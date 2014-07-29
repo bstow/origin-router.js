@@ -10,26 +10,39 @@ var util = require('util');
 var App = function() {
     var server = new http.Server(), router = new route.Router(), template = new tmpl.Template();
 
-    this.start = function(port) { server.listen(port); };
+    this.start = function(port) { server.listen.apply(server, arguments); };
+    this.stop = function() { server.close.apply(server, arguments); };
 
-    this.route = function(name, route, callback) { // define router
-        router.define(name, route, 
-            function(name, args) { return {'name': name, 'args': args, 'callback': callback}; });
+    // define route
+    this.route = function(name, route, callback) { 
+        if (arguments.length < 3) { name = undefined; route = arguments[0]; callback = arguments[1]; } // route name omitted
+        router.define(name, route, function(name, args) { return {'name': name, 'args': args, 'callback': callback}; });
     };
 
+    // define template
+    this.template = this.tmpl = function(name, tmpl) { template.define(name, tmpl); };
+
     server.on('request', function(request, response) { // on request
-        var c = {'request': request, 'response': response}; // context
+        var c = {}; // context
+
+        // http objects
+        c.request = c.req = request;
+        c.response = c.res = response;
 
         // url related
-        c.url = url.parse(request.url); // parsed url
+        c.url = url.parse(c.request.url); // parsed url
         c.route = undefined; // route info, initialized upon routing
-        c.to = function(name, args) { return to.call(c, router, name, args); }; // generate url path
+        c.to = function(name, args) { return router.path.apply(router, arguments); }; // generate url path
 
         // response functions
-        c.missing = function() { return missing.call(c); }; // serve missing response
-        c.error = function(err) { return error.call(c, err); }; // serve error response
-        c.redirect = function(url) { return redirect.call(c, url); } // serve redirect response
-        c.file = function(path, type) { return file.call(c, path, type); }; // serve file
+        c.ok = function() { return ok.apply(c, arguments); }; // serve missing response
+        c.missing = function() { return missing.apply(c, arguments); }; // serve missing response
+        c.error = c.err = function(err) { return error.apply(c, arguments); }; // serve error response
+        c.redirect = function(url) { return redirect.apply(c, arguments); } // serve redirect response
+        c.file = function(path, type) { return file.apply(c, arguments); }; // serve file
+
+        // template
+        c.template = c.tmpl = function(descriptor, args) { return template.template(descriptor).call(c, args); }
 
         // route
         var route = router.route(c.url.pathname); // match route
@@ -41,9 +54,11 @@ var App = function() {
     });
 };
 
-// generate url path
-var to = function(router, name, args) {
-    return router.path(name, args);
+// serve ok response
+var ok = function(body, type) {
+    this.response.writeHead(200, type != undefined ? {'Content-Type': type} : undefined);
+    this.response.write(body);
+    this.response.end();
 };
 
 // serve missing response 
@@ -78,7 +93,6 @@ var file = function(filepath, type) {
 
     fs.readFile(filepath, 'binary', function(err, file) {
         if (err != undefined) { 
-            console.log(err);
             if (err.code === 'ENOENT' || err.code === 'EISDIR') { self.missing(); }
             else { self.error(err); }
             return;

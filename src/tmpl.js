@@ -1,4 +1,5 @@
 var assert = require('assert');
+var fs = require('fs');
 
 // template
 var Template = function() {
@@ -14,6 +15,29 @@ Template.prototype.define = function(name, template) {
                 "Couldn't define template '" + name + "' because another template named '" + name + "' already exists"
             );
         }
+
+        if (template.indexOf('<%') === -1 && template.indexOf('%>') === -1) { // template is a filepath
+            try { template = fs.readFileSync(template, 'utf8'); } 
+            catch (err) { // failed to read the template file
+                var abridge = function() { // shorten to make errors caused by templates read as filepaths legible
+                    var parts = template.trim().split('\n');
+                    if (parts.length > 1) { return parts[0] + '...'; }
+                    else { return parts[0] != undefined ? parts[0] : template; }
+                };
+
+                if (err.code === 'ENOENT') {
+                    throw new Error(
+                        "Couldn't define template '" + name + "' because the template filepath '" +
+                        abridge() + "' doesn't exist"
+                    );
+                } else if (err.code === 'EISDIR') {
+                    throw new Error(
+                        "Couldn't define template '" + name + "' because the template filepath '" +
+                        abridge() + "' is a directory not a file"
+                    );
+                } else { throw err; }
+            }
+        } 
     
         var func;
         if (template in by.template) { func = by.template[template]; } // use previously cached compiled template
@@ -28,7 +52,7 @@ Template.prototype.template = function(descriptor) {
     with (this.templates) {
         if (descriptor in by.name) { // descriptor is a name 
             return by.name[descriptor]; // defined template by name
-        } else if (descriptor.indexOf('<%') === -1) { // descriptor is not a template
+        } else if (descriptor.indexOf('<%') === -1 && descriptor.indexOf('%>') === -1) { // descriptor is not a template
             throw new Error("No template named '" + name + "' exists");
         } else { // descriptor is a dynamic template
             var func;
