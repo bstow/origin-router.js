@@ -86,8 +86,26 @@ var parse = function(template) {
 
         index = start + 2; // move past '<%'
 
-        var end = template.indexOf('%>', index); // find next '%>'
-        if (end === -1) { throw new Error("Template is missing a '%>'"); } // unended code
+        // search for corresponding '%>'
+        var end = index;
+        var depth = 1; // current depth of '<%' ... '%>' pairs
+        while (true) {
+            var substart = template.indexOf('<%', end);
+            var subend = template.indexOf('%>', end);
+
+            if (substart !== -1 && (subend === -1 || substart < subend)) { // found '<%' first
+                depth++; // increment depth
+                end = substart; // move to '<%' 
+            } else if (subend !== -1 && (substart === -1 || subend < substart)) { // found '%>' first
+                depth--; // decrement depth
+                end = subend;  // move to '%>'
+            } else { // found neither '<%' nor '%>'
+                throw new Error("Template is missing a '%>'"); // unended code
+            }
+
+            if (depth > 0) { end += 2; continue; } // move past '<%' or '%>' and continue search
+            else { break; } // found corresponding '%>'
+        }
 
         if (index !== end) { // add code
             code = template.substring(index, end);
@@ -139,7 +157,7 @@ var build = function(parts) {
     return new Function(code);
 };
 
-module.exports.Template = Template;
+module.exports.Template = Template; 
 
 // tests
 
@@ -147,6 +165,7 @@ var tmpl = new Template(); // test template
 
 // define templates
 tmpl.define('template number', "t<%=\"emp\"%><%=\n'_l'.substring(1)\n%>ate<%if(this.space){%> <%}%><%=number%>");
+tmpl.define('inner template', "in<%= this.template(\"<%=this.letters%>\").call({'letters': 'ner'}) %> <%=template%>");
 
 // define template containing code with bad syntax
 assert.throws(function() { tmpl.define('bad syntax', 'bad syntax <% a?b %>'); }, SyntaxError);
@@ -158,12 +177,14 @@ assert.throws(function() { tmpl.define('duplicate template', 'duplicate <%= temp
 
 var result;
 
-// compiled template
+// compiled templates
 result = tmpl.template('template number');
 assert.strictEqual(result.call({'space': true}, {'number': 1}), 'template 1', 'The template output did not match the expected value');
 assert.strictEqual(result.call({'space': false}, {'number': 2}), 'template2', 'The template output did not match the expected value');
 assert.throws(function() { result.call({'space': false}, {'missing number': 1}); }, /number/, 
     'The template with missing arguments did not fail as expected');
+result = tmpl.template('inner template');
+assert.strictEqual(result.call(tmpl, {'template': 'template'}), 'inner template', 'The template output did not match the expected value');
 
 // dynamic template
 result = tmpl.template("t<%=\"emp\"%><%=\n'_l'.substring(1)\n%>ate<%if(this.space){%> <%}%><%=number%>");

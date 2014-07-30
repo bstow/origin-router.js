@@ -10,8 +10,8 @@ var util = require('util');
 var App = function() {
     var server = new http.Server(), router = new route.Router(), template = new tmpl.Template();
 
-    this.start = function(port) { server.listen.apply(server, arguments); };
-    this.stop = function() { server.close.apply(server, arguments); };
+    this.start = function(port) { server.listen.apply(server, arguments); }; // start app
+    this.stop = function() { server.close.apply(server, arguments); }; // stop app
 
     // define route
     this.route = function(name, route, callback) { 
@@ -22,7 +22,8 @@ var App = function() {
     // define template
     this.template = this.tmpl = function(name, tmpl) { template.define(name, tmpl); };
 
-    server.on('request', function(request, response) { // on request
+    // handle request
+    server.on('request', function(request, response) {
         var c = {}; // context
 
         // http objects
