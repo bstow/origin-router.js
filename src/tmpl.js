@@ -12,14 +12,14 @@ Template.prototype.define = function(name, template) {
     with (this.templates) {
         if (name != undefined && name in by.name) { // duplicate name
             throw new Error(
-                "Couldn't define template '" + name + "' because another template named '" + name + "' already exists"
+                "Couldn't define template '" + name + "' because another template named '" + name + "' was already defined"
             );
         }
 
         if (template.indexOf('<%') === -1 && template.indexOf('%>') === -1) { // template is a filepath
             try { template = fs.readFileSync(template, 'utf8'); } 
             catch (err) { // failed to read the template file
-                var abridge = function() { // shorten to make errors caused by templates read as filepaths legible
+                var abridge = function() { // truncate to make errors caused by templates read as filepaths legible
                     var parts = template.trim().split('\n');
                     if (parts.length > 1) { return parts[0] + '...'; }
                     else { return parts[0] != undefined ? parts[0] : template; }
@@ -51,14 +51,14 @@ Template.prototype.define = function(name, template) {
 Template.prototype.template = function(descriptor) {
     with (this.templates) {
         if (descriptor in by.name) { // descriptor is a name 
-            return by.name[descriptor]; // defined template by name
+            return by.name[descriptor]; // return defined template by name
         } else if (descriptor.indexOf('<%') === -1 && descriptor.indexOf('%>') === -1) { // descriptor is not a template
             throw new Error("No template named '" + name + "' exists");
         } else { // descriptor is a dynamic template
             var func;
             if (descriptor in by.template) { func = by.template[descriptor]; } // use previously cached compiled template
             else { func = by.template[descriptor] = compile(descriptor); } // compile and cache a new template
-            return func;
+            return func; // return compiled template
         }
     }
 };
@@ -74,7 +74,7 @@ var parse = function(template) {
 
     var index = 0;
     var length = template.length;
-    while (index < length) {
+    while (index < length) { // traverse template
         var start = template.indexOf('<%', index); // find next '<%'
         var end = template.indexOf('%>', index); // find next '%>'
         if (start !== -1 && end !== -1 && end < start) { // test for missing '<%'
@@ -82,11 +82,11 @@ var parse = function(template) {
         }
         end = undefined;
         
-        if (start === -1) { // no add'l code found
-            parts.push({'string': template.substring(index)}); // add remaining string
+        if (start === -1) { // no add'l code block found
+            parts.push({'string': template.substring(index)}); // add remaining string literal
             break; // done
-        } else if (start > index) { // string found before code
-            parts.push({'string': template.substring(index, start)}); // add string 
+        } else if (start > index) { // string literal found before code block
+            parts.push({'string': template.substring(index, start)}); // add string literal 
         } 
 
         index = start + 2; // move past '<%'
@@ -105,7 +105,7 @@ var parse = function(template) {
                 depth--; // decrement depth
                 end = subend;  // move to '%>'
             } else { // found neither '<%' nor '%>'
-                throw new Error("Template is missing a '%>'"); // missing '%>'
+                throw new Error("Template is missing a '%>'"); // missing corresponding'%>'
             }
 
             if (depth > 0) { end += 2; continue; } // move past '<%' or '%>' and continue search
@@ -115,7 +115,7 @@ var parse = function(template) {
         if (index !== end) { // add code
             code = template.substring(index, end);
 
-            var output = code.charAt(0) === '=' ? true : false; // is code output? ('<%=')
+            var output = code.charAt(0) === '=' ? true : false; // is code output block? ('<%=')
             if (output) { code = code.substr(1); } // remove '='
 
             parts.push({'code': code, 'output': output});
@@ -133,24 +133,24 @@ var build = function(parts) {
     code += 'with (arguments[0] || {}) {\n  var ___ = [];\n';
 
     parts.forEach(function(part, index, parts) { 
-        if (part.string != undefined) { // string
+        if (part.string != undefined) { // string literal
             code += (
                 '  ___.push(\n' + 
                 '    "' + part.string.split('"').join('\\"').split('\n').join('\\n" +\n' + '    "') + '"\n' + 
                 '  );\n'
             ); 
-        } else if (part.code != undefined) { // code
-            if (part.output) { // code output
+        } else if (part.code != undefined) { // code block
+            if (part.output) { // code output block
                 code += (
                     '  ___.push\n' + 
                     '    ( ' + part.code.trim() + ' );\n'
                 ); 
-            } else { 
-                code += ( // code
+            } else { // code block
+                code += ( 
                     '  ' + part.code.trim()
                 ); 
 
-                // end code statement
+                // end code block statement
                 var last = code.charAt(code.length - 1);
                 code += (last != ';' && last != '{' && last != '}') ? ';\n' : '\n';
             } 
@@ -159,7 +159,7 @@ var build = function(parts) {
 
     code += 'return ___.join("");\n}';
 
-    return new Function(code);
+    return new Function(code); // evaluate code and compile to function
 };
 
 module.exports.Template = Template; 

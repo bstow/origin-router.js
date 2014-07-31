@@ -12,7 +12,7 @@ Router.prototype.define = function(name, route, callback) {
     with (this.routes) {
         if (name != undefined && name in by.name) { // duplicate name
             throw new Error(
-                "Couldn't define route '" + name + "' because another route named '" + name + "' already exists"
+                "Couldn't define route '" + name + "' because another route named '" + name + "' was already defined"
             );
         }
 
