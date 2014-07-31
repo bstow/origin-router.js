@@ -34,8 +34,7 @@ Router.prototype.route = function(pathname) {
             with (by.order[index]) {
                 var args = match(subroutes, subpaths); // arguments
                 if (args != undefined) { // match
-                    // execute the route's callback
-                    return callback.call(undefined, name, args);  
+                    return callback.call(undefined, name, args); // execute the route's callback
                 }
             } 
         }
@@ -59,6 +58,9 @@ var parse = {}; // parsing
 parse.route = function(route) {
     var last;
 
+    var names = {}; // parameter names count
+    var collision; // first parameter collision name
+
     route = route.trim();
 
     last = route.length - 1;
@@ -73,6 +75,11 @@ parse.route = function(route) {
             var wildcard = subroute.charAt(last) === '*' ? true : false;
             var name = wildcard ? subroute.substring(1, last) : subroute.substring(1);
 
+            if (name in names) { // parameter name collision
+                if (collision == undefined) { collision = name; } 
+                names[name]++; // increment parameter name count
+            } else { names[name] = 1; }
+
             var marker = {'name': name}; // parameter marker
 
             if (wildcard && index == subroutes.length - 1) { marker.wildcard = true; } // wildcard parameter
@@ -80,6 +87,12 @@ parse.route = function(route) {
             subroutes[index] = marker; 
         } 
     });
+
+    if (collision != undefined) {
+        throw new Error(
+            "Route '" + route + "' contains " + names[collision] + " parts with the same name of '" + collision + "'"
+        );
+    }
 
     return subroutes;
 };
@@ -127,11 +140,8 @@ var match = function(subroutes, subpaths) {
     }
 
     if (wildcard != undefined) { 
-        // resolve wildcard parameter, store argument
-        args[wildcard] = subpaths.slice(index).join('/'); 
-    } else if (index != subroutes.length) { 
-        return;  // no match
-    }
+        args[wildcard] = subpaths.slice(index).join('/'); // resolve wildcard parameter, store argument
+    } else if (index != subroutes.length) { return; } // no match
 
     return args; // match
 };
@@ -173,9 +183,14 @@ router.define('route 2', '/path/:param1/:param2/', callback); // 2nd route
 router.define('route 3', ':param1*/:param2/path', callback); // 3rd route
 router.define('route 4', '%2F+path/file.ext', callback); // 4th route
 
+// define invalid routes
+assert.throws(function() { router.define('duplicate route parameter', '/path/:param1/:param2/:param2/:param1/:param2'); }, 
+    function(err) { return (err instanceof Error && /\s+3\s+/.test(err.message) && /param2/.test(err.message)) ? true : false; },
+    'The template with invalid syntax did not fail as expected');
+
 // define duplicate route name
-router.define('duplicate route', '/duplicate/1', callback); 
-assert.throws(function() { router.define('duplicate route', '/duplicate/2', callback); }, /duplicate[\s]route/,
+router.define('duplicate route name', '/duplicate/1', callback); 
+assert.throws(function() { router.define('duplicate route name', '/duplicate/2', callback); }, /duplicate[\s]route/,
     'Defining a route with a duplicate name did not fail as expected'); 
 
 var result;
