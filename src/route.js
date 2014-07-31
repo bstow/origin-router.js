@@ -186,7 +186,7 @@ router.define('route 4', '%2F+path/file.ext', callback); // 4th route
 // define invalid routes
 assert.throws(function() { router.define('duplicate route parameter', '/path/:param1/:param2/:param2/:param1/:param2'); }, 
     function(err) { return (err instanceof Error && /\s+3\s+/.test(err.message) && /param2/.test(err.message)) ? true : false; },
-    'The template with invalid syntax did not fail as expected');
+    'Defining a route with duplicate parameters did not fail as expected');
 
 // define duplicate route name
 router.define('duplicate route name', '/duplicate/1', callback); 
