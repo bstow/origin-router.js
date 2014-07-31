@@ -76,6 +76,11 @@ var parse = function(template) {
     var length = template.length;
     while (index < length) {
         var start = template.indexOf('<%', index); // find next '<%'
+        var end = template.indexOf('%>', index); // find next '%>'
+        if (start !== -1 && end !== -1 && end < start) { // test for missing '<%'
+            throw new Error("Template is missing a '<%'");
+        }
+        end = undefined;
         
         if (start === -1) { // no add'l code found
             parts.push({'string': template.substring(index)}); // add remaining string
@@ -87,7 +92,7 @@ var parse = function(template) {
         index = start + 2; // move past '<%'
 
         // search for corresponding '%>'
-        var end = index;
+        end = index;
         var depth = 1; // current depth of '<%' ... '%>' pairs
         while (true) {
             var substart = template.indexOf('<%', end);
@@ -100,7 +105,7 @@ var parse = function(template) {
                 depth--; // decrement depth
                 end = subend;  // move to '%>'
             } else { // found neither '<%' nor '%>'
-                throw new Error("Template is missing a '%>'"); // unended code
+                throw new Error("Template is missing a '%>'"); // missing '%>'
             }
 
             if (depth > 0) { end += 2; continue; } // move past '<%' or '%>' and continue search
@@ -167,8 +172,17 @@ var tmpl = new Template(); // test template
 tmpl.define('template number', "t<%=\"emp\"%><%=\n'_l'.substring(1)\n%>ate<%if(this.space){%> <%}%><%=number%>");
 tmpl.define('inner template', "in<%= this.template(\"<%=this.letters%>\").call({'letters': 'ner'}) %> <%=template%>");
 
-// define template containing code with bad syntax
-assert.throws(function() { tmpl.define('bad syntax', 'bad syntax <% a?b %>'); }, SyntaxError);
+// define invalid templates
+assert.throws(function() { tmpl.define('bad syntax', 'bad syntax <% a?b %>'); }, SyntaxError,
+    'The template with invalid syntax did not fail as expected');
+assert.throws(function() { tmpl.define('no start', "no %> <%= 'start' %>"); }, /[<][%]/,
+    'The template with invalid syntax did not fail as expected');
+assert.throws(function() { tmpl.define('no inner start', "<%= 'no' %>%> <%= 'start' %>"); }, /[<][%]/,
+    'The template with invalid syntax did not fail as expected');
+assert.throws(function() { tmpl.define('no end', "<%= 'no' %> <%= end "); }, /[%][>]/,
+    'The template with invalid syntax did not fail as expected');
+assert.throws(function() { tmpl.define('no inner end', "<%= 'no' %> <%<%= 'end' %>"); }, /[%][>]/,
+    'The template with invalid syntax did not fail as expected');
 
 // define duplicate template name
 tmpl.define('duplicate template', 'duplicate <%= template1 %>'); 
