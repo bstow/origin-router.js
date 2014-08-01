@@ -13,10 +13,14 @@
     };
 
     /* define a route
-     * @method - http method
-     * @name - route name
-     * @route - route expression
-     * @func - function to execute upon routing */
+     * @method - http method {string}
+     * @name - route name {string}
+     * @route - route expression {string}
+     * @func - function to execute upon routing {
+     *      function(
+     *          @name - route name {string}
+     *          @args - route arguments {object}
+     *      )} */
     Router.prototype.define = function(method, name, expression, func) {
         var routes = this.routes, methods = this.routes.methods;
 
@@ -47,9 +51,9 @@
     };
 
     /* route a path
-     * @method - http method
-     * @pathname - path
-     * return result of the route's function */
+     * @method - http method {string}
+     * @pathname - path {string}
+     * return result of the route's function {?} */
     Router.prototype.route = function(method, pathname) {
         var routes = this.routes, methods = this.routes.methods;
 
@@ -79,8 +83,8 @@
     };
 
     /* compose a path
-     * @name - route name
-     * @args - arguments to the route expression
+     * @name - route name {string}
+     * @args - route arguments {object}
      * return path */
     Router.prototype.path = function(name, args) {
         var routes  = this.routes;
@@ -94,8 +98,8 @@
     var parse = {}; // parsing
 
     /* parse an expression into subroutes
-     * @expression - route expression
-     * return array of objects describing each part of the route */
+     * @expression - route expression {string}
+     * return array of objects describing each part of the route {array} */
     parse.route = function(expression) {
         var last;
 
@@ -137,8 +141,8 @@
     };
 
     /* parse path into subpaths
-     * @pathname - path
-     * return array of strings representing each part of the path */
+     * @pathname - path {string}
+     * return array of strings representing each part of the path {array} */
     parse.path = function(pathname) {
         pathname = pathname.trim();
 
@@ -155,9 +159,9 @@
     };
 
     /* match subroutes and subpaths
-     * @subroutes - array of objects describing each part of the route
-     * @subpaths - array of strings representing each part of the path
-     * return arguments as an object of name value pairs */
+     * @subroutes - array of objects describing each part of the route {array}
+     * @subpaths - array of strings representing each part of the path {array}
+     * return route arguments as an object of name value pairs {object} */
     var match = function(subroutes, subpaths) {
         var args = {};
         var wildcard;
@@ -191,9 +195,9 @@
     };
 
     /* compose path from subroutes
-    * @subroutes - array of objects describing each part of the route
-    * @args - arguments to apply
-    * return path */
+    * @subroutes - array of objects describing each part of the route {array}
+    * @args - route arguments to apply {object}
+    * return path {string} */
     var compose = function(subroutes, args) {
         args = args || {};
 
@@ -230,23 +234,28 @@
     router.define(undefined, 'route 2', '/path/:param1/:param2/', func); // 2nd route
     router.define(undefined, 'route 3', ':param1*/:param2/path', func); // 3rd route
     router.define(undefined, 'route 4', '%2F+path/file.ext', func); // 4th route
+    router.define('GET', 'get route', '/method/:param1', func); // GET route
+    router.define('POST', 'post route', '/method/:param1', func); // POST route
 
     // define invalid routes
-    assert.throws(function() { router.define(undefined, 'duplicate route parameter', 
-        '/path/:param1/:param2/:param2/:param1/:param2'); }, 
-    function(err) { return (err instanceof Error && /\s+3\s+/.test(err.message) && /param2/.test(err.message)); },
+    assert.throws(
+        function() { router.define('get', 'duplicate route parameter', '/path/:p1/:p2/:p2/:p1/:p2'); }, 
+        function(err) { return (err instanceof Error && /\s+3\s+/.test(err.message) && /p2/.test(err.message)); },
         'Defining a route with duplicate parameters did not fail as expected');
+    assert.throws(function() { router.define('INvalid MEthod', 'bAd method', '/invalid/method/:param1'); },
+        function(err) { return (err instanceof Error && /INvalid/.test(err.message) && /bAd/.test(err.message)); },
+        'Defining a route with an invalid method did not fail as expected');
 
     // define duplicate route name
-    router.define(undefined, 'duplicate route name', '/duplicate/1', func); 
-    assert.throws(function() { router.define(undefined, 'duplicate route name', '/duplicate/2', func); }, 
+    router.define('DEL', 'duplicate route name', '/duplicate/1', func); 
+    assert.throws(function() { router.define('PUT', 'duplicate route name', '/duplicate/2', func); }, 
         /duplicate[\s]route/,
         'Defining a route with a duplicate name did not fail as expected'); 
 
     var result;
 
     // route path with 1st route
-    result = router.route(undefined, '/path/arg1/arg2/ /../a/r/g/3/');
+    result = router.route('POST', '/path/arg1/arg2/ /../a/r/g/3/');
     assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
     assert.strictEqual(result.args.param1, 'arg1', 
         "The path's 1st argument to the 1st route did not match the expected value");
@@ -256,7 +265,7 @@
         "The path's 3rd argument to the 1st route did not match the expected value");
 
     // route path with 2nd route
-    result = router.route(undefined, 'path/arg1/arg2');
+    result = router.route('get', 'path/arg1/arg2');
     assert.strictEqual(result.name, 'route 2', 'The path did not match the 2nd route');
     assert.strictEqual(result.args.param1, 'arg1', 
         "The path's 1st argument to the 2nd route did not match the expected value");
@@ -272,8 +281,18 @@
         "The path's 2nd argument to the 3rd route did not match the expected value");
 
     // route path with 4th route
-    result = router.route(undefined, '/../%2F+path/file.ext/');
+    result = router.route('Del', '/../%2F+path/file.ext/');
     assert.strictEqual(result.name, 'route 4', 'The path did not match the 4th route');
+
+    // route path with GET route
+    result = router.route('  GEt ', '/method/get');
+    assert.strictEqual(result.name, 'get route', 'The path did not match the GET route');
+    result = router.route(undefined, '/method/all');
+    assert.strictEqual(result.name, 'get route', 'The path did not match the GET route');
+
+    // route path with POST route
+    result = router.route('  poSt ', '/method/post');
+    assert.strictEqual(result.name, 'post route', 'The path did not match the POST route');
 
     // assemble path with 1st route
     result = router.path('route 1', {'param1': 'arg1', 'param2': 'arg2', 'param3': '/a/r/g/3/'});
