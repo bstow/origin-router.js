@@ -1,239 +1,301 @@
-var assert = require('assert');
-var path = require('path');
+(function() { 'use strict';
+    var path = require('path');
 
-// router
-var Router = function() {
-    this.routes = {};
-    this.routes.by = {'name': {}, 'order': []};
-};
+    /* router class */
+    var Router = module.exports.Router = function() {
+        var routes = this.routes = {}; // all routes regardless of method
+        var methods = this.routes.methods = {'get': {}, 'post': {}, 'put': {}, 'del': {}}; // routes segregated by method
 
-// define a route
-Router.prototype.define = function(name, route, callback) {
-    with (this.routes) {
-        if (name != undefined && name in by.name) { // duplicate name
-            throw new Error(
-                "Couldn't define route '" + name + "' because another route named '" + name + "' was already defined"
-            );
+        // setup route stores
+        [routes].concat(Object.keys(methods).map(function (key) { return methods[key]; })).forEach(
+            function(store) { store.by = {'name': {}, 'order': []}; } // store by name and order
+        ); 
+    };
+
+    /* define a route
+     * @method - http method
+     * @name - route name
+     * @route - route expression
+     * @func - function to execute upon routing */
+    Router.prototype.define = function(method, name, expression, func) {
+        var routes = this.routes, methods = this.routes.methods;
+
+        if (name != undefined && name in routes.by.name) { // duplicate name
+            throw new Error("Couldn't define route '" + name + 
+                "' because another route named '" + name + "' is already defined");
         }
 
-        var data = {'name': name, 'subroutes': parse.route(route), 'callback': callback};
+        if (method != undefined) { // convert method to the associated store
+            var store = methods[method.toLowerCase().trim()];
 
-        by.order.push(data);
-        if (name != undefined) { by.name[name] = data; }
-    }
-};
+            if (store == undefined) { // no associated store
+                throw new Error("Couldn't define route '" + name + 
+                    "' because the method '" + method + "' is not recognized");
+            }
 
-// route a path
-Router.prototype.route = function(pathname) {
-    with (this.routes) {
+            method = store;
+        }
+
+        var data = {'name': name, 'subroutes': parse.route(expression), 'func': func};
+
+        var stores = [routes].concat( // collect the applicable stores
+            method != undefined ? method : Object.keys(methods).map(function (key) { return methods[key]; }));
+        stores.forEach(function(store) { 
+            store.by.order.push(data); // store by order
+            if (name != undefined) { store.by.name[name] = data; } // store by name
+        });
+    };
+
+    /* route a path
+     * @method - http method
+     * @pathname - path
+     * return result of the route's function */
+    Router.prototype.route = function(method, pathname) {
+        var routes = this.routes, methods = this.routes.methods;
+
+        var store;
+        if (method != undefined) { // convert method to the associated store
+            var store = methods[method.toLowerCase().trim()];
+
+            if (store == undefined) { // no associated store
+                throw new Error("Couldn't define route '" + name + 
+                    "' because the method '" + method + "' is not recognized");
+            }
+        } else { store = routes; } // all routes
+
         var subpaths = parse.path(pathname);
 
         // find first matching route
-        var length = by.order.length;
+        var length = store.by.order.length;
         for (var index = 0; index < length; index++) {
-            with (by.order[index]) {
-                var args = match(subroutes, subpaths); // arguments
-                if (args != undefined) { // match
-                    return callback.call(undefined, name, args); // execute the route's callback
-                }
-            } 
-        }
-    }
-};
+            var data = store.by.order[index];
+            var name = data.name, subroutes = data.subroutes, func = data.func;
 
-// compose a path
-Router.prototype.path = function(name, args) {
-    with (this.routes) {
-        if (name in by.name) { // compose path with the named route
-            with (by.name[name]) { return compose(subroutes, args); }
-        } else { 
-            throw new Error("No route named '" + name + "' exists");
-        }
-    }
-};
-
-var parse = {}; // parsing
-
-// parse route into subroutes
-parse.route = function(route) {
-    var last;
-
-    var names = {}; // parameter names count
-    var collision; // first parameter collision name
-
-    route = route.trim();
-
-    last = route.length - 1;
-    if (route.charAt(last) === '/') { route = route.substring(0, last); }
-    if (route.charAt(0) === '/') { route = route.substring(1); }
-
-    var subroutes = route.split('/');
-    subroutes.forEach(function(subroute, index, subroutes) { // parameters
-        if (subroute.charAt(0) === ':') {
-            last = subroute.length - 1;
-
-            var wildcard = subroute.charAt(last) === '*' ? true : false;
-            var name = wildcard ? subroute.substring(1, last) : subroute.substring(1);
-
-            if (name in names) { // parameter name collision
-                if (collision == undefined) { collision = name; } 
-                names[name]++; // increment parameter name count
-            } else { names[name] = 1; }
-
-            var marker = {'name': name}; // parameter marker
-
-            if (wildcard && index == subroutes.length - 1) { marker.wildcard = true; } // wildcard parameter
-
-            subroutes[index] = marker; 
-        } 
-    });
-
-    if (collision != undefined) {
-        throw new Error(
-            "Route '" + route + "' contains " + names[collision] + " parts with the same name of '" + collision + "'"
-        );
-    }
-
-    return subroutes;
-};
-
-// parse path into subpaths
-parse.path = function(pathname) {
-    pathname = pathname.trim();
-
-    // resolve dot directory subpaths for safety
-    pathname = path.resolve('/', path.normalize(pathname)); 
-
-    var last = pathname.length - 1;
-    if (pathname.charAt(last) === '/') { pathname = pathname.substring(0, last); }
-    if (pathname.charAt(0) === '/') { pathname = pathname.substring(1); }
-
-    var subpaths = pathname.split('/');
-
-    return subpaths;
-};
-
-// match the subroutes and subpaths
-var match = function(subroutes, subpaths) {
-    var args = {};
-    var wildcard;
-
-    var index;
-    var length = subpaths.length;
-    for (index = 0; index < length; index++) { // traverse subpaths and subroutes
-        var subroute = subroutes[index];
-        var subpath = subpaths[index];
-
-        if (subroute == undefined) { return; } // match unsuccessful
-        if (typeof subroute === 'string' || subroute instanceof String) {
-            if (subroute == subpath) { continue; } // continue matching 
-            else { return; } // match unsuccessful
-        } else if (typeof subroute === 'object') { // parameter marker
-            if (subroute.wildcard) { // wildcard
-                wildcard = subroute.name; // wildcard parameter name
-                break;
-            } else { // parameter
-                args[subroute.name] = subpath; // store argument
-                continue; // continue matching
+            var args = match(subroutes, subpaths); // arguments
+            if (args != undefined) { // match
+                return func.call(undefined, name, args); // execute the route's function
             }
-        } else { break; } // end matching
-    }
-
-    if (wildcard != undefined) { 
-        args[wildcard] = subpaths.slice(index).join('/'); // resolve wildcard parameter, store argument
-    } else if (index != subroutes.length) { return; } // no match
-
-    return args; // match
-};
-
-// compose path from subroutes
-var compose = function(subroutes, args) {
-    args = args || {};
-
-    var subpaths = [];
-    subroutes.forEach(function(subroute, index, route) { 
-        if (typeof subroute === 'string' || subroute instanceof String) {
-            subpaths.push(subroute);
-        } else if (typeof subroute === 'object') { // parameter marker
-            var arg = args[subroute.name];
-            if (arg == undefined) { arg = ''; }
-
-            if (subroute.wildcard) { subpaths.push(arg.charAt(0) === '/' ? arg.substring(1) : arg); } // wildcard parameter
-            else { subpaths.push(arg); } // parameter
         }
-    });
+    };
 
-    var pathname = subpaths.join('/');
-    if (pathname.charAt(0) !== '/') { pathname = '/' + pathname; }
+    /* compose a path
+     * @name - route name
+     * @args - arguments to the route expression
+     * return path */
+    Router.prototype.path = function(name, args) {
+        var routes  = this.routes;
 
-    return pathname;
-};
+        if (name in routes.by.name) { // compose path with the named route
+            var subroutes = routes.by.name[name].subroutes;
+            return compose(subroutes, args); 
+        } else { throw new Error("No route named '" + name + "' exists"); }
+    };
 
-module.exports.Router = Router;
+    var parse = {}; // parsing
 
-// tests
+    /* parse an expression into subroutes
+     * @expression - route expression
+     * return array of objects describing each part of the route */
+    parse.route = function(expression) {
+        var last;
 
-var router = new Router(); // test router
+        var names = {}; // parameter names count
+        var collision; // first parameter collision name
 
-var callback = function(name, args) { return {'name': name, 'args': args}; };
+        expression = expression.trim();
 
-// define routes
-router.define('route 1', '/path/:param1/:param2/:param3*', callback); // 1st route
-router.define('route 2', '/path/:param1/:param2/', callback); // 2nd route
-router.define('route 3', ':param1*/:param2/path', callback); // 3rd route
-router.define('route 4', '%2F+path/file.ext', callback); // 4th route
+        last = expression.length - 1;
+        if (expression.charAt(last) === '/') { expression = expression.substring(0, last); }
+        if (expression.charAt(0) === '/') { expression = expression.substring(1); }
 
-// define invalid routes
-assert.throws(function() { router.define('duplicate route parameter', '/path/:param1/:param2/:param2/:param1/:param2'); }, 
-    function(err) { return (err instanceof Error && /\s+3\s+/.test(err.message) && /param2/.test(err.message)) ? true : false; },
-    'Defining a route with duplicate parameters did not fail as expected');
+        var subroutes = expression.split('/');
+        subroutes.forEach(function(subroute, index, subroutes) { // parameters
+            if (subroute.charAt(0) === ':') {
+                last = subroute.length - 1;
 
-// define duplicate route name
-router.define('duplicate route name', '/duplicate/1', callback); 
-assert.throws(function() { router.define('duplicate route name', '/duplicate/2', callback); }, /duplicate[\s]route/,
-    'Defining a route with a duplicate name did not fail as expected'); 
+                var wildcard = subroute.charAt(last) === '*';
+                var name = wildcard ? subroute.substring(1, last) : subroute.substring(1);
 
-var result;
+                if (name in names) { // parameter name collision
+                    if (collision == undefined) { collision = name; } 
+                    names[name]++; // increment parameter name count
+                } else { names[name] = 1; }
 
-// route path with 1st route
-result = router.route('/path/arg1/arg2/ /../a/r/g/3/');
-assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
-assert.strictEqual(result.args.param1, 'arg1', "The path's 1st argument to the 1st route did not match the expected value");
-assert.strictEqual(result.args.param2, 'arg2', "The path's 2nd argument to the 1st route did not match the expected value");
-assert.strictEqual(result.args.param3, 'a/r/g/3', "The path's 3rd argument to the 1st route did not match the expected value");
+                var marker = {'name': name}; // parameter marker
 
-// route path with 2nd route
-result = router.route('path/arg1/arg2');
-assert.strictEqual(result.name, 'route 2', 'The path did not match the 2nd route');
-assert.strictEqual(result.args.param1, 'arg1', "The path's 1st argument to the 2nd route did not match the expected value");
-assert.strictEqual(result.args.param2, 'arg2', "The path's 2nd argument to the 2nd route did not match the expected value");
+                if (wildcard && index == subroutes.length - 1) { marker.wildcard = true; } // wildcard parameter
 
-// route path with 3rd route
-result = router.route('/arg1/arg2/path/');
-assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
-assert.strictEqual(result.args.param1, 'arg1', "The path's 1st argument to the 3rd route did not match the expected value");
-assert.strictEqual(result.args.param2, 'arg2', "The path's 2nd argument to the 3rd route did not match the expected value");
+                subroutes[index] = marker; 
+            } 
+        });
 
-// route path with 4th route
-result = router.route('/../%2F+path/file.ext/');
-assert.strictEqual(result.name, 'route 4', 'The path did not match the 4th route');
+        if (collision != undefined) {
+            throw new Error("Route '" + expression + "' contains " + names[collision] + " parts named '" + collision + "'");
+        }
 
-// assemble path with 1st route
-result = router.path('route 1', {'param1': 'arg1', 'param2': 'arg2', 'param3': '/a/r/g/3/'});
-assert.strictEqual(result, '/path/arg1/arg2/a/r/g/3/', 'The path assembled using the 1st route did not match the expected value');
+        return subroutes;
+    };
 
-// assemble path with 2nd route
-result = router.path('route 2', {'param1': 'arg1', 'param2': 'arg2'});
-assert.strictEqual(result, '/path/arg1/arg2', 'The path assembled using the 2nd route did not match the expected value');
+    /* parse path into subpaths
+     * @pathname - path
+     * return array of strings representing each part of the path */
+    parse.path = function(pathname) {
+        pathname = pathname.trim();
 
-// assemble path with 3rd route
-result = router.path('route 3', {'param1': 'arg1', 'param2': 'arg2'});
-assert.strictEqual(result, '/arg1/arg2/path', 'The path assembled using the 3rd route did not match the expected value');
+        // resolve dot directory subpaths for security
+        pathname = path.resolve('/', path.normalize(pathname)); 
 
-// assemble path with 4th route
-result = router.path('route 4');
-assert.strictEqual(result, '/%2F+path/file.ext', 'The path assembled using the 4th route did not match the expected value');
+        var last = pathname.length - 1;
+        if (pathname.charAt(last) === '/') { pathname = pathname.substring(0, last); }
+        if (pathname.charAt(0) === '/') { pathname = pathname.substring(1); }
 
-// assemble path with invalid route
-assert.throws(function() { router.path('invalid route', {'param1': 'arg1', 'param2': 'arg2'}); }, /invalid[\s]route/,
-    'Assembling a path with an invalid route did not fail as expected');
+        var subpaths = pathname.split('/');
+
+        return subpaths;
+    };
+
+    /* match subroutes and subpaths
+     * @subroutes - array of objects describing each part of the route
+     * @subpaths - array of strings representing each part of the path
+     * return arguments as an object of name value pairs */
+    var match = function(subroutes, subpaths) {
+        var args = {};
+        var wildcard;
+
+        var index;
+        var length = subpaths.length;
+        for (index = 0; index < length; index++) { // traverse subpaths and subroutes
+            var subroute = subroutes[index];
+            var subpath = subpaths[index];
+
+            if (subroute == undefined) { return; } // match unsuccessful
+            if (typeof subroute === 'string' || subroute instanceof String) {
+                if (subroute == subpath) { continue; } // continue matching 
+                else { return; } // match unsuccessful
+            } else if (typeof subroute === 'object') { // parameter marker
+                if (subroute.wildcard) { // wildcard
+                    wildcard = subroute.name; // wildcard parameter name
+                    break;
+                } else { // parameter
+                    args[subroute.name] = subpath; // store argument
+                    continue; // continue matching
+                }
+            } else { break; } // end matching
+        }
+
+        if (wildcard != undefined) { 
+            args[wildcard] = subpaths.slice(index).join('/'); // resolve wildcard parameter, store argument
+        } else if (index != subroutes.length) { return; } // no match
+
+        return args; // match
+    };
+
+    /* compose path from subroutes
+    * @subroutes - array of objects describing each part of the route
+    * @args - arguments to apply
+    * return path */
+    var compose = function(subroutes, args) {
+        args = args || {};
+
+        var subpaths = [];
+        subroutes.forEach(function(subroute, index, route) { 
+            if (typeof subroute === 'string' || subroute instanceof String) {
+                subpaths.push(subroute);
+            } else if (typeof subroute === 'object') { // parameter marker
+                var arg = args[subroute.name];
+                if (arg == undefined) { arg = ''; }
+
+                if (subroute.wildcard) { 
+                    subpaths.push(arg.charAt(0) === '/' ? arg.substring(1) : arg); // wildcard parameter
+                } else { subpaths.push(arg); } // parameter
+            }
+        });
+
+        var pathname = subpaths.join('/');
+        if (pathname.charAt(0) !== '/') { pathname = '/' + pathname; }
+
+        return pathname;
+    };
+})();
+
+(function() { // tests
+    var assert = require('assert');
+
+    var router = new module.exports.Router(); // test router
+
+    var func = function(name, args) { return {'name': name, 'args': args}; };
+
+    // define routes
+    router.define(undefined, 'route 1', '/path/:param1/:param2/:param3*', func); // 1st route
+    router.define(undefined, 'route 2', '/path/:param1/:param2/', func); // 2nd route
+    router.define(undefined, 'route 3', ':param1*/:param2/path', func); // 3rd route
+    router.define(undefined, 'route 4', '%2F+path/file.ext', func); // 4th route
+
+    // define invalid routes
+    assert.throws(function() { router.define(undefined, 'duplicate route parameter', 
+        '/path/:param1/:param2/:param2/:param1/:param2'); }, 
+    function(err) { return (err instanceof Error && /\s+3\s+/.test(err.message) && /param2/.test(err.message)); },
+        'Defining a route with duplicate parameters did not fail as expected');
+
+    // define duplicate route name
+    router.define(undefined, 'duplicate route name', '/duplicate/1', func); 
+    assert.throws(function() { router.define(undefined, 'duplicate route name', '/duplicate/2', func); }, 
+        /duplicate[\s]route/,
+        'Defining a route with a duplicate name did not fail as expected'); 
+
+    var result;
+
+    // route path with 1st route
+    result = router.route(undefined, '/path/arg1/arg2/ /../a/r/g/3/');
+    assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
+    assert.strictEqual(result.args.param1, 'arg1', 
+        "The path's 1st argument to the 1st route did not match the expected value");
+    assert.strictEqual(result.args.param2, 'arg2', 
+        "The path's 2nd argument to the 1st route did not match the expected value");
+    assert.strictEqual(result.args.param3, 'a/r/g/3', 
+        "The path's 3rd argument to the 1st route did not match the expected value");
+
+    // route path with 2nd route
+    result = router.route(undefined, 'path/arg1/arg2');
+    assert.strictEqual(result.name, 'route 2', 'The path did not match the 2nd route');
+    assert.strictEqual(result.args.param1, 'arg1', 
+        "The path's 1st argument to the 2nd route did not match the expected value");
+    assert.strictEqual(result.args.param2, 'arg2', 
+        "The path's 2nd argument to the 2nd route did not match the expected value");
+
+    // route path with 3rd route
+    result = router.route(undefined, '/arg1/arg2/path/');
+    assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
+    assert.strictEqual(result.args.param1, 'arg1', 
+        "The path's 1st argument to the 3rd route did not match the expected value");
+    assert.strictEqual(result.args.param2, 'arg2', 
+        "The path's 2nd argument to the 3rd route did not match the expected value");
+
+    // route path with 4th route
+    result = router.route(undefined, '/../%2F+path/file.ext/');
+    assert.strictEqual(result.name, 'route 4', 'The path did not match the 4th route');
+
+    // assemble path with 1st route
+    result = router.path('route 1', {'param1': 'arg1', 'param2': 'arg2', 'param3': '/a/r/g/3/'});
+    assert.strictEqual(result, '/path/arg1/arg2/a/r/g/3/', 
+        'The path assembled using the 1st route did not match the expected value');
+
+    // assemble path with 2nd route
+    result = router.path('route 2', {'param1': 'arg1', 'param2': 'arg2'});
+    assert.strictEqual(result, '/path/arg1/arg2', 
+        'The path assembled using the 2nd route did not match the expected value');
+
+    // assemble path with 3rd route
+    result = router.path('route 3', {'param1': 'arg1', 'param2': 'arg2'});
+    assert.strictEqual(result, '/arg1/arg2/path', 
+        'The path assembled using the 3rd route did not match the expected value');
+
+    // assemble path with 4th route
+    result = router.path('route 4');
+    assert.strictEqual(result, '/%2F+path/file.ext', 
+        'The path assembled using the 4th route did not match the expected value');
+
+    // assemble path with invalid route
+    assert.throws(function() { router.path('invalid route', {'param1': 'arg1', 'param2': 'arg2'}); }, /invalid[\s]route/,
+        'Assembling a path with an invalid route did not fail as expected');
+})();

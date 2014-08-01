@@ -11,30 +11,25 @@ var Template = function() {
 Template.prototype.define = function(name, template) {
     with (this.templates) {
         if (name != undefined && name in by.name) { // duplicate name
-            throw new Error(
-                "Couldn't define template '" + name + "' because another template named '" + name + "' was already defined"
-            );
+            throw new Error("Couldn't define template '" + name + 
+                "' because another template named '" + name + "' is already defined");
         }
 
         if (template.indexOf('<%') === -1 && template.indexOf('%>') === -1) { // template is a filepath
             try { template = fs.readFileSync(template, 'utf8'); } 
             catch (err) { // failed to read the template file
-                var abridge = function() { // truncate to make errors caused by templates read as filepaths legible
+                var truncate = function() { // truncate to make errors caused by templates read as filepaths legible
                     var parts = template.trim().split('\n');
                     if (parts.length > 1) { return parts[0] + '...'; }
                     else { return parts[0] != undefined ? parts[0] : template; }
                 };
 
                 if (err.code === 'ENOENT') {
-                    throw new Error(
-                        "Couldn't define template '" + name + "' because the template filepath '" +
-                        abridge() + "' doesn't exist"
-                    );
+                    throw new Error("Couldn't define template '" + name + 
+                        "' because the template filepath '" + truncate() + "' doesn't exist");
                 } else if (err.code === 'EISDIR') {
-                    throw new Error(
-                        "Couldn't define template '" + name + "' because the template filepath '" +
-                        abridge() + "' is a directory not a file"
-                    );
+                    throw new Error("Couldn't define template '" + name + 
+                        "' because the template filepath '" + truncate() + "' is a directory not a file");
                 } else { throw err; }
             }
         } 
@@ -64,9 +59,7 @@ Template.prototype.template = function(descriptor) {
 };
 
 // compile template into function
-var compile = function(template) {
-    return build(parse(template));
-};
+var compile = function(template) { return build(parse(template)); };
 
 // parse template into parts
 var parse = function(template) {
@@ -115,7 +108,7 @@ var parse = function(template) {
         if (index !== end) { // add code
             code = template.substring(index, end);
 
-            var output = code.charAt(0) === '=' ? true : false; // is code output block? ('<%=')
+            var output = code.charAt(0) === '='; // is code output block? ('<%=')
             if (output) { code = code.substr(1); } // remove '='
 
             parts.push({'code': code, 'output': output});
