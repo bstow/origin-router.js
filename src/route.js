@@ -4,7 +4,9 @@
     /* router class */
     var Router = module.exports.Router = function() {
         var routes = this.routes = {}; // all routes regardless of method
-        var methods = this.routes.methods = {'get': {}, 'post': {}, 'put': {}, 'del': {}}; // routes segregated by method
+        var methods = this.routes.methods = { // routes segregated by method
+            'get': {}, 'post': {}, 'put': {}, 'delete': {}, 'head': {}, 'options': {}, 'trace': {}, 'connect': {}
+        };
 
         // setup route stores
         [routes].concat(Object.keys(methods).map(function (key) { return methods[key]; })).forEach(
@@ -247,7 +249,7 @@
         'Defining a route with an invalid method did not fail as expected');
 
     // define duplicate route name
-    router.define('DEL', 'duplicate route name', '/duplicate/1', func); 
+    router.define('DELete', 'duplicate route name', '/duplicate/1', func); 
     assert.throws(function() { router.define('PUT', 'duplicate route name', '/duplicate/2', func); }, 
         /duplicate[\s]route/,
         'Defining a route with a duplicate name did not fail as expected'); 
@@ -281,7 +283,7 @@
         "The path's 2nd argument to the 3rd route did not match the expected value");
 
     // route path with 4th route
-    result = router.route('Del', '/../%2F+path/file.ext/');
+    result = router.route('Delete', '/../%2F+path/file.ext/');
     assert.strictEqual(result.name, 'route 4', 'The path did not match the 4th route');
 
     // route path with GET route
