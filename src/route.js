@@ -2,17 +2,24 @@
     var events = require('events'), path = require('path'), util = require('util');
 
     /* 
-     * Route {class} - route for http requests 
+     * Route {class} - route for http requests
+     * 
+     * Route.prototype.constructor 
      *      @expression {string} - route expression 
      *      @options {object} - options
      *          .name {string} - route name 
      *          .method {string} - http method 
      *
-     * Route.expression {string} - route expression
+     * Route.prototype.expression {string} - route expression
      *
-     * Route.name {string} - route name
+     * Route.prototype.name {string} - route name
      *
-     * Route.method {string} - http method 
+     * Route.prototype.method {string} - http method 
+     *
+     * Route route {event} - occurs upon routing
+     *      on {function}
+     *          @args {object} - url encoded route arguments
+     *          this {Route} - route
      */
     var Route = function(expression, options) {
         events.EventEmitter.call(this);
@@ -32,6 +39,8 @@
 
     /* 
      * Router {class} - router for http requests 
+     *
+     * Router.prototype.constructor
      */
     var Router = module.exports.Router = function() {
         var routes = this.routes = {}; // all routes regardless of method
@@ -46,7 +55,7 @@
     };
 
     /* 
-     * Router.define {function} - define a route 
+     * Router.prototype.define {function} - define a route 
      *      @expression {string} - route expression 
      *      @options {object} - options
      *          .name {string} - route name 
@@ -91,7 +100,7 @@
     };
 
     /* 
-     * Router.route {function} - route a path
+     * Router.prototype.route {function} - route a method and path
      *      @method {string} - http method {string}
      *      @pathname {string} - url encoded path
      */
@@ -125,10 +134,10 @@
     };
 
     /* 
-     * Router.path {function} - compose a path
+     * Router.prototype.path {function} - compose a path
      *      @name {string} - route name
      *      @args {object} - url encoded route arguments
-     *      return {string} - path 
+     *      return {string} - url encoded path 
      */
     Router.prototype.path = function(name, args) {
         var routes  = this.routes;
@@ -140,7 +149,7 @@
     };
 
     /* [private]
-     * parse {object} - parse
+     * parse {object}
      */
     var parse = {}; // parsing
 
