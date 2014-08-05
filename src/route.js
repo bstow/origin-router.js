@@ -7,19 +7,19 @@
      * 
      * Route.prototype.constructor {function}
      *      @expression {string} - route expression 
-     *      @options {object|undefined} - options
+     *      [@options] {object|undefined} - options
      *          .name {string|undefined} - route name 
-     *          .method {string|array<string>|undefined} - http method(s)
+     *          .method {string|array<string>|undefined} - route's applicable http method(s)
      *
      * Route.prototype.expression {string} - route expression
      *
      * Route.prototype.name {string|undefined} - route name
      *
-     * Route.prototype.method {string|array<string>|undefined} - http method(s)
+     * Route.prototype.method {string|array<string>|undefined} - route's applicable http method(s)
      *
      * Route route {event} - occurs upon routing
      *      listener {function}
-     *          @args {object} - url encoded route arguments
+     *          [@args] {object<string>} - url encoded route arguments as name value pairs
      *          this {Route} - route
      */
     var Route = function(expression, options) {
@@ -62,20 +62,17 @@
     /* 
      * Router.prototype.add {function} - add a route 
      *      @expression {string} - route expression 
-     *      @options {object|undefined} - options
+     *      [@options] {object|undefined} - options
      *          .name {string|undefined} - route name
-     *          .method {string|array<string>|undefined} - http method(s)
-     *          .validator {function|undefined} - validator (for custom rules)
-     *              @args {object} - url encoded route arguments
-     *              this {Route} - route
-     *              return {boolean} - true if route is valid, false to continue route matching 
+     *          .method {string|array<string>|undefined} - route's applicable http method(s)
+     *          .constraints {function|object<function|RegExp>|array<string>} - url encoded route argument constraints
      *      return {Route} - route
      */
     Router.prototype.add = function(expression, options) {
         var routes = this.___routes, methods = routes.methods;
 
-        var name, method; // options
-        if (options != undefined) { name = options.name, method = options.method; }
+        var name, method, constraints; // options
+        if (options != undefined) { name = options.name, method = options.method, constraints = options.constraints; }
 
         if (name != undefined && name in routes.by.name) { // duplicate name
             throw new Error("Couldn't add route '" + name + 
@@ -98,7 +95,7 @@
         } else { stores = stores.concat( // collect all method stores
             Object.keys(methods).map(function (key) { return methods[key]; })); }
 
-        var route = new Route(expression, options); // create route event emitter
+        var route = new Route(expression, {'name': name, 'method': method}); // create route event emitter
         var subroutes = parse.route(expression); // parse expression into subroutes
 
         var data = {'route': route, 'subroutes': subroutes};
@@ -112,13 +109,23 @@
     };
 
     /* 
-     * Router.prototype.route {function} - route a method and path
+     * Router.prototype.route {function} - route a path
      *      @pathname {string} - url encoded path
-     *      @options {object|undefined} - options
+     *      [@options] {object|undefined} - options
      *          .method {string|undefined} - http method 
+     *      [@callback] {function|undefined} - called upon routing
+     *          [@args] {object<string>} - url encoded route arguments as name value pairs
+     *          this {Route} - route
      *      return {Route|undefined} - matching route or undefined if no matching route found
      */
-    Router.prototype.route = function(pathname, options) {
+    Router.prototype.route = function() {
+        // associate arguments to parameters
+        var pathname = arguments[0], options, callback;
+        if (arguments.length === 2) {
+            if (arguments[1] instanceof Function) { callback = arguments[1]; }
+            else { options = arguments[1]; }
+        } else if (arguments.length >= 3) { options = arguments[1], callback = arguments[2]; }
+
         var method; // options
         if (options != undefined) { method = options.method; }
 
@@ -144,21 +151,24 @@
 
             var args = match(subroutes, subpaths); // arguments
             if (args != undefined) { // match
+                if (callback != undefined) { route.once('route', callback); } // queue callback
                 route.emit('route', args); // emit route event on matching route
                 return route; // return matching route
             }
         }
 
         return; // no matching route
-    };
+    }
 
     /* 
      * Router.prototype.path {function} - compose a path
      *      @name {string} - route name
-     *      @args {object|undefined} - url encoded route arguments
+     *      [@args] {object|undefined} - url encoded route arguments as name value pairs
      *      return {string} - url encoded path 
      */
     Router.prototype.path = function(name, args) {
+        args = args || {};
+        
         var routes  = this.___routes;
 
         if (name in routes.by.name) { // compose path with the named route
@@ -172,7 +182,7 @@
      */
     var parse = {}; // parsing
 
-    /* [private]
+    /*
      * parse.route {function} - parse an expression into subroutes
      *      @expression {string} - route expression
      *      return {array<object|string>} - parts of the route 
@@ -247,7 +257,7 @@
      *              .name {string} - route parameter name
      *              .wildcard {boolean|undefined} - true if route parameter is wildcard 
      *      @subpaths {array<string>} - url encoded parts of the path
-     *      return {object} - url encoded route arguments
+     *      return {object} - url encoded route arguments as name value pairs
      */
     var match = function(subroutes, subpaths) {
         var args = {};
@@ -287,7 +297,7 @@
     *           [{
     *               .name {string} - route parameter name
     *               .wildcard {boolean|undefined} - true if route parameter is wildcard 
-    *       @args {object|undefined} - url encoded route arguments
+    *       [@args] {object|undefined} - url encoded route arguments as name value pairs
     *       return {string} - url encoded path 
     */
     var compose = function(subroutes, args) {
@@ -322,9 +332,7 @@
     var result;
 
     result = {};
-    var onRoute = function(args) { 
-        result = {'name': this.name, 'args': args}; 
-    };
+    var onRoute = function(args) { result = {'name': this.name, 'args': args}; };
 
     // add routes
     router.add('/path/:param1/:param2/:param3*', {'name': 'route 1'}).on('route', onRoute); // 1st route
@@ -359,8 +367,6 @@
         /duplicate[\s]route/,
         'Defining a route with a duplicate name did not fail as expected'); 
 
-    var result;
-
     // route path with 1st route
     router.route('/path/arg1/arg2/ /../a/r/g/3/', {'method': 'POST'});
     assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
@@ -372,11 +378,22 @@
         "The path's 3rd argument to the 1st route did not match the expected value");
 
     // route path with 2nd route
-    router.route('path/arg1/arg2', {'method': 'get'});
+    var callback = {'result': {}};
+    router.route('path/arg1/arg2', function(args) { callback.result = {'name': this.name, 'args': args}; });
+    assert.strictEqual(callback.result.name, 'route 2', 'The path did not match the 2nd route');
+    assert.strictEqual(callback.result.args.param1, 'arg1', 
+        "The path's 1st argument to the 2nd route did not match the expected value");
+    router.route('path/arg1/arg2', {'method': 'get'}, 
+        function(args) { callback.result = {'name': this.name, 'args': args}; });
     assert.strictEqual(result.name, 'route 2', 'The path did not match the 2nd route');
+    assert.strictEqual(callback.result.name, 'route 2', 'The path did not match the 2nd route');
     assert.strictEqual(result.args.param1, 'arg1', 
         "The path's 1st argument to the 2nd route did not match the expected value");
+    assert.strictEqual(callback.result.args.param1, 'arg1', 
+        "The path's 1st argument to the 2nd route did not match the expected value");
     assert.strictEqual(result.args.param2, 'arg2', 
+        "The path's 2nd argument to the 2nd route did not match the expected value");
+    assert.strictEqual(callback.result.args.param2, 'arg2', 
         "The path's 2nd argument to the 2nd route did not match the expected value");
 
     // route path with 3rd route
