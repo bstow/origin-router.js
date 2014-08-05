@@ -2,22 +2,23 @@
     var events = require('events'), path = require('path'), util = require('util');
 
     /* 
-     * Route {class} - route for http requests
+     * Route {prototype} - route for http requests
+     *      inherits {EventEmitter}
      * 
-     * Route.prototype.constructor 
+     * Route.prototype.constructor {function}
      *      @expression {string} - route expression 
-     *      @options {object} - options
-     *          .name {string} - route name 
-     *          .method {string} - http method 
+     *      @options {object|undefined} - options
+     *          .name {string|undefined} - route name 
+     *          .method {string|array<string>|undefined} - http method(s)
      *
      * Route.prototype.expression {string} - route expression
      *
-     * Route.prototype.name {string} - route name
+     * Route.prototype.name {string|undefined} - route name
      *
-     * Route.prototype.method {string} - http method 
+     * Route.prototype.method {string|array<string>|undefined} - http method(s)
      *
      * Route route {event} - occurs upon routing
-     *      on {function}
+     *      listener {function}
      *          @args {object} - url encoded route arguments
      *          this {Route} - route
      */
@@ -27,24 +28,28 @@
         var name, method; // options
         if (options != undefined) { name = options.name, method = options.method; }
 
-        // getters
-        Object.defineProperty(this, 'expression', {'get': function() { return expression; },
+        // accessors
+        Object.defineProperty(this, 'expression', {'get': function() { return expression; }, // expression getter
             'enumerable': true, 'configurable': false});
-        Object.defineProperty(this, 'name', {'get': function() { return name; },
+        Object.defineProperty(this, 'name', {'get': function() { return name; }, // name getter
             'enumerable': true, 'configurable': false});
-        Object.defineProperty(this, 'method', {'get': function() { return method; },
+        Object.defineProperty(this, 'method', {'get': function() { return method; }, // method getter
             'enumerable': true, 'configurable': false});
     };
     util.inherits(Route, events.EventEmitter);
 
-    /* 
-     * Router {class} - router for http requests 
+    /*
+     * Router {prototype} - router for http requests 
+     *      module.exports.Router
      *
-     * Router.prototype.constructor
+     * Router.prototype.constructor {function}
      */
     var Router = module.exports.Router = function() {
-        var routes = this.routes = {}; // all routes regardless of method
-        var methods = this.routes.methods = { // routes segregated by method
+        var routes = {}; // all routes regardless of method
+        Object.defineProperty(this, '___routes', {'get': function() { return routes; }, // routes getter
+            'enumerable': false, 'configurable': false});
+
+        var methods = routes.methods = { // routes segregated by method
             'get': {}, 'post': {}, 'put': {}, 'delete': {}, 'head': {}, 'options': {}, 'trace': {}, 'connect': {}
         };
 
@@ -55,42 +60,49 @@
     };
 
     /* 
-     * Router.prototype.define {function} - define a route 
+     * Router.prototype.add {function} - add a route 
      *      @expression {string} - route expression 
-     *      @options {object} - options
-     *          .name {string} - route name 
-     *          .method {string} - http method 
+     *      @options {object|undefined} - options
+     *          .name {string|undefined} - route name
+     *          .method {string|array<string>|undefined} - http method(s)
+     *          .validator {function|undefined} - validator (for custom rules)
+     *              @args {object} - url encoded route arguments
+     *              this {Route} - route
+     *              return {boolean} - true if route is valid, false to continue route matching 
      *      return {Route} - route
      */
-    Router.prototype.define = function(expression, options) {
-        var routes = this.routes, methods = this.routes.methods;
+    Router.prototype.add = function(expression, options) {
+        var routes = this.___routes, methods = routes.methods;
 
         var name, method; // options
         if (options != undefined) { name = options.name, method = options.method; }
 
         if (name != undefined && name in routes.by.name) { // duplicate name
-            throw new Error("Couldn't define route '" + name + 
-                "' because another route named '" + name + "' is already defined");
+            throw new Error("Couldn't add route '" + name + 
+                "' because another route named '" + name + "' already exists");
         }
 
-        if (method != undefined) { // convert method to the associated store
-            var store = methods[method.toLowerCase().trim()];
+        var stores = [routes]; // applicable stores for the route
 
-            if (store == undefined) { // no associated store
-                throw new Error("Couldn't define route " + (name != undefined ? "\'" + name + "\'" + ' ' : '') + 
-                    "because the method '" + method + "' is not recognized");
-            }
+        if (method != undefined) { // collect method(s) associated store(s)
+            (util.isArray(method) ? method : [method]).forEach(function(method) {
+                var store = methods[method.toLowerCase().trim()];
 
-            method = store;
-        }
+                if (store == undefined) { // no associated store
+                    throw new Error("Couldn't add route " + (name != undefined ? "\'" + name + "\'" + ' ' : '') + 
+                        "because the method '" + method + "' is not recognized");
+                }
+
+                stores.push(store);
+            });
+        } else { stores = stores.concat( // collect all method stores
+            Object.keys(methods).map(function (key) { return methods[key]; })); }
 
         var route = new Route(expression, options); // create route event emitter
         var subroutes = parse.route(expression); // parse expression into subroutes
 
         var data = {'route': route, 'subroutes': subroutes};
 
-        var stores = [routes].concat( // collect the applicable stores
-            method != undefined ? method : Object.keys(methods).map(function (key) { return methods[key]; }));
         stores.forEach(function(store) { 
             store.by.order.push(data); // store by order
             if (name != undefined) { store.by.name[name] = data; } // store by name
@@ -101,11 +113,16 @@
 
     /* 
      * Router.prototype.route {function} - route a method and path
-     *      @method {string} - http method {string}
      *      @pathname {string} - url encoded path
+     *      @options {object|undefined} - options
+     *          .method {string|undefined} - http method 
+     *      return {Route|undefined} - matching route or undefined if no matching route found
      */
-    Router.prototype.route = function(method, pathname) {
-        var routes = this.routes, methods = this.routes.methods;
+    Router.prototype.route = function(pathname, options) {
+        var method; // options
+        if (options != undefined) { method = options.method; }
+
+        var routes = this.___routes, methods = routes.methods;
 
         var store;
         if (method != undefined) { // convert method to the associated store
@@ -127,20 +144,22 @@
 
             var args = match(subroutes, subpaths); // arguments
             if (args != undefined) { // match
-                route.emit('route', args); // emit route event
-                return;
+                route.emit('route', args); // emit route event on matching route
+                return route; // return matching route
             }
         }
+
+        return; // no matching route
     };
 
     /* 
      * Router.prototype.path {function} - compose a path
      *      @name {string} - route name
-     *      @args {object} - url encoded route arguments
+     *      @args {object|undefined} - url encoded route arguments
      *      return {string} - url encoded path 
      */
     Router.prototype.path = function(name, args) {
-        var routes  = this.routes;
+        var routes  = this.___routes;
 
         if (name in routes.by.name) { // compose path with the named route
             var subroutes = routes.by.name[name].subroutes;
@@ -148,7 +167,7 @@
         } else { throw new Error("No route named '" + name + "' exists"); }
     };
 
-    /* [private]
+    /* 
      * parse {object}
      */
     var parse = {}; // parsing
@@ -156,9 +175,10 @@
     /* [private]
      * parse.route {function} - parse an expression into subroutes
      *      @expression {string} - route expression
-     *      return {array<string|object>} - parts of the route 
-     *          .name {string} - route parameter name
-     *          .wildcard {boolean} - true if route parameter is wildcard 
+     *      return {array<object|string>} - parts of the route 
+     *          [{
+     *              .name {string} - route parameter name
+     *              .wildcard {boolean|undefined} - true if route parameter is wildcard 
      */
     parse.route = function(expression) {
         var last;
@@ -200,7 +220,7 @@
         return subroutes;
     };
 
-    /* [private]
+    /* 
      * parse.path {function} - parse path into encoded subpaths
      *      @pathname {string} - url encoded path
      *      return {array<string>} - url encoded parts of the path 
@@ -220,11 +240,12 @@
         return subpaths;
     };
 
-    /* [private]
+    /* 
      * match {function} - match subroutes and subpaths
-     *      @subroutes {array<string|object>} - parts of the route 
-     *          .name {string} - route parameter name
-     *          .wildcard {boolean} - true if route parameter is wildcard 
+     *      @subroutes {array<object|string>} - parts of the route 
+     *          [{
+     *              .name {string} - route parameter name
+     *              .wildcard {boolean|undefined} - true if route parameter is wildcard 
      *      @subpaths {array<string>} - url encoded parts of the path
      *      return {object} - url encoded route arguments
      */
@@ -260,12 +281,13 @@
         return args; // match
     };
 
-    /* [private]
+    /* 
     * compose {function} - compose path from subroutes
-    *       @subroutes {array<string|object>} - parts of the route 
-    *           .name {string} - route parameter name
-    *           .wildcard {boolean} - true if route parameter is wildcard 
-    *       @args {object} - url encoded route arguments
+    *       @subroutes {array<object|string>} - parts of the route 
+    *           [{
+    *               .name {string} - route parameter name
+    *               .wildcard {boolean|undefined} - true if route parameter is wildcard 
+    *       @args {object|undefined} - url encoded route arguments
     *       return {string} - url encoded path 
     */
     var compose = function(subroutes, args) {
@@ -300,43 +322,47 @@
     var result;
 
     result = {};
-    var onRoute = function(args) { result = {'name': this.name, 'args': args}; };
+    var onRoute = function(args) { 
+        result = {'name': this.name, 'args': args}; 
+    };
 
-    // define routes
-    router.define('/path/:param1/:param2/:param3*', {'name': 'route 1'}).on('route', onRoute); // 1st route
-    router.define('/path/:param1/:param2/', {'name': 'route 2'}).on('route', onRoute); // 2nd route
-    router.define(':param1*/:param2/path', {'name': 'route 3'}).on('route', onRoute); // 3rd route
-    router.define('%2F+path/file.ext', {'name': 'route 4'}).on('route', onRoute); // 4th route
-    router.define('/method/:param1', {'name': 'get route', 'method': 'GET'}).on('route', onRoute); // GET route
-    router.define('/method/:param1', {'name': 'post route', 'method': 'POST'}).on('route', onRoute); // POST route
+    // add routes
+    router.add('/path/:param1/:param2/:param3*', {'name': 'route 1'}).on('route', onRoute); // 1st route
+    router.add('/path/:param1/:param2/', {'name': 'route 2'}).on('route', onRoute); // 2nd route
+    router.add(':param1*/:param2/path', {'name': 'route 3'}).on('route', onRoute); // 3rd route
+    router.add('%2F+path/file.ext', {'name': 'route 4'}).on('route', onRoute); // 4th route
+    router.add('/method/:param1', {'name': 'get route', 'method': 'GET'}).on('route', onRoute); // GET route
+    router.add('/method/:param1', {'name': 'post route', 'method': 'POST'}).on('route', onRoute); // POST route
+    var routeGetPost = router.add('get/post/:param', {'name': 'get & post route', 'method': ['POST', 'GET']}); // GET & POST route
+    routeGetPost.on('route', onRoute);
 
-    // define invalid routes
+    // add invalid routes
     assert.throws(
-        function() { router.define('/path/:p1/:p2/:p2/:p1/:p2', {'method': 'get'}); }, 
+        function() { router.add('/path/:p1/:p2/:p2/:p1/:p2', {'method': 'get'}); }, 
         function(err) { return (err instanceof Error && /\s+3\s+/.test(err.message) && /p2/.test(err.message)); },
         'Defining a route with duplicate parameters did not fail as expected');
     assert.throws(
-        function() { router.define('/invalid/method/:param1', {'name': 'bAd', 'method': 'INvalid'}); },
+        function() { router.add('/invalid/method/:param1', {'name': 'bAd', 'method': ['GET', 'INvalid']}); },
         function(err) { return (err instanceof Error && /INvalid/.test(err.message) && /bAd/.test(err.message)); },
         'Defining a route with an invalid method did not fail as expected');
     assert.throws(
-        function() { router.define('/invalid/method/:param1', {'method': 'INvalid'}); },
+        function() { router.add('/invalid/method/:param1', {'method': 'INvalid'}); },
         function(err) { 
             return (err instanceof Error && /INvalid/.test(err.message) && /route\sbecause/.test(err.message)); 
         },
         'Defining a route with an invalid method did not fail as expected');
 
-    // define duplicate route name
-    router.define('/duplicate/1', {'name': 'duplicate route name', 'method': 'DELete'}); 
+    // add duplicate route name
+    router.add('/duplicate/1', {'name': 'duplicate route name', 'method': ['CONNECT', 'DELete']}); 
     assert.throws(
-        function() { router.define('/duplicate/2', {'name': 'duplicate route name', 'method': 'PUT'}); }, 
+        function() { router.add('/duplicate/2', {'name': 'duplicate route name', 'method': 'PUT'}); }, 
         /duplicate[\s]route/,
         'Defining a route with a duplicate name did not fail as expected'); 
 
     var result;
 
     // route path with 1st route
-    router.route('POST', '/path/arg1/arg2/ /../a/r/g/3/');
+    router.route('/path/arg1/arg2/ /../a/r/g/3/', {'method': 'POST'});
     assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
     assert.strictEqual(result.args.param1, 'arg1', 
         "The path's 1st argument to the 1st route did not match the expected value");
@@ -346,7 +372,7 @@
         "The path's 3rd argument to the 1st route did not match the expected value");
 
     // route path with 2nd route
-    router.route('get', 'path/arg1/arg2');
+    router.route('path/arg1/arg2', {'method': 'get'});
     assert.strictEqual(result.name, 'route 2', 'The path did not match the 2nd route');
     assert.strictEqual(result.args.param1, 'arg1', 
         "The path's 1st argument to the 2nd route did not match the expected value");
@@ -354,7 +380,7 @@
         "The path's 2nd argument to the 2nd route did not match the expected value");
 
     // route path with 3rd route
-    router.route(undefined, '/arg1/arg2/path/');
+    router.route('/arg1/arg2/path/');
     assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
     assert.strictEqual(result.args.param1, 'arg1', 
         "The path's 1st argument to the 3rd route did not match the expected value");
@@ -362,22 +388,32 @@
         "The path's 2nd argument to the 3rd route did not match the expected value");
 
     // route path with 4th route
-    router.route('Delete', '/../%2F+path/file.ext/');
+    router.route('/../%2F+path/file.ext/', {'method': 'Delete'});
     assert.strictEqual(result.name, 'route 4', 'The path did not match the 4th route');
 
     // route path with GET route
-    router.route('  GEt ', '/method/get');
+    router.route('/method/get', {'method': '  GEt '});
     assert.strictEqual(result.name, 'get route', 'The path did not match the GET route');
-    router.route(undefined, '/method/all');
+    router.route('/method/all');
     assert.strictEqual(result.name, 'get route', 'The path did not match the GET route');
 
     // route path with POST route
-    router.route('  poSt ', '/method/post');
+    router.route('/method/post', {'method': '  poSt '});
     assert.strictEqual(result.name, 'post route', 'The path did not match the POST route');
+
+    // route path with GET & POST route
+    assert.strictEqual(routeGetPost, router.route('/get/post/method', {'method': 'GEt'}), 
+        'The path did not match the GET & POST route');
+    assert.strictEqual(result.name, 'get & post route', 'The path did not match the GET & POST route');
+    assert.strictEqual(routeGetPost, router.route('/get/post/method', {'method': 'POST '}),
+        'The path did not match the GET & POST route');
+    assert.strictEqual(result.name, 'get & post route', 'The path did not match the GET & POST route');
+    assert.strictEqual(undefined, router.route('/get/post/method', {'method': 'connect '}),
+        'The path matched a route');
 
     // route path with invalid method
     assert.throws(
-        function() { router.route('  bad METHOD ', '/bad/method/path'); },
+        function() { router.route('/bad/method/path', {'method': '  bad METHOD '}); },
         function(err) { 
             return (err instanceof Error && /bad\sMETHOD/.test(err.message) && /bad[\/]method[\/]path/.test(err.message)); 
         },
