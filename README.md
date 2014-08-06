@@ -1,4 +1,4 @@
-small.js
+origin-router.js
 ========
 
-A small web framework for node.js
+HTTP Router for Node.js
