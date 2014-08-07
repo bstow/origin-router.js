@@ -228,13 +228,27 @@
         if (name in routes.by.name) { // compose path with the named route
             var data = routes.by.name[name], route = data.route, subroutes = data.subroutes;
 
+            // validate
             var constraints = route.constraints;
-            validate(args, constraints);
+            var valid = validate(args, constraints);
+            if (valid !== true) { // invalid
+                if (typeof valid === 'string' || valid instanceof String) { // invalid parameter constraint
+                    var key = valid, value = args[key];
+                    throw new Error("Couldn't generate path with route '" + name + "' because the " + 
+                        "'" + key + "' argument value of '" + value + "' is invalid " + 
+                        "according to the route's constraints");
+                } else { // invalid constraints
+                    throw new Error("Couldn't generate path with route '" + name + "' because " + 
+                        "one or more of the arguments are invalid according to the route's constraints");
+                }
+            }
 
             return compose(subroutes, args); 
-        } else { throw new Error("Couldn't generate path because no route named '" + name + "' exists"); }
+        } else { 
+            throw new Error(
+                "Couldn't generate path with route '" + name + "' because no route named '" + name + "' exists"); 
+        }
     };
-    console.log("TODO: Validate contraints when creating path");
 
     /* 
      * parse {object}
@@ -399,7 +413,7 @@
                 return constraints.call(undefined, args) ? true : false; // validate
             } else { // validate arguments against constraints map
                 for (var name in constraints) { // iterate parameter names within constraints
-                    if (!name in args) { continue; } // no argument to validate
+                    if (!(name in args)) { continue; } // no argument to validate
 
                     var arg = args[name], constraint = constraints[name];
                     if ( // validate argument against parameter constraint 
@@ -574,7 +588,8 @@
     assert.throws(
         function() { router.route('/bad/method/path', {'method': '  bad METHOD '}); },
         function(err) { 
-            return (err instanceof Error && /bad\sMETHOD/.test(err.message) && /bad[\/]method[\/]path/.test(err.message)); 
+            return (err instanceof Error && 
+                /bad\sMETHOD/.test(err.message) && /bad[\/]method[\/]path/.test(err.message)); 
         },
         'Routing a path with an invalid method did not fail as expected');
 
@@ -599,6 +614,28 @@
     result = router.path('route 4');
     assert.strictEqual(result, '/%2F+path/file.ext', 
         'The path assembled using the 4th route did not match the expected value');
+
+    // assemble path with constrained routes
+    assert.throws(
+        function() { router.path('constrained route 1', {'param1': 'not1', 'param2': '1'}); },
+        function(err) { 
+            return (err instanceof Error && 
+                /constrained\sroute\s1/.test(err.message) && /one\sor\smore/.test(err.message)); 
+        },
+        'Assembling a path with the 1st constrained route and an invalid argument did not fail as expected');
+    assert.throws(
+        function() { router.path('constrained route 2', {'param1': 'not2', 'param2': '2'}); },
+        function(err) { 
+            return (err instanceof Error && 
+                /constrained\sroute\s2/.test(err.message) && /param1/.test(err.message) && /not2/.test(err.message)); 
+        },
+        'Assembling a path with the 2nd constrained route and an invalid argument did not fail as expected');
+    result = router.path('constrained route 3', {'param1': 'not1', 'param2': 'not2'});
+    assert.strictEqual(result, '/constraint/not1/not2',
+        'The path assembled using the 3rd constrained route did not match the expected value');
+    result = router.path('constrained route 3', {'param2': 'not2'});
+    assert.strictEqual(result, '/constraint//not2',
+        'The path assembled using the 3rd constrained route did not match the expected value');
 
     // assemble path with invalid route
     assert.throws(function() { router.path('invalid route', {'param1': 'arg1', 'param2': 'arg2'}); }, /invalid[\s]route/,

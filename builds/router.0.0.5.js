@@ -252,13 +252,27 @@ SOFTWARE.
         if (name in routes.by.name) { // compose path with the named route
             var data = routes.by.name[name], route = data.route, subroutes = data.subroutes;
 
+            // validate
             var constraints = route.constraints;
-            validate(args, constraints);
+            var valid = validate(args, constraints);
+            if (valid !== true) { // invalid
+                if (typeof valid === 'string' || valid instanceof String) { // invalid parameter constraint
+                    var key = valid, value = args[key];
+                    throw new Error("Couldn't generate path with route '" + name + "' because the " + 
+                        "'" + key + "' argument value of '" + value + "' is invalid " + 
+                        "according to the route's constraints");
+                } else { // invalid constraints
+                    throw new Error("Couldn't generate path with route '" + name + "' because " + 
+                        "one or more of the arguments are invalid according to the route's constraints");
+                }
+            }
 
             return compose(subroutes, args); 
-        } else { throw new Error("Couldn't generate path because no route named '" + name + "' exists"); }
+        } else { 
+            throw new Error(
+                "Couldn't generate path with route '" + name + "' because no route named '" + name + "' exists"); 
+        }
     };
-    console.log("TODO: Validate contraints when creating path");
 
     /* 
      * parse {object}
@@ -423,7 +437,7 @@ SOFTWARE.
                 return constraints.call(undefined, args) ? true : false; // validate
             } else { // validate arguments against constraints map
                 for (var name in constraints) { // iterate parameter names within constraints
-                    if (!name in args) { continue; } // no argument to validate
+                    if (!(name in args)) { continue; } // no argument to validate
 
                     var arg = args[name], constraint = constraints[name];
                     if ( // validate argument against parameter constraint 
