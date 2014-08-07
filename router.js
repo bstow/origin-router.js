@@ -1,3 +1,27 @@
+/*****************************************************************************
+The MIT License (MIT)
+
+Copyright (c) 2014 bstow
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*****************************************************************************/
+
 (function() { 'use strict';
     var events = require('events'), path = require('path'), util = require('util');
 
@@ -411,196 +435,4 @@
             }
         } else { return true; } // valid
     };
-})();
-
-/*{ @! tests }*/
-(function() { // tests
-    var assert = require('assert');
-
-    var router = new module.exports.Router(); // test router
-
-    var result;
-
-    result = {};
-    var onRoute = function(args) { result = {'name': this.name, 'args': args}; };
-
-    // add routes
-
-    router.add('/path/:param1/:param2/:param3*', {'name': 'route 1'}).on('route', onRoute); // 1st route
-    router.add('/path/:param1/:param2/', {'name': 'route 2'}).on('route', onRoute); // 2nd route
-    router.add(':param1*/:param2/path', {'name': 'route 3'}).on('route', onRoute); // 3rd route
-    router.add('%2F+path/file.ext', {'name': 'route 4'}).on('route', onRoute); // 4th route
-
-    var constraints;
-    constraints = function(args) { 
-        return args.param1 != 'not1' && args.param2 != 'not1' && this.expression.indexOf('constrain') != -1; 
-    };
-    router.add('/constraint/:param1/:param2', // 1st constrained route 
-        {'name': 'constrained route 1', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
-    constraints = {'param1': /^(?!(?:not2)).*$/, 'param2': /^(?!(?:not2)).*$/, 'param3': /^(?!(?:not2)).*$/};
-    var routeConstraint2 = router.add('/constraint/:param1/:param2', // 2nd constrained route 
-        {'name': 'constrained route 2', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
-    routeConstraint2.constraints = constraints;
-    constraints = {'param1': ['not1', 'not2'], 'param2': /^not[1-2]$/};
-    router.add('/constraint/:param1/:param2', // 3rd constrained route 
-        {'name': 'constrained route 3', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
-
-    router.add('/method/:param1', {'name': 'get route', 'method': 'GET'}).on('route', onRoute); // GET route
-    router.add('/method/:param1', {'name': 'post route', 'method': 'POST'}).on('route', onRoute); // POST route
-    var routeGetPost = router.add('get/post/:param', // GET & POST route
-        {'name': 'get & post route', 'method': ['POST', 'GET']}); 
-    routeGetPost.on('route', onRoute);
-
-    // add invalid routes
-    assert.throws(
-        function() { router.add('/path/:p1/:p2/:p2/:p1/:p2', {'method': 'get'}); }, 
-        function(err) { return (err instanceof Error && /\s+3\s+/.test(err.message) && /p2/.test(err.message)); },
-        'Defining a route with duplicate parameters did not fail as expected');
-    assert.throws(
-        function() { router.add('/invalid/method/:param1', {'name': 'bAd', 'method': ['GET', 'INvalid']}); },
-        function(err) { return (err instanceof Error && /INvalid/.test(err.message) && /bAd/.test(err.message)); },
-        'Defining a route with an invalid method did not fail as expected');
-    assert.throws(
-        function() { router.add('/invalid/method/:param1', {'method': 'INvalid'}); },
-        function(err) { 
-            return (err instanceof Error && /INvalid/.test(err.message) && /route\sbecause/.test(err.message)); 
-        },
-        'Defining a route with an invalid method did not fail as expected');
-    assert.throws(
-        function() { router.add('/invalid/constraints/:p1', {'name': 'bad constraints', 'constraints': 'invalid'}); },
-        function(err) { 
-            return (err instanceof Error && 
-                /bad\sconstraints/.test(err.message) && /contraints\sare\sinvalid/.test(err.message)); 
-        },
-        'Defining a route with invalid constraints did not fail as expected');
-    assert.throws(
-        function() { 
-            router.add('/invalid/constraint/:param1', 
-                {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': 'value1'}}); 
-        },
-        function(err) { 
-            return (err instanceof Error && /bad\sconstraint/.test(err.message) && 
-                /param1/.test(err.message) && /regular\sexpression/.test(err.message)); 
-        },
-        'Defining a route with an invalid constraint did not fail as expected');
-    assert.throws(
-        function() { 
-            router.add('/invalid/constraint/:param1', 
-                {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': ['value1', 1, '1']}}); 
-        },
-        function(err) { 
-            return (err instanceof Error && /bad\sconstraint/.test(err.message) && 
-                /param1/.test(err.message) && /regular\sexpression/.test(err.message)); 
-        },
-        'Defining a route with an invalid constraint did not fail as expected');
-
-    // add duplicate route name
-    router.add('/duplicate/1', {'name': 'duplicate route name', 'method': ['CONNECT', 'DELete']}); 
-    assert.throws(
-        function() { router.add('/duplicate/2', {'name': 'duplicate route name', 'method': 'PUT'}); }, 
-        /duplicate[\s]route/,
-        'Defining a route with a duplicate name did not fail as expected'); 
-
-    // route path with 1st route
-    router.route('/path/arg1/arg2/ /../a/r/g/3/', {'method': 'POST'});
-    assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
-    assert.strictEqual(result.args.param1, 'arg1', 
-        "The path's 1st argument to the 1st route did not match the expected value");
-    assert.strictEqual(result.args.param2, 'arg2', 
-        "The path's 2nd argument to the 1st route did not match the expected value");
-    assert.strictEqual(result.args.param3, 'a/r/g/3', 
-        "The path's 3rd argument to the 1st route did not match the expected value");
-
-    // route paths with 2nd route
-    var callback = {'result': {}};
-    router.route('path/arg1/arg2', function(args) { callback.result = {'name': this.name, 'args': args}; });
-    assert.strictEqual(callback.result.name, 'route 2', 'The path did not match the 2nd route');
-    assert.strictEqual(callback.result.args.param1, 'arg1', 
-        "The path's 1st argument to the 2nd route did not match the expected value");
-    router.route('path/arg1/arg2', {'method': 'get'}, 
-        function(args) { callback.result = {'name': this.name, 'args': args}; });
-    assert.strictEqual(result.name, 'route 2', 'The path did not match the 2nd route');
-    assert.strictEqual(callback.result.name, 'route 2', 'The path did not match the 2nd route');
-    assert.strictEqual(result.args.param1, 'arg1', 
-        "The path's 1st argument to the 2nd route did not match the expected value");
-    assert.strictEqual(callback.result.args.param1, 'arg1', 
-        "The path's 1st argument to the 2nd route did not match the expected value");
-    assert.strictEqual(result.args.param2, 'arg2', 
-        "The path's 2nd argument to the 2nd route did not match the expected value");
-    assert.strictEqual(callback.result.args.param2, 'arg2', 
-        "The path's 2nd argument to the 2nd route did not match the expected value");
-
-    // route path with 3rd route
-    router.route('/arg1/arg2/path/');
-    assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
-    assert.strictEqual(result.args.param1, 'arg1', 
-        "The path's 1st argument to the 3rd route did not match the expected value");
-    assert.strictEqual(result.args.param2, 'arg2', 
-        "The path's 2nd argument to the 3rd route did not match the expected value");
-
-    // route path with 4th route
-    router.route('/../%2F+path/file.ext/', {'method': 'Delete'});
-    assert.strictEqual(result.name, 'route 4', 'The path did not match the 4th route');
-
-    // route paths with constrained routes
-    router.route('/constraint/1/1', {'method': 'connect'});
-    assert.strictEqual(result.name, 'constrained route 1', 'The path did not match the 1st constrained route');
-    router.route('/constraint/1/not1', {'method': 'connect'});
-    assert.strictEqual(result.name, 'constrained route 2', 'The path did not match the 2nd constrained route');
-    router.route('/constraint/not2/not1', {'method': 'connect'});
-    assert.strictEqual(result.name, 'constrained route 3', 'The path did not match the 3rd constrained route');
-
-    // route path with GET route
-    router.route('/method/get', {'method': '  GEt '});
-    assert.strictEqual(result.name, 'get route', 'The path did not match the GET route');
-    router.route('/method/all');
-    assert.strictEqual(result.name, 'get route', 'The path did not match the GET route');
-
-    // route path with POST route
-    router.route('/method/post', {'method': '  poSt '});
-    assert.strictEqual(result.name, 'post route', 'The path did not match the POST route');
-
-    // route path with GET & POST route
-    assert.strictEqual(routeGetPost, router.route('/get/post/method', {'method': 'GEt'}), 
-        'The path did not match the GET & POST route');
-    assert.strictEqual(result.name, 'get & post route', 'The path did not match the GET & POST route');
-    assert.strictEqual(routeGetPost, router.route('/get/post/method', {'method': 'POST '}),
-        'The path did not match the GET & POST route');
-    assert.strictEqual(result.name, 'get & post route', 'The path did not match the GET & POST route');
-    assert.strictEqual(undefined, router.route('/get/post/method', {'method': 'connect '}),
-        'The path matched a route');
-
-    // route path with invalid method
-    assert.throws(
-        function() { router.route('/bad/method/path', {'method': '  bad METHOD '}); },
-        function(err) { 
-            return (err instanceof Error && /bad\sMETHOD/.test(err.message) && /bad[\/]method[\/]path/.test(err.message)); 
-        },
-        'Routing a path with an invalid method did not fail as expected');
-
-    result = '';
-
-    // assemble path with 1st route
-    result = router.path('route 1', {'param1': 'arg1', 'param2': 'arg2', 'param3': '/a/r/g/3/'});
-    assert.strictEqual(result, '/path/arg1/arg2/a/r/g/3/', 
-        'The path assembled using the 1st route did not match the expected value');
-
-    // assemble path with 2nd route
-    result = router.path('route 2', {'param1': 'arg1', 'param2': 'arg2'});
-    assert.strictEqual(result, '/path/arg1/arg2', 
-        'The path assembled using the 2nd route did not match the expected value');
-
-    // assemble path with 3rd route
-    result = router.path('route 3', {'param1': 'arg1', 'param2': 'arg2'});
-    assert.strictEqual(result, '/arg1/arg2/path', 
-        'The path assembled using the 3rd route did not match the expected value');
-
-    // assemble path with 4th route
-    result = router.path('route 4');
-    assert.strictEqual(result, '/%2F+path/file.ext', 
-        'The path assembled using the 4th route did not match the expected value');
-
-    // assemble path with invalid route
-    assert.throws(function() { router.path('invalid route', {'param1': 'arg1', 'param2': 'arg2'}); }, /invalid[\s]route/,
-        'Assembling a path with an invalid route did not fail as expected');
 })();
