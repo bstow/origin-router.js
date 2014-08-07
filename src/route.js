@@ -21,18 +21,21 @@
      *
      * Route.prototype.method {string|array<string>|undefined}      - get route's applicable http method(s)
      *
-     * Route.prototype.constraints {function|object<RegExp>|undefined} - route argument constraints
+     * Route.prototype.constraints {function|object<RegExp|<array<string>>|undefined} - route argument constraints
      *      [@args] {object<string>}                                - url encoded route arguments as name value pairs
      *      this {Route}                                            - route
      *      return {boolean}                                        - true if valid, false if invalid
      *
-     * Route route {event}                                          - occurs upon routing
-     *      listener {function}
-     *          [@args] {object<string>}                            - url encoded route arguments as name value pairs
-     *          this {Route}                                        - route
+     * Route.prototype 
+     *      emits route {event}                                     - occurs upon routing
+     *          listener {function}
+     *              [@args] {object<string>}                        - url encoded route arguments as name value pairs
+     *              this {Route}                                    - route
      */
     var Route = function(expression, options) {
         events.EventEmitter.call(this);
+
+        var self = this;
 
         var name, method, constraints; // options
         if (options != undefined) { name = options.name, method = options.method, constraints = options.constraints; }
@@ -46,18 +49,19 @@
             'enumerable': true, 'configurable': false});
         Object.defineProperty(this, 'constraints', {
             'get': function() { return constraints; },  // constraints getter
-            'set': function(val) { // constraints setter
-                if (val === undefined || val === null) {}
-                else if (val instanceof Function) {} // constraint function
-                else if (val === Object(val)) { // constraints map
-                    for (var key in val) {
-                        var constraint = val[key];
+            'set': function(value) { // constraints setter
+                if (value === undefined || value === null) {}
+                else if (value instanceof Function) { // constraint function
+                    constraints = function() { return value.apply(self, arguments); }
+                } else if (value === Object(value)) { // constraints map
+                    for (var key in value) {
+                        var constraint = value[key];
 
-                        var valid = true;
-                        if (constraint instanceof RegExp) {}
+                        var valid;
+                        if (constraint instanceof RegExp) { valid = true; }
                         else if (util.isArray(constraint)) {
-                            valid = constraint.length !== 0 && constraint.every(function(str) {
-                                return typeof str === 'string' || str instanceof String; });
+                            valid = constraint.length !== 0 && constraint.every(
+                                function(str) { return typeof str === 'string' || str instanceof String; });
                         } else { valid = false; }
 
                         if (!valid) {
@@ -67,13 +71,12 @@
                                 'regular expression or an array of strings'); 
                         }
                     }
+                    constraints = value;
                 } else { 
                     throw new Error("Couldn't set constraints for route " + 
                         (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') + 
                         'because the contraints are invalid'); 
                 }
-
-                constraints = val;
             },
             'enumerable': true, 'configurable': false});
         this.constraints = constraints; // validate constraints
@@ -107,7 +110,7 @@
      *      [@options] {object|undefined}                           - options
      *          .name {string|undefined}                            - route name
      *          .method {string|array<string>|undefined}            - route's applicable http method(s)
-     *          .constraints {function|object<RegExp>|undefined}    - route argument constraints
+     *          .constraints {function|object<RegExp|<array<string>>|undefined} - route argument constraints
      *              [@args] {object<string>}                        - url encoded route arguments as name value pairs
      *              this {Route}                                    - route
      *              return {boolean}                                - true if valid, false if invalid
@@ -192,27 +195,15 @@
 
         var subpaths = parse.path(pathname);
 
+        // find matching route
         var length = store.by.order.length;
-        find: // find matching route
         for (var index = 0; index < length; index++) {
-            var data = store.by.order[index];
-            var route = data.route, subroutes = data.subroutes;
+            var data = store.by.order[index], route = data.route, subroutes = data.subroutes;
 
             var args = match(subroutes, subpaths); // arguments
             if (args != undefined) { // match
-                // validate constraints
-                var constraints = route.constraints;
-                if (constraints = undefined) {
-                    if (constraints instanceof Function) { // validate arguments against constraint function
-                        if (!(constraints.call(route, args))) { continue find; } // find next matching route
-                    } else { // validate arguments against regex constraints
-                        for (var name in constraints) { // iterate parameter names
-                            if (name in args && !(constraints[name].test(args[name]))) { // find next matching route
-                                continue find; 
-                            }
-                        }
-                    }
-                }
+                var constraints = route.constraints; // validate constraints
+                if (constraints !== undefined && validate(args, constraints) !== true) { continue; }
 
                 if (callback != undefined) { route.once('route', callback); } // queue callback
                 route.emit('route', args); // emit route event on matching route
@@ -224,7 +215,7 @@
     }
 
     /* 
-     * Router.prototype.path {function} - compose a path
+     * Router.prototype.path {function} - generate a path
      *      @name {string}              - route name
      *      [@args] {object|undefined}  - url encoded route arguments as name value pairs
      *      return {string}             - url encoded path 
@@ -232,13 +223,18 @@
     Router.prototype.path = function(name, args) {
         args = args || {};
 
-        var routes  = this.___routes;
+        var routes = this.___routes;
 
         if (name in routes.by.name) { // compose path with the named route
-            var subroutes = routes.by.name[name].subroutes;
+            var data = routes.by.name[name], route = data.route, subroutes = data.subroutes;
+
+            var constraints = route.constraints;
+            validate(args, constraints);
+
             return compose(subroutes, args); 
-        } else { throw new Error("No route named '" + name + "' exists"); }
+        } else { throw new Error("Couldn't generate path because no route named '" + name + "' exists"); }
     };
+    console.log("TODO: Validate contraints when creating path");
 
     /* 
      * parse {object}
@@ -385,6 +381,36 @@
 
         return pathname;
     };
+
+    /*
+     * validate {function}                      - validate arguments against constraints
+     *      [@args] {object<string>|undefined}  - url encoded route arguments as name value pairs
+     *      [@constraints] {function|object<RegExp|<array<string>>|undefined} - route argument constraints
+     *              [@args] {object<string>}    - url encoded route arguments as name value pairs
+     *              return {boolean}            - true if valid, false if invalid
+     *      return {boolean|string}             - true if valid, false if invalid, constraint name if constraint \
+     *                                              in constraints map is invalid
+     */
+    var validate = function(args, constraints) {
+        args = args || {};
+
+        if (constraints != undefined) {
+            if (constraints instanceof Function) { // validate arguments against constraint function
+                return constraints.call(undefined, args) ? true : false; // validate
+            } else { // validate arguments against constraints map
+                for (var name in constraints) { // iterate parameter names within constraints
+                    if (!name in args) { continue; } // no argument to validate
+
+                    var arg = args[name], constraint = constraints[name];
+                    if ( // validate argument against parameter constraint 
+                        (constraint instanceof RegExp && !constraint.test(arg)) || // regex constraint
+                        (util.isArray(constraint) && constraint.indexOf(arg) == -1) // array of strings constraint
+                    ) { return name; } // invalid
+                }
+                return true; // valid
+            }
+        } else { return true; } // valid
+    };
 })();
 
 (function() { // tests
@@ -405,16 +431,18 @@
     router.add('%2F+path/file.ext', {'name': 'route 4'}).on('route', onRoute); // 4th route
 
     var constraints;
-    constraints = function(args) { return args.param1 != 'not1' && args.param2 != 'not1'; };
-    router.add('/constraint/:param1/:param2', // 1st constraint route 
-        {'name': 'constraint route 1', 'method': 'connect', 'constraints': constraints}, onRoute); 
-    constraints = {'param1': /^not2$/, 'param2': /^not2$/, 'param3': /^not2$/};
-    var routeConstraint2 = router.add('/constraint/:param1:param2', // 2nd constraint route 
-        {'name': 'constraint route 2', 'method': 'connect'}, onRoute); 
+    constraints = function(args) { 
+        return args.param1 != 'not1' && args.param2 != 'not1' && this.expression.indexOf('constrain') != -1; 
+    };
+    router.add('/constraint/:param1/:param2', // 1st constrained route 
+        {'name': 'constrained route 1', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
+    constraints = {'param1': /^(?!(?:not2)).*$/, 'param2': /^(?!(?:not2)).*$/, 'param3': /^(?!(?:not2)).*$/};
+    var routeConstraint2 = router.add('/constraint/:param1/:param2', // 2nd constrained route 
+        {'name': 'constrained route 2', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
     routeConstraint2.constraints = constraints;
-    constraints = {'param1': ['not1', 'not2'], 'param2': /^not[0-1]$/};
-    router.add('/constraint/:param1/:param2', // 3rd constraint route 
-        {'name': 'constraint route 3', 'method': 'connect', 'constraints': constraints}, onRoute);
+    constraints = {'param1': ['not1', 'not2'], 'param2': /^not[1-2]$/};
+    router.add('/constraint/:param1/:param2', // 3rd constrained route 
+        {'name': 'constrained route 3', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
 
     router.add('/method/:param1', {'name': 'get route', 'method': 'GET'}).on('route', onRoute); // GET route
     router.add('/method/:param1', {'name': 'post route', 'method': 'POST'}).on('route', onRoute); // POST route
@@ -482,7 +510,7 @@
     assert.strictEqual(result.args.param3, 'a/r/g/3', 
         "The path's 3rd argument to the 1st route did not match the expected value");
 
-    // route path with 2nd route
+    // route paths with 2nd route
     var callback = {'result': {}};
     router.route('path/arg1/arg2', function(args) { callback.result = {'name': this.name, 'args': args}; });
     assert.strictEqual(callback.result.name, 'route 2', 'The path did not match the 2nd route');
@@ -512,6 +540,14 @@
     // route path with 4th route
     router.route('/../%2F+path/file.ext/', {'method': 'Delete'});
     assert.strictEqual(result.name, 'route 4', 'The path did not match the 4th route');
+
+    // route paths with constrained routes
+    router.route('/constraint/1/1', {'method': 'connect'});
+    assert.strictEqual(result.name, 'constrained route 1', 'The path did not match the 1st constrained route');
+    router.route('/constraint/1/not1', {'method': 'connect'});
+    assert.strictEqual(result.name, 'constrained route 2', 'The path did not match the 2nd constrained route');
+    router.route('/constraint/not2/not1', {'method': 'connect'});
+    assert.strictEqual(result.name, 'constrained route 3', 'The path did not match the 3rd constrained route');
 
     // route path with GET route
     router.route('/method/get', {'method': '  GEt '});
