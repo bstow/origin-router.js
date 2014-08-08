@@ -1,3 +1,16 @@
+/** Origin Router - origin-router.js v.{ @! version } **/
+
+/*
+ * [example code]
+ * 
+ { @! example code start }
+
+
+
+ { @! example code end }
+ *
+ */
+
 (function() { 'use strict';
     var events = require('events'), path = require('path'), util = require('util');
 
@@ -84,12 +97,25 @@
     util.inherits(Route, events.EventEmitter);
 
     /*
-     * Router {prototype}           - router for http requests 
+     * Router {prototype}                       - router for http requests 
+     *      inherits {EventEmitter}
      *      module.exports.Router
      *
      * Router.prototype.constructor {function}
+     *
+     * Router.prototype 
+     *      emits success {event}               - occurs upon routing
+     *          listener {function}
+     *              @route {Route}              - matching route
+     *              [@args] {object<string>}    - url encoded route arguments as name value pairs
+     *              this {Router}               - router
+     *      emits fail {event}                  - occurs upon routing when no matching route found
+     *          listener {function}
+     *              this {Router}               - router
      */
     var Router = module.exports.Router = function() {
+        events.EventEmitter.call(this);
+
         var routes = {}; // all routes regardless of method
         Object.defineProperty(this, '___routes', {'get': function() { return routes; }, // routes getter
             'enumerable': false, 'configurable': false});
@@ -103,6 +129,7 @@
             function(store) { store.by = {'name': {}, 'order': []}; } // store by name and order
         ); 
     };
+    util.inherits(Router, events.EventEmitter);
 
     /* 
      * Router.prototype.add {function}                              - add a route 
@@ -119,7 +146,14 @@
      *          this {Route}                                        - route
      *      return {Route}                                          - route
      */
-    Router.prototype.add = function(expression, options) {
+    Router.prototype.add = function() {
+        // associate arguments to parameters
+        var expression = arguments[0], options, callback;
+        if (arguments.length === 2) {
+            if (arguments[1] instanceof Function) { callback = arguments[1]; }
+            else { options = arguments[1]; }
+        } else if (arguments.length >= 3) { options = arguments[1], callback = arguments[2]; }
+
         var routes = this.___routes, methods = routes.methods;
 
         var name, method, constraints; // options
@@ -156,6 +190,8 @@
             store.by.order.push(data); // store by order
             if (name != undefined) { store.by.name[name] = data; } // store by name
         });
+
+        if (callback != undefined) { route.on('route', callback); }
 
         return route;
     };
@@ -207,11 +243,13 @@
 
                 if (callback != undefined) { route.once('route', callback); } // queue callback
                 route.emit('route', args); // emit route event on matching route
+                this.emit('success', route, args); // emit success event on matching route
                 return route; // return matching route
             }
         }
 
-        return; // no matching route
+        this.emit('fail'); // emit fail event on no matching route
+        return undefined;
     }
 
     /* 
@@ -440,10 +478,10 @@
 
     // add routes
 
-    router.add('/path/:param1/:param2/:param3*', {'name': 'route 1'}).on('route', onRoute); // 1st route
+    var firstRoute = router.add('/path/:param1/:param2/:param3*', {'name': 'route 1'}, onRoute); // 1st route
     router.add('/path/:param1/:param2/', {'name': 'route 2'}).on('route', onRoute); // 2nd route
     router.add(':param1*/:param2/path', {'name': 'route 3'}).on('route', onRoute); // 3rd route
-    router.add('%2F+path/file.ext', {'name': 'route 4'}).on('route', onRoute); // 4th route
+    router.add('%2F+path/file.ext', {'name': 'route 4'}, onRoute); // 4th route
 
     var constraints;
     constraints = function(args) { 
@@ -640,4 +678,16 @@
     // assemble path with invalid route
     assert.throws(function() { router.path('invalid route', {'param1': 'arg1', 'param2': 'arg2'}); }, /invalid[\s]route/,
         'Assembling a path with an invalid route did not fail as expected');
+
+    result = '';
+
+    // router events
+    router.on('fail', function() { if (this === router) { result = 'fail'; } });
+    router.route('/*/*/*/no/matching/route/*/*/*/');
+    assert.strictEqual(result, 'fail', "The router 'fail' event did not occur as expected");
+    router.on('success', function(route, args) {
+        if (this === router && route === firstRoute && args.param1 === 'arg1') { result = 'success'; }
+    });
+    router.route('/path/arg1/arg2/arg3', {'method': 'POST'});
+    assert.strictEqual(result, 'success', "The router 'success' event did not occur as expected");
 })();

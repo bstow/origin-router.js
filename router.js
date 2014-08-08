@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 *****************************************************************************/
 
+/** Origin Router - origin-router.js v.0.0.5 **/
+
 (function() { 'use strict';
     var events = require('events'), path = require('path'), util = require('util');
 
@@ -108,12 +110,25 @@ SOFTWARE.
     util.inherits(Route, events.EventEmitter);
 
     /*
-     * Router {prototype}           - router for http requests 
+     * Router {prototype}                       - router for http requests 
+     *      inherits {EventEmitter}
      *      module.exports.Router
      *
      * Router.prototype.constructor {function}
+     *
+     * Router.prototype 
+     *      emits success {event}               - occurs upon routing
+     *          listener {function}
+     *              @route {Route}              - matching route
+     *              [@args] {object<string>}    - url encoded route arguments as name value pairs
+     *              this {Router}               - router
+     *      emits fail {event}                  - occurs upon routing when no matching route found
+     *          listener {function}
+     *              this {Router}               - router
      */
     var Router = module.exports.Router = function() {
+        events.EventEmitter.call(this);
+
         var routes = {}; // all routes regardless of method
         Object.defineProperty(this, '___routes', {'get': function() { return routes; }, // routes getter
             'enumerable': false, 'configurable': false});
@@ -127,6 +142,7 @@ SOFTWARE.
             function(store) { store.by = {'name': {}, 'order': []}; } // store by name and order
         ); 
     };
+    util.inherits(Router, events.EventEmitter);
 
     /* 
      * Router.prototype.add {function}                              - add a route 
@@ -143,7 +159,14 @@ SOFTWARE.
      *          this {Route}                                        - route
      *      return {Route}                                          - route
      */
-    Router.prototype.add = function(expression, options) {
+    Router.prototype.add = function() {
+        // associate arguments to parameters
+        var expression = arguments[0], options, callback;
+        if (arguments.length === 2) {
+            if (arguments[1] instanceof Function) { callback = arguments[1]; }
+            else { options = arguments[1]; }
+        } else if (arguments.length >= 3) { options = arguments[1], callback = arguments[2]; }
+
         var routes = this.___routes, methods = routes.methods;
 
         var name, method, constraints; // options
@@ -180,6 +203,8 @@ SOFTWARE.
             store.by.order.push(data); // store by order
             if (name != undefined) { store.by.name[name] = data; } // store by name
         });
+
+        if (callback != undefined) { route.on('route', callback); }
 
         return route;
     };
@@ -231,11 +256,13 @@ SOFTWARE.
 
                 if (callback != undefined) { route.once('route', callback); } // queue callback
                 route.emit('route', args); // emit route event on matching route
+                this.emit('success', route, args); // emit success event on matching route
                 return route; // return matching route
             }
         }
 
-        return; // no matching route
+        this.emit('fail'); // emit fail event on no matching route
+        return undefined;
     }
 
     /* 
