@@ -24,6 +24,17 @@ SOFTWARE.
 
 /** Origin Router - origin-router.js v.0.0.5 **/
 
+/*
+ * [example code]
+ * 
+ { @! example code start }
+
+
+
+ { @! example code end }
+ *
+ */
+
 (function() { 'use strict';
     var events = require('events'), path = require('path'), util = require('util');
 
