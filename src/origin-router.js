@@ -44,12 +44,12 @@ router.route('/calico/cat/white/orange/gray'); // outputs
                                                // 'I have a white/orange/gray cat'
 { @! example code end }*/
 
-
 /*{ @! example code start } [Variable Constraints]
 // add a route with a variable constraints ...
 router.add('/dogs/:count/:breed', 
     {'constraints': function(args) { return parseInt(args.count) > 0; },
-    function(args) { console.log('I have ' + args.count + ' ' + args.breed + 's'); });
+    function(args) { 
+        console.log('I have ' + args.count + ' ' + args.breed + 's'); });
 
 router.route('/dogs/0/poodle'); // outputs nothing because the count is invalid
 router.route('/dogs/2/poodles'); // outputs 'I have 2 poodles'
@@ -58,7 +58,8 @@ router.route('/dogs/2/poodles'); // outputs 'I have 2 poodles'
 // as either a regular expression or an array of valid strings ...
 router.add('cats/:count/:breed'
     {'constraints': 'count': /(two|three)/, 'breed': ['persian', 'siamese']},
-    function(args) { console.log('I have ' + args.count + ' ' + args.breed + ' cats'); });
+    function(args) { 
+        console.log('I have ' + args.count + ' ' + args.breed + ' cats'); });
 
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
 router.route('/cats/two/shorthair'); // outputs nothing because the breed is invalid
