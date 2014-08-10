@@ -46,9 +46,10 @@ router.route('/dog/homework');  // outputs 'I have a homework colored dog!'
 // denoted by a '*' at the end ...
 
 router.add('/calico/:pet/:colors*', 
-    function(args) { console.log("I have a " + args.colors + ' ' + args.pet '!'); });
+    function(args) { console.log("I have a " + args.colors + ' ' + args.pet); });
 
-router.route('/calico/cat/white/orange/gray'); // outputs 'I have a white/orange/gray cat!'
+router.route('/calico/cat/white/orange/gray'); // outputs 
+                                               // 'I have a white/orange/gray cat'
 ```
 
 
@@ -56,14 +57,21 @@ router.route('/calico/cat/white/orange/gray'); // outputs 'I have a white/orange
 // add a named route ...
 
 router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, 
-    function(args) { console.log('I have a mixed breed ' + args.pet + ' that is part ' + args.breeds + '!'); });
+    function(args) { 
+        console.log(
+            'I have a mixed breed ' + args.pet + 
+            ' that is part ' + args.breeds + '!'
+        ); 
+    }
+);
 
 // generate a path using the named route ...
 
-var path = router.path('mixed breed',                   // path is '/dog/mixed/beagle/bulldog/boxer'           
-    {'pet': 'dog', 'breeds': 'beagle/bulldog/boxer'});  // and matches the 'mixed breed' route
+var path = router.path('mixed breed', // path is '/dog/mixed/beagle/bulldog/boxer'           
+    {'pet': 'dog', 'breeds': 'beagle/bulldog/boxer'}); 
 
-                                                                                          
-router.route(path); // outputs 'I have a mixed breed dog that is part beagle/bulldog/boxer!'
+// the path matches the 'mixed breed' route                                                                            
+router.route(path); // outputs 
+                    // 'I have a mixed breed dog that is part beagle/bulldog/boxer!'
 ```
 
