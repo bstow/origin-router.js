@@ -35,6 +35,9 @@ while (true) {
     example = example.replace(/^\s*\[\s*(.+?)\s*\]/, function(match, $1) { title = $1; return ''; }); // extract title
     example = example.trim();
 
+    var readmeExample = '\n```javascript\n' + example + '\n```\n\n';
+    readme += readmeExample;
+
     var sourceExample = example.split('\n');
     sourceExample.unshift('');
     sourceExample.unshift((' ' + '[Example: ' + title + ']'));
@@ -49,5 +52,7 @@ while (true) {
 var build = [license, source].join('\n'); // assemble source for build
 fs.writeFileSync(path.join(__dirname, package.name + '.js'), build, 'utf8'); // write build
 fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), build, 'utf8'); // write build
+
+fs.writeFileSync(path.join(__dirname, 'README.md'), readme, 'utf8'); // write build
 
 require(path.join(__dirname, package.name + '.js')); // test build
