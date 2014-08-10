@@ -35,7 +35,7 @@ while (true) {
     example = example.replace(/^\s*\[\s*(.+?)\s*\]/, function(match, $1) { title = $1; return ''; }); // extract title
     example = example.trim();
 
-    var readmeExample = '\n```javascript\n' + example + '\n```\n\n';
+    var readmeExample = '\n####' + title + '\n' + '```javascript\n' + example + '\n```\n\n';
     readme += readmeExample;
 
     var sourceExample = example.split('\n');
