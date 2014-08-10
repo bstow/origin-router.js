@@ -22,9 +22,12 @@ router.route('/dog/poodle'); // outputs nothing
 ```javascript
 // add more routes using ':' to denote variables ...
 
-router.add('/dog/:color', function(args) { console.log('I have a ' + args.color + ' colored dog!'); });
-router.add('/cat/:color', function(args) { console.log('I have a ' + args.color + ' colored cat!'); });
-router.add('/:pet/homework', function(args) { console.log('My ' + args.pet + ' ate my homework!'); })
+router.add('/dog/:color', 
+    function(args) { console.log('I have a ' + args.color + ' colored dog!'); });
+router.add('/cat/:color', 
+    function(args) { console.log('I have a ' + args.color + ' colored cat!'); });
+router.add('/:pet/homework', 
+    function(args) { console.log('My ' + args.pet + ' ate my homework!'); })
 
 // route some more paths ...
 
@@ -32,8 +35,9 @@ router.route('/dog/brown'); // outputs 'I have a brown colored dog!'
 router.route('/cat/white'); // outputs 'I have a white colored cat!'
 router.route('/fish/homework'); // outputs 'My fish at my homework!'
 router.route('/dog/homework');  // outputs 'I have a homework colored dog!' 
-                                // this is routed by the dog route and not the homework route 
-                                // because the dog route was added before the homework route
+                                // this is routed by the dog route and not 
+                                // the homework route because the dog route 
+                                // was added before the homework route
 ```
 
 
