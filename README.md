@@ -75,14 +75,24 @@ router.route('/cats/two/siamese'); // outputs 'I have two siamese cats'
 ```
 
 
+####HTTP Method-Specific Routing
+```javascript
+// add method-specific routes to the router ...
+router.add('/fish', {'method': 'GET'}, function() { console.log('I have a fish'); });
+router.add('/bird', {'method': 'POST'}, function() { console.log('I have a bird'); });
+router.add('/rabbit', {'method': ['GET', 'POST']},
+    function() { console.log('I have a rabbit'); });
+```
+
+
 ####Reverse Routing
 ```javascript
 // add a named route ...
-router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'},
+router.add('/:pet/mixed/:breeds*',
+    {'name': 'mixed breed'},
     function(args) {
-        console.log('I have a mixed breed ' + args.pet + ' that is a ' + args.breeds);
-    }
-);
+        console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds);
+    });
 
 // generate a path using the named route ...
 var path = router.path('mixed breed', // path is '/dog/mixed/beagle/bulldog/boxer'
@@ -90,6 +100,6 @@ var path = router.path('mixed breed', // path is '/dog/mixed/beagle/bulldog/boxe
 
 // generated path matches the 'mixed breed' route ...
 router.route(path); // outputs
-                    // 'I have a mixed breed dog that is a beagle/bulldog/boxer'
+                    // 'I have a mix breed dog that is a beagle/bulldog/boxer'
 ```
 

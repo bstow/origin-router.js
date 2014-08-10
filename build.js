@@ -34,6 +34,7 @@ while (true) {
     var example = source.slice(exampleStartIndex + exampleStart.length, exampleEndIndex);
     var title;
     example = example.replace(/^\s*\[\s*(.+?)\s*\]/, function(match, $1) { title = $1; return ''; }); // extract title
+    // right trim each line
     example = example.split('\n').map(function(line) { return line.replace(/\s*$/, ''); }).join('\n');
     example = example.trim();
 

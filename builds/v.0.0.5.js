@@ -95,14 +95,23 @@ SOFTWARE.
  * router.route('/cats/two/siamese'); // outputs 'I have two siamese cats'
  */
 
+/* [Example: HTTP Method-Specific Routing]
+ * 
+ * // add method-specific routes to the router ...
+ * router.add('/fish', {'method': 'GET'}, function() { console.log('I have a fish'); });
+ * router.add('/bird', {'method': 'POST'}, function() { console.log('I have a bird'); });
+ * router.add('/rabbit', {'method': ['GET', 'POST']},
+ *     function() { console.log('I have a rabbit'); });
+ */
+
 /* [Example: Reverse Routing]
  * 
  * // add a named route ...
- * router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'},
+ * router.add('/:pet/mixed/:breeds*',
+ *     {'name': 'mixed breed'},
  *     function(args) {
- *         console.log('I have a mixed breed ' + args.pet + ' that is a ' + args.breeds);
- *     }
- * );
+ *         console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds);
+ *     });
  * 
  * // generate a path using the named route ...
  * var path = router.path('mixed breed', // path is '/dog/mixed/beagle/bulldog/boxer'
@@ -110,7 +119,7 @@ SOFTWARE.
  * 
  * // generated path matches the 'mixed breed' route ...
  * router.route(path); // outputs
- *                     // 'I have a mixed breed dog that is a beagle/bulldog/boxer'
+ *                     // 'I have a mix breed dog that is a beagle/bulldog/boxer'
  */
 
 (function() { 'use strict';
@@ -269,8 +278,14 @@ SOFTWARE.
         var stores = [routes]; // applicable stores for the route
 
         if (method != undefined) { // collect method(s) associated store(s)
+            var indeces = {}; // processed method indeces
             (util.isArray(method) ? method : [method]).forEach(function(method) {
-                var store = methods[method.toLowerCase().trim()];
+                // prevent processing a duplicate method
+                var index = method.toLowerCase().trim(); // method index
+                if (index in indeces) { return; } // duplicate method
+                else { indeces[index] = true; }
+
+                var store = methods[index];
 
                 if (store == undefined) { // no associated store
                     throw new Error("Couldn't add route " + (name != undefined ? "\'" + name + "\'" + ' ' : '') + 
