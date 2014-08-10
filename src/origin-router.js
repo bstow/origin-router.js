@@ -21,9 +21,12 @@ router.route('/dog/poodle'); // outputs nothing
 /*{ @! example code start } [Basic Variables]
 // add more routes using ':' to denote variables ...
 
-router.add('/dog/:color', function(args) { console.log('I have a ' + args.color + ' colored dog!'); });
-router.add('/cat/:color', function(args) { console.log('I have a ' + args.color + ' colored cat!'); });
-router.add('/:pet/homework', function(args) { console.log('My ' + args.pet + ' ate my homework!'); })
+router.add('/dog/:color', 
+    function(args) { console.log('I have a ' + args.color + ' colored dog!'); });
+router.add('/cat/:color', 
+    function(args) { console.log('I have a ' + args.color + ' colored cat!'); });
+router.add('/:pet/homework', 
+    function(args) { console.log('My ' + args.pet + ' ate my homework!'); })
 
 // route some more paths ...
 
@@ -31,14 +34,17 @@ router.route('/dog/brown'); // outputs 'I have a brown colored dog!'
 router.route('/cat/white'); // outputs 'I have a white colored cat!'
 router.route('/fish/homework'); // outputs 'My fish at my homework!'
 router.route('/dog/homework');  // outputs 'I have a homework colored dog!' 
-                                // this is routed by the dog route and not the homework route 
-                                // because the dog route was added before the homework route
+                                // this is routed by the dog route and not 
+                                // the homework route because the dog route 
+                                // was added before the homework route
 { @! example code end }*/
 
 /*{ @! example code start } [Wildcard Path Variables]
-// add a route with a wildcardcard path variable denoted by a '*' at the end ...
+// add a route with a wildcardcard path variable 
+// denoted by a '*' at the end ...
 
-router.add('/calico/:pet/:colors*', function(args) { console.log("I have a " + args.colors + ' ' + args.pet '!'); });
+router.add('/calico/:pet/:colors*', 
+    function(args) { console.log("I have a " + args.colors + ' ' + args.pet '!'); });
 
 router.route('/calico/cat/white/orange/gray'); // outputs 'I have a white/orange/gray cat!'
 { @! example code end }*/

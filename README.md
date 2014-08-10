@@ -42,9 +42,11 @@ router.route('/dog/homework');  // outputs 'I have a homework colored dog!'
 
 
 ```javascript
-// add a route with a wildcardcard path variable denoted by a '*' at the end ...
+// add a route with a wildcardcard path variable 
+// denoted by a '*' at the end ...
 
-router.add('/calico/:pet/:colors*', function(args) { console.log("I have a " + args.colors + ' ' + args.pet '!'); });
+router.add('/calico/:pet/:colors*', 
+    function(args) { console.log("I have a " + args.colors + ' ' + args.pet '!'); });
 
 router.route('/calico/cat/white/orange/gray'); // outputs 'I have a white/orange/gray cat!'
 ```
