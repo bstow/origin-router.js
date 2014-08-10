@@ -15,6 +15,7 @@ license = '/' + Array(longestLicenseLine).join('*') + '\n' +
     license.trim() + '\n' + 
     Array(longestLicenseLine).join('*') + '/\n'; 
 
+// source
 var source = fs.readFileSync(path.join(__dirname, 'src', package.name + '.js'), 'utf8'); // source
 source = source.substring(0, source.indexOf('{ @! tests }') - '/*'.length).trim(); // remove tests from source
 source = source.replace('{ @! name }', package.name); // inject name
