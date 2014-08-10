@@ -1,15 +1,62 @@
-/** Origin Router - origin-router.js v.{ @! version } **/
+/**** { @! name }.js v.{ @! version } **/
 
-/*
- * [example code]
- * 
- { @! example code start }
+/*{ @! example code start } [Setup]
+var router = new Router();
+{ @! example code end }*/
 
+/*{ @! example code start } [Basic Routing]
+// add routes to the router ...
 
+router.add('/dog', function() { console.log('I have a dog!'); });
+router.add('/cat', function() { console.log('I have a cat!'); });
 
- { @! example code end }
- *
- */
+// route some paths ...
+
+router.route('/cat'); // outputs 'I am a cat!'
+router.route('/dog'); // outputs 'I am a dog!'
+router.route('/poodle'); // outputs nothing
+router.route('/dog/poodle'); // outputs nothing
+{ @! example code end }*/
+
+/*{ @! example code start } [Basic Variables]
+// add more routes using ':' to denote variables ...
+
+router.add('/dog/:color', function(args) { console.log('I have a ' + args.color + ' colored dog!'); });
+router.add('/cat/:color', function(args) { console.log('I have a ' + args.color + ' colored cat!'); });
+router.add('/:pet/homework', function(args) { console.log('My ' + args.pet + ' ate my homework!'); })
+
+// route some more paths ...
+
+router.route('/dog/brown'); // outputs 'I have a brown colored dog!'
+router.route('/cat/white'); // outputs 'I have a white colored cat!'
+router.route('/fish/homework'); // outputs 'My fish at my homework!'
+router.route('/dog/homework');  // outputs 'I have a homework colored dog!' 
+                                // this is routed by the dog route and not the homework route 
+                                // because the dog route was added before the homework route
+{ @! example code end }*/
+
+/*{ @! example code start } [Wildcard Path Variables]
+// add a route with a wildcardcard path variable denoted by a '*' at the end ...
+
+router.add('/calico/:pet/:colors*', function(args) { console.log("I have a " + args.colors + ' ' + args.pet '!'); });
+
+router.route('/calico/cat/white/orange/gray'); // outputs 'I have a white/orange/gray cat!'
+{ @! example code end }*/
+
+/*{ @! example code start } [Reverse Routing]
+// add a named route ...
+
+router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, 
+    function(args) { console.log('I have a mixed breed ' + args.pet + ' that is part ' + args.breeds + '!'); });
+
+// generate a path using the named route ...
+
+var path = router.path('mixed breed',                   // path is '/dog/mixed/beagle/bulldog/boxer'           
+    {'pet': 'dog', 'breeds': 'beagle/bulldog/boxer'});  // and matches the 'mixed breed' route
+
+                                                                                          
+router.route(path); // outputs 'I have a mixed breed dog that is part beagle/bulldog/boxer!'
+{ @! example code end }*/
 
 (function() { 'use strict';
     var events = require('events'), path = require('path'), util = require('util');
@@ -141,7 +188,7 @@
      *              [@args] {object<string>}                        - url encoded route arguments as name value pairs
      *              this {Route}                                    - route
      *              return {boolean}                                - true if valid, false if invalid
-     *      [@callback] {function|undefined}                        - called upon routing
+     *      [@callback] {function|undefined}                        - called upon every routing
      *          [@args] {object<string>}                            - url encoded route arguments as name value pairs
      *          this {Route}                                        - route
      *      return {Route}                                          - route
@@ -242,6 +289,7 @@
                 if (constraints !== undefined && validate(args, constraints) !== true) { continue; }
 
                 if (callback != undefined) { route.once('route', callback); } // queue callback
+
                 route.emit('route', args); // emit route event on matching route
                 this.emit('success', route, args); // emit success event on matching route
                 return route; // return matching route
