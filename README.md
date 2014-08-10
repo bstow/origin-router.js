@@ -5,7 +5,7 @@ var router = new Router();
 ```
 
 
-####Basic Routing
+####Routing
 ```javascript
 // add routes to the router ...
 router.add('/dog', function() { console.log('I have a dog'); });
@@ -19,9 +19,9 @@ router.route('/dog/bulldog'); // outputs nothing
 ```
 
 
-####Basic Variables
+####Route Parameters
 ```javascript
-// add more routes using ':' to denote variables ...
+// add more routes using ':' to denote parameters ...
 router.add('/dog/:color',
     function(args) { console.log('I have a ' + args.color + ' colored dog'); });
 router.add('/cat/:color',
@@ -40,9 +40,9 @@ router.route('/dog/homework');  // outputs 'I have a homework colored dog'
 ```
 
 
-####Wildcard Path Variables
+####Route Wildcard Parameters
 ```javascript
-// add a route with a wildcardcard path variable denoted by a '*' at the end ...
+// add a route with a wildcard parameter denoted by a '*' at the end ...
 router.add('/calico/:pet/:colors*',
     function(args) { console.log('I have a ' + args.colors + ' ' + args.pet); });
 
@@ -51,9 +51,9 @@ router.route('/calico/cat/white/orange/gray'); // outputs
 ```
 
 
-####Variable Constraints
+####Parameter Constraints
 ```javascript
-// add a route with a variable constraints ...
+// add a route with parameter constraints ...
 router.add('/dogs/:count/:breed',
     {'constraints': function(args) { return parseInt(args.count) > 0; },
     function(args) {
@@ -62,7 +62,7 @@ router.add('/dogs/:count/:breed',
 router.route('/dogs/0/poodle'); // outputs nothing because the count is invalid
 router.route('/dogs/2/poodles'); // outputs 'I have 2 poodles'
 
-// a route's variable constraints may be defined per variable
+// a route's parameter constraints may be defined per parameter
 // as either a regular expression or an array of valid strings ...
 router.add('cats/:count/:breed'
     {'constraints': 'count': /(two|three)/, 'breed': ['persian', 'siamese']},
@@ -70,18 +70,28 @@ router.add('cats/:count/:breed'
         console.log('I have ' + args.count + ' ' + args.breed + ' cats'); });
 
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
-router.route('/cats/two/shorthair'); // outputs nothing because the breed is invalid
-router.route('/cats/two/siamese'); // outputs 'I have two siamese cats'
+router.route('/cats/two/bengal'); // outputs nothing because the breed is invalid
+router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 ```
 
 
 ####HTTP Method-Specific Routing
 ```javascript
 // add method-specific routes to the router ...
-router.add('/fish', {'method': 'GET'}, function() { console.log('I have a fish'); });
-router.add('/bird', {'method': 'POST'}, function() { console.log('I have a bird'); });
-router.add('/rabbit', {'method': ['GET', 'POST']},
-    function() { console.log('I have a rabbit'); });
+router.add('/fish', {'method': 'GET'},
+    function() { console.log('I have a fish'); });
+router.add('/bird', {'method': ['GET', 'POST']},
+    function() { console.log('I have a bird'); });
+
+// route method-specific paths ...
+router.route('/fish', {'method': 'GET'}); // outputs 'I have a fish'
+router.route('/fish', {'method': 'POST'}); // outputs nothing
+router.route('/bird', {'method': 'GET'}); // outputs 'I have a bird'
+router.route('/bird', {'method': 'POST'}); // outputs 'I have a bird'
+router.route('/bird', {'method': 'DELETE'}); // outputs nothing
+
+router.route('/fish'); // outputs 'I have a fish'
+router.route('/bird'); // outputs 'I have a bird'
 ```
 
 

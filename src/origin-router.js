@@ -4,7 +4,7 @@
 var router = new Router();
 { @! example code end }*/
 
-/*{ @! example code start } [Basic Routing]
+/*{ @! example code start } [Routing]
 // add routes to the router ...
 router.add('/dog', function() { console.log('I have a dog'); });
 router.add('/cat', function() { console.log('I have a cat'); });
@@ -16,8 +16,8 @@ router.route('/bulldog'); // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
 { @! example code end }*/
 
-/*{ @! example code start } [Basic Variables]
-// add more routes using ':' to denote variables ...
+/*{ @! example code start } [Route Parameters]
+// add more routes using ':' to denote parameters ...
 router.add('/dog/:color', 
     function(args) { console.log('I have a ' + args.color + ' colored dog'); });
 router.add('/cat/:color', 
@@ -35,8 +35,8 @@ router.route('/dog/homework');  // outputs 'I have a homework colored dog'
                                 // was added before the homework route
 { @! example code end }*/
 
-/*{ @! example code start } [Wildcard Path Variables]
-// add a route with a wildcardcard path variable denoted by a '*' at the end ...
+/*{ @! example code start } [Route Wildcard Parameters]
+// add a route with a wildcard parameter denoted by a '*' at the end ...
 router.add('/calico/:pet/:colors*', 
     function(args) { console.log('I have a ' + args.colors + ' ' + args.pet); });
 
@@ -44,8 +44,8 @@ router.route('/calico/cat/white/orange/gray'); // outputs
                                                // 'I have a white/orange/gray cat'
 { @! example code end }*/
 
-/*{ @! example code start } [Variable Constraints]
-// add a route with a variable constraints ...
+/*{ @! example code start } [Parameter Constraints]
+// add a route with parameter constraints ...
 router.add('/dogs/:count/:breed', 
     {'constraints': function(args) { return parseInt(args.count) > 0; },
     function(args) { 
@@ -54,7 +54,7 @@ router.add('/dogs/:count/:breed',
 router.route('/dogs/0/poodle'); // outputs nothing because the count is invalid
 router.route('/dogs/2/poodles'); // outputs 'I have 2 poodles'
 
-// a route's variable constraints may be defined per variable 
+// a route's parameter constraints may be defined per parameter 
 // as either a regular expression or an array of valid strings ...
 router.add('cats/:count/:breed'
     {'constraints': 'count': /(two|three)/, 'breed': ['persian', 'siamese']},
@@ -62,17 +62,26 @@ router.add('cats/:count/:breed'
         console.log('I have ' + args.count + ' ' + args.breed + ' cats'); });
 
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
-router.route('/cats/two/shorthair'); // outputs nothing because the breed is invalid
-router.route('/cats/two/siamese'); // outputs 'I have two siamese cats'
+router.route('/cats/two/bengal'); // outputs nothing because the breed is invalid
+router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 { @! example code end }*/
 
 /*{ @! example code start } [HTTP Method-Specific Routing]
 // add method-specific routes to the router ...
-router.add('/fish', {'method': 'GET'}, function() { console.log('I have a fish'); });
-router.add('/bird', {'method': 'POST'}, function() { console.log('I have a bird'); });
-router.add('/rabbit', {'method': ['GET', 'POST']}, 
-    function() { console.log('I have a rabbit'); });
+router.add('/fish', {'method': 'GET'}, 
+    function() { console.log('I have a fish'); });
+router.add('/bird', {'method': ['GET', 'POST']}, 
+    function() { console.log('I have a bird'); });
 
+// route method-specific paths ...
+router.route('/fish', {'method': 'GET'}); // outputs 'I have a fish'
+router.route('/fish', {'method': 'POST'}); // outputs nothing
+router.route('/bird', {'method': 'GET'}); // outputs 'I have a bird'
+router.route('/bird', {'method': 'POST'}); // outputs 'I have a bird'
+router.route('/bird', {'method': 'DELETE'}); // outputs nothing
+
+router.route('/fish'); // outputs 'I have a fish'
+router.route('/bird'); // outputs 'I have a bird'
 { @! example code end }*/
 
 /*{ @! example code start } [Reverse Routing]
