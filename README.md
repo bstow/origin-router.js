@@ -91,7 +91,7 @@ router.add('/bird', {'method': ['GET', 'POST']},
 router.add.get('/turtle', function() { console.log('I have a turtle'); });
 router.add.post('/rabbit', function() { console.log('I have a rabbit'); });
 
-// route paths and specify the HTTP method ...
+// route paths with a corresponding HTTP method specified ...
 router.route('/fish', {'method': 'GET'}); // outputs 'I have a fish'
 router.route('/fish', {'method': 'POST'}); // outputs nothing
 router.route('/bird', {'method': 'GET'}); // outputs 'I have a bird'
@@ -102,7 +102,7 @@ router.route('/bird', {'method': 'DELETE'}); // outputs nothing
 router.route('/fish'); // outputs 'I have a fish'
 router.route('/bird'); // outputs 'I have a bird'
 
-// alternatively the HTTP method for the path can be specified like so ...
+// alternatively a path may be routed for an HTTP method like so ...
 router.route.get('/fish'); // outputs 'I have a fish'
 router.route.post('/bird'); // outputs 'I have a bird'
 ```
@@ -110,7 +110,7 @@ router.route.post('/bird'); // outputs 'I have a bird'
 
 ####Reverse Routing
 ```javascript
-// add a route and give it a name ...
+// add a route and give it a name for future reference ...
 router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'},
     function(args) {
         console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds);
@@ -125,6 +125,7 @@ router.add('pure breed', '/:pet/pure/:breed',
 // generate a path using a route ...
 var path = router.path('mixed breed', // use the route named 'mixed breed'
     {'pet': 'dog', 'breeds': 'beagle/pug/terrier'}); // route's parameter arguments
+
 console.log(path); // outputs '/dog/mixed/beagle/pug/terrier'
 ```
 
