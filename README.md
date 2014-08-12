@@ -7,13 +7,16 @@ var router = new Router();
 
 ####Routing
 ```javascript
-// add routes to the router ...
+// add routes to the router with corresponding callbacks ...
 router.add('/dog', function() { console.log('I have a dog'); });
 router.add('/cat', function() { console.log('I have a cat'); });
 
 // route some paths ...
 router.route('/cat'); // outputs 'I have a cat'
 router.route('/dog'); // outputs 'I have a dog'
+router.route('/dog/'); // outputs 'I have a dog'
+
+// attempt to route paths that don't match either route ...
 router.route('/bulldog'); // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
 ```
@@ -29,9 +32,9 @@ router.add('/cat/:color',
 router.add('/:pet/homework',
     function(args) { console.log('My ' + args.pet + ' ate my homework'); })
 
-// route some more paths ...
+// route some more paths that match the added routes ...
 router.route('/dog/brown'); // outputs 'I have a brown colored dog'
-router.route('/cat/white'); // outputs 'I have a white colored cat'
+router.route('cat/white'); // outputs 'I have a white colored cat'
 router.route('/fish/homework'); // outputs 'My fish at my homework'
 router.route('/dog/homework');  // outputs 'I have a homework colored dog'
                                 // this is routed by the dog route and not
@@ -46,6 +49,7 @@ router.route('/dog/homework');  // outputs 'I have a homework colored dog'
 router.add('/calico/:pet/:colors*',
     function(args) { console.log('I have a ' + args.colors + ' ' + args.pet); });
 
+// the wildcard parameter matches anything at the end of the path ...
 router.route('/calico/cat/white/orange/gray'); // outputs
                                                // 'I have a white/orange/gray cat'
 ```
@@ -54,7 +58,7 @@ router.route('/calico/cat/white/orange/gray'); // outputs
 ####Parameter Constraints
 ```javascript
 // add a route with parameter constraints ...
-router.add('/dogs/:count/:breed',
+router.add('/dogs/:count/:breed', // count must be more than 0
     {'constraints': function(args) { return parseInt(args.count) > 0; },
     function(args) {
         console.log('I have ' + args.count + ' ' + args.breed + 's'); });
@@ -77,39 +81,62 @@ router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 
 ####HTTP Method-Specific Routing
 ```javascript
-// add method-specific routes to the router ...
+// add routes for only certain HTTP methods ...
 router.add('/fish', {'method': 'GET'},
     function() { console.log('I have a fish'); });
 router.add('/bird', {'method': ['GET', 'POST']},
     function() { console.log('I have a bird'); });
 
-// route method-specific paths ...
+// alternatively routes can be added for an HTTP method like so ...
+router.add.get('/turtle', function() { console.log('I have a turtle'); });
+router.add.post('/rabbit', function() { console.log('I have a rabbit'); });
+
+// route paths and specify the HTTP method ...
 router.route('/fish', {'method': 'GET'}); // outputs 'I have a fish'
 router.route('/fish', {'method': 'POST'}); // outputs nothing
 router.route('/bird', {'method': 'GET'}); // outputs 'I have a bird'
 router.route('/bird', {'method': 'POST'}); // outputs 'I have a bird'
 router.route('/bird', {'method': 'DELETE'}); // outputs nothing
 
+// HTTP method-specific routes are still applicable when no method is specified ...
 router.route('/fish'); // outputs 'I have a fish'
 router.route('/bird'); // outputs 'I have a bird'
+
+// alternatively the HTTP method for the path can be specified like so ...
+router.route.get('/fish'); // outputs 'I have a fish'
+router.route.post('/bird'); // outputs 'I have a bird'
 ```
 
 
 ####Reverse Routing
 ```javascript
-// add a named route ...
-router.add('/:pet/mixed/:breeds*',
-    {'name': 'mixed breed'},
+// add a route and give it a name ...
+router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'},
     function(args) {
         console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds);
     });
 
-// generate a path using the named route ...
-var path = router.path('mixed breed', // path is '/dog/mixed/beagle/bulldog/boxer'
-    {'pet': 'dog', 'breeds': 'beagle/bulldog/boxer'});
+// alternatively the route's name can pe passed as the first argument like so...
+router.add('pure breed', '/:pet/pure/:breed',
+    function(args) {
+        console.log('I have a pure breed ' + args.pet + ' that is a ' + args.breed);
+    });
 
-// generated path matches the 'mixed breed' route ...
-router.route(path); // outputs
-                    // 'I have a mix breed dog that is a beagle/bulldog/boxer'
+// generate a path using a route ...
+var path = router.path('mixed breed', // use the route named 'mixed breed'
+    {'pet': 'dog', 'breeds': 'beagle/pug/terrier'}); // route's parameter arguments
+console.log(path); // outputs '/dog/mixed/beagle/pug/terrier'
+```
+
+
+####Events
+```javascript
+
+```
+
+
+####Using with a Server
+```javascript
+
 ```
 

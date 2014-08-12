@@ -5,13 +5,16 @@ var router = new Router();
 { @! example code end }*/
 
 /*{ @! example code start } [Routing]
-// add routes to the router ...
+// add routes to the router with corresponding callbacks ...
 router.add('/dog', function() { console.log('I have a dog'); });
 router.add('/cat', function() { console.log('I have a cat'); });
 
 // route some paths ...
 router.route('/cat'); // outputs 'I have a cat'
 router.route('/dog'); // outputs 'I have a dog'
+router.route('/dog/'); // outputs 'I have a dog'
+
+// attempt to route paths that don't match either route ...
 router.route('/bulldog'); // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
 { @! example code end }*/
@@ -25,9 +28,9 @@ router.add('/cat/:color',
 router.add('/:pet/homework', 
     function(args) { console.log('My ' + args.pet + ' ate my homework'); })
 
-// route some more paths ...
+// route some more paths that match the added routes ...
 router.route('/dog/brown'); // outputs 'I have a brown colored dog'
-router.route('/cat/white'); // outputs 'I have a white colored cat'
+router.route('cat/white'); // outputs 'I have a white colored cat'
 router.route('/fish/homework'); // outputs 'My fish at my homework'
 router.route('/dog/homework');  // outputs 'I have a homework colored dog' 
                                 // this is routed by the dog route and not 
@@ -40,13 +43,14 @@ router.route('/dog/homework');  // outputs 'I have a homework colored dog'
 router.add('/calico/:pet/:colors*', 
     function(args) { console.log('I have a ' + args.colors + ' ' + args.pet); });
 
+// the wildcard parameter matches anything at the end of the path ...
 router.route('/calico/cat/white/orange/gray'); // outputs 
                                                // 'I have a white/orange/gray cat'
 { @! example code end }*/
 
 /*{ @! example code start } [Parameter Constraints]
 // add a route with parameter constraints ...
-router.add('/dogs/:count/:breed', 
+router.add('/dogs/:count/:breed', // count must be more than 0 
     {'constraints': function(args) { return parseInt(args.count) > 0; },
     function(args) { 
         console.log('I have ' + args.count + ' ' + args.breed + 's'); });
@@ -67,42 +71,65 @@ router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 { @! example code end }*/
 
 /*{ @! example code start } [HTTP Method-Specific Routing]
-// add method-specific routes to the router ...
+// add routes for only certain HTTP methods ...
 router.add('/fish', {'method': 'GET'}, 
     function() { console.log('I have a fish'); });
 router.add('/bird', {'method': ['GET', 'POST']}, 
     function() { console.log('I have a bird'); });
 
-// route method-specific paths ...
+// alternatively routes can be added for an HTTP method like so ...
+router.add.get('/turtle', function() { console.log('I have a turtle'); });
+router.add.post('/rabbit', function() { console.log('I have a rabbit'); });
+
+// route paths and specify the HTTP method ...
 router.route('/fish', {'method': 'GET'}); // outputs 'I have a fish'
 router.route('/fish', {'method': 'POST'}); // outputs nothing
 router.route('/bird', {'method': 'GET'}); // outputs 'I have a bird'
 router.route('/bird', {'method': 'POST'}); // outputs 'I have a bird'
 router.route('/bird', {'method': 'DELETE'}); // outputs nothing
 
+// HTTP method-specific routes are still applicable when no method is specified ...
 router.route('/fish'); // outputs 'I have a fish'
 router.route('/bird'); // outputs 'I have a bird'
+
+// alternatively the HTTP method for the path can be specified like so ...
+router.route.get('/fish'); // outputs 'I have a fish'
+router.route.post('/bird'); // outputs 'I have a bird'
 { @! example code end }*/
 
 /*{ @! example code start } [Reverse Routing]
-// add a named route ...
-router.add('/:pet/mixed/:breeds*', 
-    {'name': 'mixed breed'}, 
+// add a route and give it a name ...
+router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, 
     function(args) { 
         console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds); 
     });
 
-// generate a path using the named route ...
-var path = router.path('mixed breed', // path is '/dog/mixed/beagle/bulldog/boxer'           
-    {'pet': 'dog', 'breeds': 'beagle/bulldog/boxer'}); 
+// alternatively the route's name can pe passed as the first argument like so...
+router.add('pure breed', '/:pet/pure/:breed',
+    function(args) { 
+        console.log('I have a pure breed ' + args.pet + ' that is a ' + args.breed); 
+    });
 
-// generated path matches the 'mixed breed' route ...                                                                           
-router.route(path); // outputs 
-                    // 'I have a mix breed dog that is a beagle/bulldog/boxer'
+// generate a path using a route ...
+var path = router.path('mixed breed', // use the route named 'mixed breed'          
+    {'pet': 'dog', 'breeds': 'beagle/pug/terrier'}); // route's parameter arguments
+console.log(path); // outputs '/dog/mixed/beagle/pug/terrier'
+{ @! example code end }*/
+
+/*{ @! example code start } [Events]
+
+{ @! example code end }*/
+
+/*{ @! example code start } [Using with a Server]
+
 { @! example code end }*/
 
 (function() { 'use strict';
     var events = require('events'), path = require('path'), util = require('util');
+
+    var http = {'methods': ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']}; // http methods
+
+    var argumentMaps = {};
 
     /* 
      * Route {prototype}                                            - route for http requests
@@ -206,23 +233,56 @@ router.route(path); // outputs
     var Router = module.exports.Router = function() {
         events.EventEmitter.call(this);
 
+        var self = this;
+
         var routes = {}; // all routes regardless of method
         Object.defineProperty(this, '___routes', {'get': function() { return routes; }, // routes getter
             'enumerable': false, 'configurable': false});
 
-        var methods = routes.methods = { // routes segregated by method
-            'get': {}, 'post': {}, 'put': {}, 'delete': {}, 'head': {}, 'options': {}, 'trace': {}, 'connect': {}
-        };
+        var methods = routes.methods = {} // routes segregated by method
+        http.methods.forEach(function(method) { methods[method.toLowerCase()] = {}; });
 
         // setup route stores
         [routes].concat(Object.keys(methods).map(function(key) { return methods[key]; })).forEach(
             function(store) { store.by = {'name': {}, 'order': []}; } // store by name and order
         ); 
+
+        http.methods.forEach(function(method) { 
+            self.add[method.toLowerCase()] = function() { // http method add method
+                var args = argumentMaps.add.apply(self, arguments); // associate arguments to parameters
+                var name = args.name, expression = args.expression, options = args.options, callback = args.callback;
+
+                // add method to arguments
+                options = options || {}, options.method = options.method || [];
+                if (util.isArray(options.method)) { options.method.unshift(method); }
+                else { options.method = [options.method, method]; }
+
+                return self.add(name, expression, options, callback);
+            };
+
+            self.route[method.toLowerCase()] = function() { // http method route method
+                var args = argumentMaps.route.apply(self, arguments); // associate arguments to parameters
+                var pathname = args.pathname, options = args.options, callback = args.callback;
+
+                options = options || {}, options.method = method; // add method to arguments
+
+                return self.route(pathname, options, callback);
+            };
+        });
     };
     util.inherits(Router, events.EventEmitter);
 
     /* 
      * Router.prototype.add {function}                              - add a route 
+     * Router.prototype.add.get {function}                          - add a route applicable to the HTTP GET method
+     * Router.prototype.add.post {function}                         - add a route applicable to the HTTP POST method
+     * Router.prototype.add.put {function}                          - add a route applicable to the HTTP PUT method
+     * Router.prototype.add.delete {function}                       - add a route applicable to the HTTP DELETE method
+     * Router.prototype.add.head {function}                         - add a route applicable to the HTTP HEAD mthod
+     * Router.prototype.add.options {function}                      - add a route applicable to the HTTP OPTIONS mthod
+     * Router.prototype.add.trace {function}                        - add a route applicable to the HTTP TRACE mthod
+     * Router.prototype.add.connect {function}                      - add a route applicable to the HTTP CONNECT mthod
+     *      [@name] {string}                                        - route name
      *      @expression {string}                                    - route expression 
      *      [@options] {object|undefined}                           - options
      *          .name {string|undefined}                            - route name
@@ -237,17 +297,13 @@ router.route(path); // outputs
      *      return {Route}                                          - route
      */
     Router.prototype.add = function() {
-        // associate arguments to parameters
-        var expression = arguments[0], options, callback;
-        if (arguments.length === 2) {
-            if (arguments[1] instanceof Function) { callback = arguments[1]; }
-            else { options = arguments[1]; }
-        } else if (arguments.length >= 3) { options = arguments[1], callback = arguments[2]; }
+        var args = argumentMaps.add.apply(this, arguments); // associate arguments to parameters
+        var name = args.name, expression = args.expression, options = args.options, callback = args.callback;
 
         var routes = this.___routes, methods = routes.methods;
 
-        var name, method, constraints; // options
-        if (options != undefined) { name = options.name, method = options.method, constraints = options.constraints; }
+        var opts = options, method, constraints; // options
+        if (opts != undefined) { name = name || opts.name, method = opts.method, constraints = opts.constraints; }
 
         if (name != undefined && name in routes.by.name) { // duplicate name
             throw new Error("Couldn't add route '" + name + 
@@ -291,24 +347,40 @@ router.route(path); // outputs
 
         return route;
     };
+    argumentMaps.add = function() { // associate arguments to parameters for add methods
+        var name, expression, options, callback; 
+
+        var args = Array.prototype.slice.call(arguments);
+        if (args.length >= 2) {
+            if ((typeof args[1] === 'string' || args[1] instanceof String)) { name = args.shift(); }
+            expression = args.shift();
+            if (args.length > 0 && !(args[0] instanceof Function)) { options = args.shift(); }
+            if (args.length > 0 && args[0] instanceof Function) { callback = args.shift(); }
+        }
+        return {'name': name, 'expression': expression, 'options': options, 'callback': callback};
+    };
 
     /* 
-     * Router.prototype.route {function}        - route a path
-     *      @pathname {string}                  - url encoded path
-     *      [@options] {object|undefined}       - options
-     *          .method {string|undefined}      - http method 
-     *      [@callback] {function|undefined}    - called upon routing
-     *          [@args] {object<string>}        - url encoded route arguments as name value pairs
-     *          this {Route}                    - route
-     *      return {Route|undefined}            - matching route or undefined if no matching route found
+     * Router.prototype.route {function}            - route a path
+     * Router.prototype.route.get {function}        - route a path using the HTTP GET method
+     * Router.prototype.route.post {function}       - route a path using the HTTP POST method
+     * Router.prototype.route.put {function}        - route a path using the HTTP PUT method
+     * Router.prototype.route.delete {function}     - route a path using the HTTP DELETE method
+     * Router.prototype.route.head {function}       - route a path using the HTTP HEAD mthod
+     * Router.prototype.route.options {function}    - route a path using the HTTP OPTIONS mthod
+     * Router.prototype.route.trace {function}      - route a path using the HTTP TRACE mthod
+     * Router.prototype.route.connect {function}    - route a path using the HTTP CONNECT mthod
+     *      @pathname {string}                      - url encoded path
+     *      [@options] {object|undefined}           - options
+     *          .method {string|undefined}          - http method 
+     *      [@callback] {function|undefined}        - called upon routing
+     *          [@args] {object<string>}            - url encoded route arguments as name value pairs
+     *          this {Route}                        - route
+     *      return {Route|undefined}                - matching route or undefined if no matching route found
      */
     Router.prototype.route = function() {
-        // associate arguments to parameters
-        var pathname = arguments[0], options, callback;
-        if (arguments.length === 2) {
-            if (arguments[1] instanceof Function) { callback = arguments[1]; }
-            else { options = arguments[1]; }
-        } else if (arguments.length >= 3) { options = arguments[1], callback = arguments[2]; }
+        var args = argumentMaps.route.apply(this, arguments); // associate arguments to parameters
+        var pathname = args.pathname, options = args.options, callback = args.callback;
 
         var method; // options
         if (options != undefined) { method = options.method; }
@@ -348,6 +420,14 @@ router.route(path); // outputs
         this.emit('fail'); // emit fail event on no matching route
         return undefined;
     }
+    argumentMaps.route = function() { // associate arguments to parameters
+        var pathname = arguments[0], options, callback;
+        if (arguments.length === 2) {
+            if (arguments[1] instanceof Function) { callback = arguments[1]; }
+            else { options = arguments[1]; }
+        } else if (arguments.length >= 3) { options = arguments[1], callback = arguments[2]; }
+        return {'pathname': pathname, 'options': options, 'callback': callback};
+    };
 
     /* 
      * Router.prototype.path {function} - generate a path
@@ -594,7 +674,7 @@ router.route(path); // outputs
     router.add('/constraint/:param1/:param2', // 3rd constrained route 
         {'name': 'constrained route 3', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
 
-    router.add('/method/:param1', {'name': 'get route', 'method': 'GET'}).on('route', onRoute); // GET route
+    router.add.get('get route', '/method/:param1', {'name': 'overridden name'}).on('route', onRoute); // GET route
     router.add('/method/:param1', {'name': 'post route', 'method': 'POST'}).on('route', onRoute); // POST route
     var routeGetPost = router.add('get/post/:param', // GET & POST route
         {'name': 'get & post route', 'method': ['POST', 'GET', 'POST', ' pOsT ']}); 
@@ -644,7 +724,7 @@ router.route(path); // outputs
         'Defining a route with an invalid constraint did not fail as expected');
 
     // add duplicate route name
-    router.add('/duplicate/1', {'name': 'duplicate route name', 'method': ['CONNECT', 'DELete']}); 
+    router.add.connect('/duplicate/1', {'name': 'duplicate route name', 'method': ['options', 'DELete']}); 
     assert.throws(
         function() { router.add('/duplicate/2', {'name': 'duplicate route name', 'method': 'PUT'}); }, 
         /duplicate[\s]route/,
@@ -706,7 +786,7 @@ router.route(path); // outputs
     assert.strictEqual(result.name, 'get route', 'The path did not match the GET route');
 
     // route path with POST route
-    router.route('/method/post', {'method': '  poSt '});
+    router.route.post('/method/post');
     assert.strictEqual(result.name, 'post route', 'The path did not match the POST route');
 
     // route path with GET & POST route
