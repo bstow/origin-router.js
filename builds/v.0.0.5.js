@@ -150,7 +150,18 @@ SOFTWARE.
 
 /* [Example: Events]
  * 
+ * // know when a route routes a path by listening to the route's 'route' event ...
+ * var route = router.add('hamster', '/hamster/:color');
+ * route.on('route',
+ *     function(args) { console.log('I have a ' + args.color + ' ' + this.name); });
  * 
+ * router.route('/hamster/gray'); // outputs 'I have a gray hamster'
+ * 
+ * // know when the router is unable to find a matching route to route a path
+ * // by listening to the router's 'fail' event ...
+ * router.on('fail', function() { console.log('Sorry! Not found'); });
+ * 
+ * router.route('/guinea/pig'); // outputs 'Sorry! Not found'
  */
 
 /* [Example: Using with a Server]
