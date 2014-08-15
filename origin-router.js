@@ -82,7 +82,8 @@ SOFTWARE.
  * router.add('/dogs/:count/:breed', // count must be more than 0
  *     {'constraints': function(args) { return parseInt(args.count) > 0; },
  *     function(args) {
- *         console.log('I have ' + args.count + ' ' + args.breed + 's'); });
+ *         console.log('I have ' + args.count + ' ' + args.breed + 's');
+ *     });
  * 
  * router.route('/dogs/0/poodle'); // outputs nothing because the count is invalid
  * router.route('/dogs/2/poodles'); // outputs 'I have 2 poodles'
@@ -92,7 +93,8 @@ SOFTWARE.
  * router.add('cats/:count/:breed'
  *     {'constraints': 'count': /(two|three)/, 'breed': ['persian', 'siamese']},
  *     function(args) {
- *         console.log('I have ' + args.count + ' ' + args.breed + ' cats'); });
+ *         console.log('I have ' + args.count + ' ' + args.breed + ' cats');
+ *     });
  * 
  * router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
  * router.route('/cats/two/bengal'); // outputs nothing because the breed is invalid
@@ -130,16 +132,12 @@ SOFTWARE.
 /* [Example: Reverse Routing]
  * 
  * // add a route and give it a name for future reference ...
- * router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'},
- *     function(args) {
- *         console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds);
- *     });
+ * router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(args) {
+ *     console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds); });
  * 
  * // alternatively the route's name can pe passed as the first argument like so...
- * router.add('pure breed', '/:pet/pure/:breed',
- *     function(args) {
- *         console.log('I have a pure breed ' + args.pet + ' that is a ' + args.breed);
- *     });
+ * router.add('pure breed', '/:pet/pure/:breed', function(args) {
+ *     console.log('I have a pure breed ' + args.pet + ' that is a ' + args.breed); });
  * 
  * // generate a path using a route ...
  * var pathname = router.path('mixed breed', // use the route named 'mixed breed'
@@ -159,17 +157,15 @@ SOFTWARE.
  * 
  * // know when the router is unable to find a matching route to route a path
  * // by listening to the router's 'fail' event ...
- * router.on('fail',
- *     function(event) { console.log('No route found for ' + event.pathname); });
+ * router.on('fail', function(event) {
+ *     console.log('No route found for ' + event.pathname); });
  * 
  * router.route('/guinea/pig'); // outputs 'No route found for /guinea/pig'
  * 
  * // alternatively, know when the router successfully routes any path by listening
  * // to the router's 'success' event ...
- * router.on('success',
- *     function(event) {
- *         console.log(event.pathname + " routed by route '" + event.route.name + "'");
- *     });
+ * router.on('success', function(event) {
+ *     console.log(event.pathname + " routed by route '" + event.route.name + "'"); });
  * 
  * router.route('/hamster/gray'); // outputs 'I have a gray hamster'
  *                                // outputs "/hamster/gray routed by route 'hamster'"
@@ -215,7 +211,11 @@ SOFTWARE.
      * Route.prototype
      *      emits route {event}                                     - occurs upon routing
      *          listener {function}
-     *              [@args] {object<string>}                        - url encoded route arguments as name value pairs
+     *              @event                          - event object
+     *                  .pathname <string>          - url encoded pathname
+     *                  .method <string|undefined>  - http method
+     *                  .route {Route}              - route
+     *                  .args {object<string>}      - url encoded route arguments as name value pairs
      *              this {Route}                                    - route
      */
     var Route = function(expression, options) {
@@ -473,8 +473,8 @@ SOFTWARE.
 
                 if (callback != undefined) { route.once('route', callback); } // queue callback
 
-                route.emit('route', args); // emit route event on matching route
-
+                // emit route event on matching route
+                route.emit('route', {'pathname': pathname, 'method': method, 'route': route, 'args': args});
                 // emit success event on matching route
                 this.emit('success', {'pathname': pathname, 'method': method, 'route': route, 'args': args});
 
