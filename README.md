@@ -123,27 +123,38 @@ router.add('pure breed', '/:pet/pure/:breed',
     });
 
 // generate a path using a route ...
-var path = router.path('mixed breed', // use the route named 'mixed breed'
+var pathname = router.path('mixed breed', // use the route named 'mixed breed'
     {'pet': 'dog', 'breeds': 'beagle/pug/terrier'}); // route's parameter arguments
 
-console.log(path); // outputs '/dog/mixed/beagle/pug/terrier'
+console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 ```
 
 
 ####Events
 ```javascript
 // know when a route routes a path by listening to the route's 'route' event ...
-var route = router.add('hamster', '/hamster/:color');
+var route = router.add('/hamster/:color', {'name': 'hamster'});
 route.on('route',
     function(args) { console.log('I have a ' + args.color + ' ' + this.name); });
 
-router.route('/hamster/gray'); // outputs 'I have a gray hamster'
+router.route('/hamster/brown'); // outputs 'I have a brown hamster'
 
 // know when the router is unable to find a matching route to route a path
 // by listening to the router's 'fail' event ...
-router.on('fail', function() { console.log('Sorry! Not found'); });
+router.on('fail',
+    function(event) { console.log('No route found for ' + event.pathname); });
 
-router.route('/guinea/pig'); // outputs 'Sorry! Not found'
+router.route('/guinea/pig'); // outputs 'No route found for /guinea/pig'
+
+// alternatively, know when the router successfully routes any path by listening
+// to the router's 'success' event ...
+router.on('success',
+    function(event) {
+        console.log(event.pathname + " routed by route '" + event.route.name + "'");
+    });
+
+router.route('/hamster/gray'); // outputs 'I have a gray hamster'
+                               // outputs "/hamster/gray routed by route 'hamster'"
 ```
 
 

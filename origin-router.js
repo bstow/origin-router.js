@@ -142,26 +142,37 @@ SOFTWARE.
  *     });
  * 
  * // generate a path using a route ...
- * var path = router.path('mixed breed', // use the route named 'mixed breed'
+ * var pathname = router.path('mixed breed', // use the route named 'mixed breed'
  *     {'pet': 'dog', 'breeds': 'beagle/pug/terrier'}); // route's parameter arguments
  * 
- * console.log(path); // outputs '/dog/mixed/beagle/pug/terrier'
+ * console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
  */
 
 /* [Example: Events]
  * 
  * // know when a route routes a path by listening to the route's 'route' event ...
- * var route = router.add('hamster', '/hamster/:color');
+ * var route = router.add('/hamster/:color', {'name': 'hamster'});
  * route.on('route',
  *     function(args) { console.log('I have a ' + args.color + ' ' + this.name); });
  * 
- * router.route('/hamster/gray'); // outputs 'I have a gray hamster'
+ * router.route('/hamster/brown'); // outputs 'I have a brown hamster'
  * 
  * // know when the router is unable to find a matching route to route a path
  * // by listening to the router's 'fail' event ...
- * router.on('fail', function() { console.log('Sorry! Not found'); });
+ * router.on('fail',
+ *     function(event) { console.log('No route found for ' + event.pathname); });
  * 
- * router.route('/guinea/pig'); // outputs 'Sorry! Not found'
+ * router.route('/guinea/pig'); // outputs 'No route found for /guinea/pig'
+ * 
+ * // alternatively, know when the router successfully routes any path by listening
+ * // to the router's 'success' event ...
+ * router.on('success',
+ *     function(event) {
+ *         console.log(event.pathname + " routed by route '" + event.route.name + "'");
+ *     });
+ * 
+ * router.route('/hamster/gray'); // outputs 'I have a gray hamster'
+ *                                // outputs "/hamster/gray routed by route 'hamster'"
  */
 
 /* [Example: Using with a Server]
@@ -176,14 +187,14 @@ SOFTWARE.
 
     var argumentMaps = {};
 
-    /* 
+    /*
      * Route {prototype}                                            - route for http requests
      *      inherits {EventEmitter}
-     * 
+     *
      * Route.prototype.constructor {function}
-     *      @expression {string}                                    - route expression 
+     *      @expression {string}                                    - route expression
      *      [@options] {object|undefined}                           - options
-     *          .name {string|undefined}                            - route name 
+     *          .name {string|undefined}                            - route name
      *          .method {string|array<string>|undefined}            - route's applicable http method(s)
      *          .constraints {function|object<RegExp|array<string>>|undefined} - route argument constraints
      *              [@args] {object<string>}                        - url encoded route arguments as name value pairs
@@ -201,7 +212,7 @@ SOFTWARE.
      *      this {Route}                                            - route
      *      return {boolean}                                        - true if valid, false if invalid
      *
-     * Route.prototype 
+     * Route.prototype
      *      emits route {event}                                     - occurs upon routing
      *          listener {function}
      *              [@args] {object<string>}                        - url encoded route arguments as name value pairs
@@ -240,17 +251,17 @@ SOFTWARE.
                         } else { valid = false; }
 
                         if (!valid) {
-                            throw new Error("Couldn't set constraints for route " + 
-                                (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') + 
-                                "because the contraint '" + key + "' was not a " + 
-                                'regular expression or an array of strings'); 
+                            throw new Error("Couldn't set constraints for route " +
+                                (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                                "because the contraint '" + key + "' was not a " +
+                                'regular expression or an array of strings');
                         }
                     }
                     constraints = value;
-                } else { 
-                    throw new Error("Couldn't set constraints for route " + 
-                        (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') + 
-                        'because the contraints are invalid'); 
+                } else {
+                    throw new Error("Couldn't set constraints for route " +
+                        (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                        'because the contraints are invalid');
                 }
             },
             'enumerable': true, 'configurable': false});
@@ -259,21 +270,27 @@ SOFTWARE.
     util.inherits(Route, events.EventEmitter);
 
     /*
-     * Router {prototype}                       - router for http requests 
+     * Router {prototype}                       - router for http requests
      *      inherits {EventEmitter}
      *      module.exports.Router
      *
      * Router.prototype.constructor {function}
      *
-     * Router.prototype 
-     *      emits success {event}               - occurs upon routing
+     * Router.prototype
+     *      emits success {event}                   - occurs upon routing
      *          listener {function}
-     *              @route {Route}              - matching route
-     *              [@args] {object<string>}    - url encoded route arguments as name value pairs
-     *              this {Router}               - router
-     *      emits fail {event}                  - occurs upon routing when no matching route found
+     *              @event                          - event object
+     *                  .pathname <string>          - url encoded pathname
+     *                  .method <string|undefined>  - http method
+     *                  .route {Route}              - matching route
+     *                  .args {object<string>}      - url encoded route arguments as name value pairs
+     *              this {Router}                   - router
+     *      emits fail {event}                      - occurs upon routing when no matching route found
      *          listener {function}
-     *              this {Router}               - router
+     *              @event                          - event object
+     *                  .pathname <string>          - url encoded pathname
+     *                  .method <string|undefined>  - http method
+     *              this {Router}                   - router
      */
     var Router = module.exports.Router = function() {
         events.EventEmitter.call(this);
@@ -290,9 +307,9 @@ SOFTWARE.
         // setup route stores
         [routes].concat(Object.keys(methods).map(function(key) { return methods[key]; })).forEach(
             function(store) { store.by = {'name': {}, 'order': []}; } // store by name and order
-        ); 
+        );
 
-        http.methods.forEach(function(method) { 
+        http.methods.forEach(function(method) {
             self.add[method.toLowerCase()] = function() { // http method add method
                 var args = argumentMaps.add.apply(self, arguments); // associate arguments to parameters
                 var name = args.name, expression = args.expression, options = args.options, callback = args.callback;
@@ -317,8 +334,8 @@ SOFTWARE.
     };
     util.inherits(Router, events.EventEmitter);
 
-    /* 
-     * Router.prototype.add {function}                              - add a route 
+    /*
+     * Router.prototype.add {function}                              - add a route
      * Router.prototype.add.get {function}                          - add a route applicable to the HTTP GET method
      * Router.prototype.add.post {function}                         - add a route applicable to the HTTP POST method
      * Router.prototype.add.put {function}                          - add a route applicable to the HTTP PUT method
@@ -328,7 +345,7 @@ SOFTWARE.
      * Router.prototype.add.trace {function}                        - add a route applicable to the HTTP TRACE mthod
      * Router.prototype.add.connect {function}                      - add a route applicable to the HTTP CONNECT mthod
      *      [@name] {string}                                        - route name
-     *      @expression {string}                                    - route expression 
+     *      @expression {string}                                    - route expression
      *      [@options] {object|undefined}                           - options
      *          .name {string|undefined}                            - route name
      *          .method {string|array<string>|undefined}            - route's applicable http method(s)
@@ -351,7 +368,7 @@ SOFTWARE.
         if (opts != undefined) { name = name || opts.name, method = opts.method, constraints = opts.constraints; }
 
         if (name != undefined && name in routes.by.name) { // duplicate name
-            throw new Error("Couldn't add route '" + name + 
+            throw new Error("Couldn't add route '" + name +
                 "' because another route named '" + name + "' already exists");
         }
 
@@ -368,7 +385,7 @@ SOFTWARE.
                 var store = methods[index];
 
                 if (store == undefined) { // no associated store
-                    throw new Error("Couldn't add route " + (name != undefined ? "\'" + name + "\'" + ' ' : '') + 
+                    throw new Error("Couldn't add route " + (name != undefined ? "\'" + name + "\'" + ' ' : '') +
                         "because the method '" + method + "' is not recognized");
                 }
 
@@ -383,7 +400,7 @@ SOFTWARE.
 
         var data = {'route': route, 'subroutes': subroutes};
 
-        stores.forEach(function(store) { 
+        stores.forEach(function(store) {
             store.by.order.push(data); // store by order
             if (name != undefined) { store.by.name[name] = data; } // store by name
         });
@@ -393,7 +410,7 @@ SOFTWARE.
         return route;
     };
     argumentMaps.add = function() { // associate arguments to parameters for add methods
-        var name, expression, options, callback; 
+        var name, expression, options, callback;
 
         var args = Array.prototype.slice.call(arguments);
         if (args.length >= 2) {
@@ -405,7 +422,7 @@ SOFTWARE.
         return {'name': name, 'expression': expression, 'options': options, 'callback': callback};
     };
 
-    /* 
+    /*
      * Router.prototype.route {function}            - route a path
      * Router.prototype.route.get {function}        - route a path using the HTTP GET method
      * Router.prototype.route.post {function}       - route a path using the HTTP POST method
@@ -417,7 +434,7 @@ SOFTWARE.
      * Router.prototype.route.connect {function}    - route a path using the HTTP CONNECT mthod
      *      @pathname {string}                      - url encoded path
      *      [@options] {object|undefined}           - options
-     *          .method {string|undefined}          - http method 
+     *          .method {string|undefined}          - http method
      *      [@callback] {function|undefined}        - called upon routing
      *          [@args] {object<string>}            - url encoded route arguments as name value pairs
      *          this {Route}                        - route
@@ -437,7 +454,7 @@ SOFTWARE.
             var store = methods[method.toLowerCase().trim()];
 
             if (store == undefined) { // no associated store
-                throw new Error("Couldn't route '" + pathname + 
+                throw new Error("Couldn't route '" + pathname +
                     "' because the method '" + method + "' is not recognized");
             }
         } else { store = routes; } // all routes
@@ -457,12 +474,15 @@ SOFTWARE.
                 if (callback != undefined) { route.once('route', callback); } // queue callback
 
                 route.emit('route', args); // emit route event on matching route
-                this.emit('success', route, args); // emit success event on matching route
+
+                // emit success event on matching route
+                this.emit('success', {'pathname': pathname, 'method': method, 'route': route, 'args': args});
+
                 return route; // return matching route
             }
         }
 
-        this.emit('fail'); // emit fail event on no matching route
+        this.emit('fail', {'pathname': pathname, 'method': method}); // emit fail event on no matching route
         return undefined;
     }
     argumentMaps.route = function() { // associate arguments to parameters
@@ -474,11 +494,11 @@ SOFTWARE.
         return {'pathname': pathname, 'options': options, 'callback': callback};
     };
 
-    /* 
+    /*
      * Router.prototype.path {function} - generate a path
      *      @name {string}              - route name
      *      [@args] {object|undefined}  - url encoded route arguments as name value pairs
-     *      return {string}             - url encoded path 
+     *      return {string}             - url encoded path
      */
     Router.prototype.path = function(name, args) {
         args = args || {};
@@ -494,23 +514,23 @@ SOFTWARE.
             if (valid !== true) { // invalid
                 if (typeof valid === 'string' || valid instanceof String) { // invalid parameter constraint
                     var key = valid, value = args[key];
-                    throw new Error("Couldn't generate path with route '" + name + "' because the " + 
-                        "'" + key + "' argument value of '" + value + "' is invalid " + 
+                    throw new Error("Couldn't generate path with route '" + name + "' because the " +
+                        "'" + key + "' argument value of '" + value + "' is invalid " +
                         "according to the route's constraints");
                 } else { // invalid constraints
-                    throw new Error("Couldn't generate path with route '" + name + "' because " + 
+                    throw new Error("Couldn't generate path with route '" + name + "' because " +
                         "one or more of the arguments are invalid according to the route's constraints");
                 }
             }
 
-            return compose(subroutes, args); 
-        } else { 
+            return compose(subroutes, args);
+        } else {
             throw new Error(
-                "Couldn't generate path with route '" + name + "' because no route named '" + name + "' exists"); 
+                "Couldn't generate path with route '" + name + "' because no route named '" + name + "' exists");
         }
     };
 
-    /* 
+    /*
      * parse {object}
      */
     var parse = {}; // parsing
@@ -518,10 +538,10 @@ SOFTWARE.
     /*
      * parse.route {function}                       - parse an expression into subroutes
      *      @expression {string}                    - route expression
-     *      return {array<object|string>}           - parts of the route 
+     *      return {array<object|string>}           - parts of the route
      *          [...]
      *              .name {string}                  - route parameter name
-     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard 
+     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard
      */
     parse.route = function(expression) {
         var last;
@@ -544,7 +564,7 @@ SOFTWARE.
                 var name = wildcard ? subroute.substring(1, last) : subroute.substring(1);
 
                 if (name in names) { // parameter name collision
-                    if (collision == undefined) { collision = name; } 
+                    if (collision == undefined) { collision = name; }
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
@@ -552,8 +572,8 @@ SOFTWARE.
 
                 if (wildcard && index == subroutes.length - 1) { marker.wildcard = true; } // wildcard parameter
 
-                subroutes[index] = marker; 
-            } 
+                subroutes[index] = marker;
+            }
         });
 
         if (collision != undefined) {
@@ -563,16 +583,16 @@ SOFTWARE.
         return subroutes;
     };
 
-    /* 
+    /*
      * parse.path {function}        - parse path into encoded subpaths
      *      @pathname {string}      - url encoded path
-     *      return {array<string>}  - url encoded parts of the path 
+     *      return {array<string>}  - url encoded parts of the path
      */
     parse.path = function(pathname) {
         pathname = pathname.trim();
 
         // resolve dot directory subpaths for security
-        pathname = path.resolve('/', path.normalize(pathname)); 
+        pathname = path.resolve('/', path.normalize(pathname));
 
         var last = pathname.length - 1;
         if (pathname.charAt(last) === '/') { pathname = pathname.substring(0, last); }
@@ -583,12 +603,12 @@ SOFTWARE.
         return subpaths;
     };
 
-    /* 
+    /*
      * match {function}                             - match subroutes and subpaths
-     *      @subroutes {array<object|string>}       - parts of the route 
+     *      @subroutes {array<object|string>}       - parts of the route
      *          [...]
      *              .name {string}                  - route parameter name
-     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard 
+     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard
      *      @subpaths {array<string>}               - url encoded parts of the path
      *      return {object}                         - url encoded route arguments as name value pairs
      */
@@ -604,7 +624,7 @@ SOFTWARE.
 
             if (subroute == undefined) { return; } // match unsuccessful
             if (typeof subroute === 'string' || subroute instanceof String) {
-                if (subroute == subpath) { continue; } // continue matching 
+                if (subroute == subpath) { continue; } // continue matching
                 else { return; } // match unsuccessful
             } else if (typeof subroute === 'object') { // parameter marker
                 if (subroute.wildcard) { // wildcard
@@ -617,34 +637,34 @@ SOFTWARE.
             } else { break; } // end matching
         }
 
-        if (wildcard != undefined) { 
+        if (wildcard != undefined) {
             args[wildcard] = subpaths.slice(index).join('/'); // resolve wildcard parameter, store argument
         } else if (index != subroutes.length) { return; } // no match
 
         return args; // match
     };
 
-    /* 
+    /*
     * compose {function}                            - compose path from subroutes
-    *       @subroutes {array<object|string>}       - parts of the route 
+    *       @subroutes {array<object|string>}       - parts of the route
     *           [...]
     *               .name {string}                  - route parameter name
-    *               .wildcard {boolean|undefined}   - true if route parameter is wildcard 
+    *               .wildcard {boolean|undefined}   - true if route parameter is wildcard
     *       [@args] {object|undefined}              - url encoded route arguments as name value pairs
-    *       return {string}                         - url encoded path 
+    *       return {string}                         - url encoded path
     */
     var compose = function(subroutes, args) {
         args = args || {};
 
         var subpaths = [];
-        subroutes.forEach(function(subroute, index, route) { 
+        subroutes.forEach(function(subroute, index, route) {
             if (typeof subroute === 'string' || subroute instanceof String) {
                 subpaths.push(subroute);
             } else if (typeof subroute === 'object') { // parameter marker
                 var arg = args[subroute.name];
                 if (arg == undefined) { arg = ''; }
 
-                if (subroute.wildcard) { 
+                if (subroute.wildcard) {
                     subpaths.push(arg.charAt(0) === '/' ? arg.substring(1) : arg); // wildcard parameter
                 } else { subpaths.push(arg); } // parameter
             }
@@ -676,7 +696,7 @@ SOFTWARE.
                     if (!(name in args)) { continue; } // no argument to validate
 
                     var arg = args[name], constraint = constraints[name];
-                    if ( // validate argument against parameter constraint 
+                    if ( // validate argument against parameter constraint
                         (constraint instanceof RegExp && !constraint.test(arg)) || // regex constraint
                         (util.isArray(constraint) && constraint.indexOf(arg) == -1) // array of strings constraint
                     ) { return name; } // invalid

@@ -21,48 +21,48 @@ router.route('/dog/bulldog'); // outputs nothing
 
 /*{ @! example code start } [Route Parameters]
 // add more routes using ':' to denote parameters ...
-router.add('/dog/:color', 
+router.add('/dog/:color',
     function(args) { console.log('I have a ' + args.color + ' colored dog'); });
-router.add('/cat/:color', 
+router.add('/cat/:color',
     function(args) { console.log('I have a ' + args.color + ' colored cat'); });
-router.add('/:pet/homework', 
+router.add('/:pet/homework',
     function(args) { console.log('My ' + args.pet + ' ate my homework'); })
 
 // route some more paths that match the added routes ...
 router.route('/dog/brown'); // outputs 'I have a brown colored dog'
 router.route('cat/white'); // outputs 'I have a white colored cat'
 router.route('/fish/homework'); // outputs 'My fish at my homework'
-router.route('/dog/homework');  // outputs 'I have a homework colored dog' 
-                                // this is routed by the dog route and not 
-                                // the homework route because the dog route 
+router.route('/dog/homework');  // outputs 'I have a homework colored dog'
+                                // this is routed by the dog route and not
+                                // the homework route because the dog route
                                 // was added before the homework route
 { @! example code end }*/
 
 /*{ @! example code start } [Route Wildcard Parameters]
 // add a route with a wildcard parameter denoted by a '*' at the end ...
-router.add('/calico/:pet/:colors*', 
+router.add('/calico/:pet/:colors*',
     function(args) { console.log('I have a ' + args.colors + ' ' + args.pet); });
 
 // the wildcard parameter matches anything at the end of the path ...
-router.route('/calico/cat/white/orange/gray'); // outputs 
+router.route('/calico/cat/white/orange/gray'); // outputs
                                                // 'I have a white/orange/gray cat'
 { @! example code end }*/
 
 /*{ @! example code start } [Parameter Constraints]
 // add a route with parameter constraints ...
-router.add('/dogs/:count/:breed', // count must be more than 0 
+router.add('/dogs/:count/:breed', // count must be more than 0
     {'constraints': function(args) { return parseInt(args.count) > 0; },
-    function(args) { 
+    function(args) {
         console.log('I have ' + args.count + ' ' + args.breed + 's'); });
 
 router.route('/dogs/0/poodle'); // outputs nothing because the count is invalid
 router.route('/dogs/2/poodles'); // outputs 'I have 2 poodles'
 
-// a route's parameter constraints may be defined per parameter 
+// a route's parameter constraints may be defined per parameter
 // as either a regular expression or an array of valid strings ...
 router.add('cats/:count/:breed'
     {'constraints': 'count': /(two|three)/, 'breed': ['persian', 'siamese']},
-    function(args) { 
+    function(args) {
         console.log('I have ' + args.count + ' ' + args.breed + ' cats'); });
 
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
@@ -72,9 +72,9 @@ router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 
 /*{ @! example code start } [HTTP Method-Specific Routing]
 // add routes for only certain HTTP methods ...
-router.add('/fish', {'method': 'GET'}, 
+router.add('/fish', {'method': 'GET'},
     function() { console.log('I have a fish'); });
-router.add('/bird', {'method': ['GET', 'POST']}, 
+router.add('/bird', {'method': ['GET', 'POST']},
     function() { console.log('I have a bird'); });
 
 // alternatively routes can be added for an HTTP method like so ...
@@ -99,37 +99,48 @@ router.route.post('/bird'); // outputs 'I have a bird'
 
 /*{ @! example code start } [Reverse Routing]
 // add a route and give it a name for future reference ...
-router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, 
-    function(args) { 
-        console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds); 
+router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'},
+    function(args) {
+        console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds);
     });
 
 // alternatively the route's name can pe passed as the first argument like so...
 router.add('pure breed', '/:pet/pure/:breed',
-    function(args) { 
-        console.log('I have a pure breed ' + args.pet + ' that is a ' + args.breed); 
+    function(args) {
+        console.log('I have a pure breed ' + args.pet + ' that is a ' + args.breed);
     });
 
 // generate a path using a route ...
-var path = router.path('mixed breed', // use the route named 'mixed breed'          
+var pathname = router.path('mixed breed', // use the route named 'mixed breed'
     {'pet': 'dog', 'breeds': 'beagle/pug/terrier'}); // route's parameter arguments
 
-console.log(path); // outputs '/dog/mixed/beagle/pug/terrier'
+console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 { @! example code end }*/
 
 /*{ @! example code start } [Events]
 // know when a route routes a path by listening to the route's 'route' event ...
-var route = router.add('hamster', '/hamster/:color');
-route.on('route', 
+var route = router.add('/hamster/:color', {'name': 'hamster'});
+route.on('route',
     function(args) { console.log('I have a ' + args.color + ' ' + this.name); });
 
-router.route('/hamster/gray'); // outputs 'I have a gray hamster'
+router.route('/hamster/brown'); // outputs 'I have a brown hamster'
 
-// know when the router is unable to find a matching route to route a path 
+// know when the router is unable to find a matching route to route a path
 // by listening to the router's 'fail' event ...
-router.on('fail', function() { console.log('Sorry! Not found'); });
+router.on('fail',
+    function(event) { console.log('No route found for ' + event.pathname); });
 
-router.route('/guinea/pig'); // outputs 'Sorry! Not found'
+router.route('/guinea/pig'); // outputs 'No route found for /guinea/pig'
+
+// alternatively, know when the router successfully routes any path by listening
+// to the router's 'success' event ...
+router.on('success',
+    function(event) {
+        console.log(event.pathname + " routed by route '" + event.route.name + "'");
+    });
+
+router.route('/hamster/gray'); // outputs 'I have a gray hamster'
+                               // outputs "/hamster/gray routed by route 'hamster'"
 { @! example code end }*/
 
 /*{ @! example code start } [Using with a Server]
@@ -143,14 +154,14 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
 
     var argumentMaps = {};
 
-    /* 
+    /*
      * Route {prototype}                                            - route for http requests
      *      inherits {EventEmitter}
-     * 
+     *
      * Route.prototype.constructor {function}
-     *      @expression {string}                                    - route expression 
+     *      @expression {string}                                    - route expression
      *      [@options] {object|undefined}                           - options
-     *          .name {string|undefined}                            - route name 
+     *          .name {string|undefined}                            - route name
      *          .method {string|array<string>|undefined}            - route's applicable http method(s)
      *          .constraints {function|object<RegExp|array<string>>|undefined} - route argument constraints
      *              [@args] {object<string>}                        - url encoded route arguments as name value pairs
@@ -168,7 +179,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
      *      this {Route}                                            - route
      *      return {boolean}                                        - true if valid, false if invalid
      *
-     * Route.prototype 
+     * Route.prototype
      *      emits route {event}                                     - occurs upon routing
      *          listener {function}
      *              [@args] {object<string>}                        - url encoded route arguments as name value pairs
@@ -207,17 +218,17 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
                         } else { valid = false; }
 
                         if (!valid) {
-                            throw new Error("Couldn't set constraints for route " + 
-                                (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') + 
-                                "because the contraint '" + key + "' was not a " + 
-                                'regular expression or an array of strings'); 
+                            throw new Error("Couldn't set constraints for route " +
+                                (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                                "because the contraint '" + key + "' was not a " +
+                                'regular expression or an array of strings');
                         }
                     }
                     constraints = value;
-                } else { 
-                    throw new Error("Couldn't set constraints for route " + 
-                        (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') + 
-                        'because the contraints are invalid'); 
+                } else {
+                    throw new Error("Couldn't set constraints for route " +
+                        (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                        'because the contraints are invalid');
                 }
             },
             'enumerable': true, 'configurable': false});
@@ -226,21 +237,27 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
     util.inherits(Route, events.EventEmitter);
 
     /*
-     * Router {prototype}                       - router for http requests 
+     * Router {prototype}                       - router for http requests
      *      inherits {EventEmitter}
      *      module.exports.Router
      *
      * Router.prototype.constructor {function}
      *
-     * Router.prototype 
-     *      emits success {event}               - occurs upon routing
+     * Router.prototype
+     *      emits success {event}                   - occurs upon routing
      *          listener {function}
-     *              @route {Route}              - matching route
-     *              [@args] {object<string>}    - url encoded route arguments as name value pairs
-     *              this {Router}               - router
-     *      emits fail {event}                  - occurs upon routing when no matching route found
+     *              @event                          - event object
+     *                  .pathname <string>          - url encoded pathname
+     *                  .method <string|undefined>  - http method
+     *                  .route {Route}              - matching route
+     *                  .args {object<string>}      - url encoded route arguments as name value pairs
+     *              this {Router}                   - router
+     *      emits fail {event}                      - occurs upon routing when no matching route found
      *          listener {function}
-     *              this {Router}               - router
+     *              @event                          - event object
+     *                  .pathname <string>          - url encoded pathname
+     *                  .method <string|undefined>  - http method
+     *              this {Router}                   - router
      */
     var Router = module.exports.Router = function() {
         events.EventEmitter.call(this);
@@ -257,9 +274,9 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
         // setup route stores
         [routes].concat(Object.keys(methods).map(function(key) { return methods[key]; })).forEach(
             function(store) { store.by = {'name': {}, 'order': []}; } // store by name and order
-        ); 
+        );
 
-        http.methods.forEach(function(method) { 
+        http.methods.forEach(function(method) {
             self.add[method.toLowerCase()] = function() { // http method add method
                 var args = argumentMaps.add.apply(self, arguments); // associate arguments to parameters
                 var name = args.name, expression = args.expression, options = args.options, callback = args.callback;
@@ -284,8 +301,8 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
     };
     util.inherits(Router, events.EventEmitter);
 
-    /* 
-     * Router.prototype.add {function}                              - add a route 
+    /*
+     * Router.prototype.add {function}                              - add a route
      * Router.prototype.add.get {function}                          - add a route applicable to the HTTP GET method
      * Router.prototype.add.post {function}                         - add a route applicable to the HTTP POST method
      * Router.prototype.add.put {function}                          - add a route applicable to the HTTP PUT method
@@ -295,7 +312,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
      * Router.prototype.add.trace {function}                        - add a route applicable to the HTTP TRACE mthod
      * Router.prototype.add.connect {function}                      - add a route applicable to the HTTP CONNECT mthod
      *      [@name] {string}                                        - route name
-     *      @expression {string}                                    - route expression 
+     *      @expression {string}                                    - route expression
      *      [@options] {object|undefined}                           - options
      *          .name {string|undefined}                            - route name
      *          .method {string|array<string>|undefined}            - route's applicable http method(s)
@@ -318,7 +335,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
         if (opts != undefined) { name = name || opts.name, method = opts.method, constraints = opts.constraints; }
 
         if (name != undefined && name in routes.by.name) { // duplicate name
-            throw new Error("Couldn't add route '" + name + 
+            throw new Error("Couldn't add route '" + name +
                 "' because another route named '" + name + "' already exists");
         }
 
@@ -335,7 +352,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
                 var store = methods[index];
 
                 if (store == undefined) { // no associated store
-                    throw new Error("Couldn't add route " + (name != undefined ? "\'" + name + "\'" + ' ' : '') + 
+                    throw new Error("Couldn't add route " + (name != undefined ? "\'" + name + "\'" + ' ' : '') +
                         "because the method '" + method + "' is not recognized");
                 }
 
@@ -350,7 +367,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
 
         var data = {'route': route, 'subroutes': subroutes};
 
-        stores.forEach(function(store) { 
+        stores.forEach(function(store) {
             store.by.order.push(data); // store by order
             if (name != undefined) { store.by.name[name] = data; } // store by name
         });
@@ -360,7 +377,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
         return route;
     };
     argumentMaps.add = function() { // associate arguments to parameters for add methods
-        var name, expression, options, callback; 
+        var name, expression, options, callback;
 
         var args = Array.prototype.slice.call(arguments);
         if (args.length >= 2) {
@@ -372,7 +389,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
         return {'name': name, 'expression': expression, 'options': options, 'callback': callback};
     };
 
-    /* 
+    /*
      * Router.prototype.route {function}            - route a path
      * Router.prototype.route.get {function}        - route a path using the HTTP GET method
      * Router.prototype.route.post {function}       - route a path using the HTTP POST method
@@ -384,7 +401,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
      * Router.prototype.route.connect {function}    - route a path using the HTTP CONNECT mthod
      *      @pathname {string}                      - url encoded path
      *      [@options] {object|undefined}           - options
-     *          .method {string|undefined}          - http method 
+     *          .method {string|undefined}          - http method
      *      [@callback] {function|undefined}        - called upon routing
      *          [@args] {object<string>}            - url encoded route arguments as name value pairs
      *          this {Route}                        - route
@@ -404,7 +421,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
             var store = methods[method.toLowerCase().trim()];
 
             if (store == undefined) { // no associated store
-                throw new Error("Couldn't route '" + pathname + 
+                throw new Error("Couldn't route '" + pathname +
                     "' because the method '" + method + "' is not recognized");
             }
         } else { store = routes; } // all routes
@@ -424,12 +441,15 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
                 if (callback != undefined) { route.once('route', callback); } // queue callback
 
                 route.emit('route', args); // emit route event on matching route
-                this.emit('success', route, args); // emit success event on matching route
+
+                // emit success event on matching route
+                this.emit('success', {'pathname': pathname, 'method': method, 'route': route, 'args': args});
+
                 return route; // return matching route
             }
         }
 
-        this.emit('fail'); // emit fail event on no matching route
+        this.emit('fail', {'pathname': pathname, 'method': method}); // emit fail event on no matching route
         return undefined;
     }
     argumentMaps.route = function() { // associate arguments to parameters
@@ -441,11 +461,11 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
         return {'pathname': pathname, 'options': options, 'callback': callback};
     };
 
-    /* 
+    /*
      * Router.prototype.path {function} - generate a path
      *      @name {string}              - route name
      *      [@args] {object|undefined}  - url encoded route arguments as name value pairs
-     *      return {string}             - url encoded path 
+     *      return {string}             - url encoded path
      */
     Router.prototype.path = function(name, args) {
         args = args || {};
@@ -461,23 +481,23 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
             if (valid !== true) { // invalid
                 if (typeof valid === 'string' || valid instanceof String) { // invalid parameter constraint
                     var key = valid, value = args[key];
-                    throw new Error("Couldn't generate path with route '" + name + "' because the " + 
-                        "'" + key + "' argument value of '" + value + "' is invalid " + 
+                    throw new Error("Couldn't generate path with route '" + name + "' because the " +
+                        "'" + key + "' argument value of '" + value + "' is invalid " +
                         "according to the route's constraints");
                 } else { // invalid constraints
-                    throw new Error("Couldn't generate path with route '" + name + "' because " + 
+                    throw new Error("Couldn't generate path with route '" + name + "' because " +
                         "one or more of the arguments are invalid according to the route's constraints");
                 }
             }
 
-            return compose(subroutes, args); 
-        } else { 
+            return compose(subroutes, args);
+        } else {
             throw new Error(
-                "Couldn't generate path with route '" + name + "' because no route named '" + name + "' exists"); 
+                "Couldn't generate path with route '" + name + "' because no route named '" + name + "' exists");
         }
     };
 
-    /* 
+    /*
      * parse {object}
      */
     var parse = {}; // parsing
@@ -485,10 +505,10 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
     /*
      * parse.route {function}                       - parse an expression into subroutes
      *      @expression {string}                    - route expression
-     *      return {array<object|string>}           - parts of the route 
+     *      return {array<object|string>}           - parts of the route
      *          [...]
      *              .name {string}                  - route parameter name
-     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard 
+     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard
      */
     parse.route = function(expression) {
         var last;
@@ -511,7 +531,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
                 var name = wildcard ? subroute.substring(1, last) : subroute.substring(1);
 
                 if (name in names) { // parameter name collision
-                    if (collision == undefined) { collision = name; } 
+                    if (collision == undefined) { collision = name; }
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
@@ -519,8 +539,8 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
 
                 if (wildcard && index == subroutes.length - 1) { marker.wildcard = true; } // wildcard parameter
 
-                subroutes[index] = marker; 
-            } 
+                subroutes[index] = marker;
+            }
         });
 
         if (collision != undefined) {
@@ -530,16 +550,16 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
         return subroutes;
     };
 
-    /* 
+    /*
      * parse.path {function}        - parse path into encoded subpaths
      *      @pathname {string}      - url encoded path
-     *      return {array<string>}  - url encoded parts of the path 
+     *      return {array<string>}  - url encoded parts of the path
      */
     parse.path = function(pathname) {
         pathname = pathname.trim();
 
         // resolve dot directory subpaths for security
-        pathname = path.resolve('/', path.normalize(pathname)); 
+        pathname = path.resolve('/', path.normalize(pathname));
 
         var last = pathname.length - 1;
         if (pathname.charAt(last) === '/') { pathname = pathname.substring(0, last); }
@@ -550,12 +570,12 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
         return subpaths;
     };
 
-    /* 
+    /*
      * match {function}                             - match subroutes and subpaths
-     *      @subroutes {array<object|string>}       - parts of the route 
+     *      @subroutes {array<object|string>}       - parts of the route
      *          [...]
      *              .name {string}                  - route parameter name
-     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard 
+     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard
      *      @subpaths {array<string>}               - url encoded parts of the path
      *      return {object}                         - url encoded route arguments as name value pairs
      */
@@ -571,7 +591,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
 
             if (subroute == undefined) { return; } // match unsuccessful
             if (typeof subroute === 'string' || subroute instanceof String) {
-                if (subroute == subpath) { continue; } // continue matching 
+                if (subroute == subpath) { continue; } // continue matching
                 else { return; } // match unsuccessful
             } else if (typeof subroute === 'object') { // parameter marker
                 if (subroute.wildcard) { // wildcard
@@ -584,34 +604,34 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
             } else { break; } // end matching
         }
 
-        if (wildcard != undefined) { 
+        if (wildcard != undefined) {
             args[wildcard] = subpaths.slice(index).join('/'); // resolve wildcard parameter, store argument
         } else if (index != subroutes.length) { return; } // no match
 
         return args; // match
     };
 
-    /* 
+    /*
     * compose {function}                            - compose path from subroutes
-    *       @subroutes {array<object|string>}       - parts of the route 
+    *       @subroutes {array<object|string>}       - parts of the route
     *           [...]
     *               .name {string}                  - route parameter name
-    *               .wildcard {boolean|undefined}   - true if route parameter is wildcard 
+    *               .wildcard {boolean|undefined}   - true if route parameter is wildcard
     *       [@args] {object|undefined}              - url encoded route arguments as name value pairs
-    *       return {string}                         - url encoded path 
+    *       return {string}                         - url encoded path
     */
     var compose = function(subroutes, args) {
         args = args || {};
 
         var subpaths = [];
-        subroutes.forEach(function(subroute, index, route) { 
+        subroutes.forEach(function(subroute, index, route) {
             if (typeof subroute === 'string' || subroute instanceof String) {
                 subpaths.push(subroute);
             } else if (typeof subroute === 'object') { // parameter marker
                 var arg = args[subroute.name];
                 if (arg == undefined) { arg = ''; }
 
-                if (subroute.wildcard) { 
+                if (subroute.wildcard) {
                     subpaths.push(arg.charAt(0) === '/' ? arg.substring(1) : arg); // wildcard parameter
                 } else { subpaths.push(arg); } // parameter
             }
@@ -643,7 +663,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
                     if (!(name in args)) { continue; } // no argument to validate
 
                     var arg = args[name], constraint = constraints[name];
-                    if ( // validate argument against parameter constraint 
+                    if ( // validate argument against parameter constraint
                         (constraint instanceof RegExp && !constraint.test(arg)) || // regex constraint
                         (util.isArray(constraint) && constraint.indexOf(arg) == -1) // array of strings constraint
                     ) { return name; } // invalid
@@ -673,28 +693,28 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
     router.add('%2F+path/file.ext', {'name': 'route 4'}, onRoute); // 4th route
 
     var constraints;
-    constraints = function(args) { 
-        return args.param1 != 'not1' && args.param2 != 'not1' && this.expression.indexOf('constrain') != -1; 
+    constraints = function(args) {
+        return args.param1 != 'not1' && args.param2 != 'not1' && this.expression.indexOf('constrain') != -1;
     };
-    router.add('/constraint/:param1/:param2', // 1st constrained route 
+    router.add('/constraint/:param1/:param2', // 1st constrained route
         {'name': 'constrained route 1', 'method': ['connect'], 'constraints': constraints}).on('route', onRoute);
     constraints = {'param1': /^(?!(?:not2)).*$/, 'param2': /^(?!(?:not2)).*$/, 'param3': /^(?!(?:not2)).*$/};
-    var routeConstraint2 = router.add('/constraint/:param1/:param2', // 2nd constrained route 
+    var routeConstraint2 = router.add('/constraint/:param1/:param2', // 2nd constrained route
         {'name': 'constrained route 2', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
     routeConstraint2.constraints = constraints;
     constraints = {'param1': ['not1', 'not2'], 'param2': /^not[1-2]$/};
-    router.add('/constraint/:param1/:param2', // 3rd constrained route 
+    router.add('/constraint/:param1/:param2', // 3rd constrained route
         {'name': 'constrained route 3', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
 
     router.add.get('get route', '/method/:param1', {'name': 'overridden name'}).on('route', onRoute); // GET route
     router.add('/method/:param1', {'name': 'post route', 'method': 'POST'}).on('route', onRoute); // POST route
     var routeGetPost = router.add('get/post/:param', // GET & POST route
-        {'name': 'get & post route', 'method': ['POST', 'GET', 'POST', ' pOsT ']}); 
+        {'name': 'get & post route', 'method': ['POST', 'GET', 'POST', ' pOsT ']});
     routeGetPost.on('route', onRoute);
 
     // add invalid routes
     assert.throws(
-        function() { router.add('/path/:p1/:p2/:p2/:p1/:p2', {'method': 'get'}); }, 
+        function() { router.add('/path/:p1/:p2/:p2/:p1/:p2', {'method': 'get'}); },
         function(err) { return (err instanceof Error && /\s+3\s+/.test(err.message) && /p2/.test(err.message)); },
         'Defining a route with duplicate parameters did not fail as expected');
     assert.throws(
@@ -703,80 +723,80 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
         'Defining a route with an invalid method did not fail as expected');
     assert.throws(
         function() { router.add('/invalid/method/:param1', {'method': 'INvalid'}); },
-        function(err) { 
-            return (err instanceof Error && /INvalid/.test(err.message) && /route\sbecause/.test(err.message)); 
+        function(err) {
+            return (err instanceof Error && /INvalid/.test(err.message) && /route\sbecause/.test(err.message));
         },
         'Defining a route with an invalid method did not fail as expected');
     assert.throws(
         function() { router.add('/invalid/constraints/:p1', {'name': 'bad constraints', 'constraints': 'invalid'}); },
-        function(err) { 
-            return (err instanceof Error && 
-                /bad\sconstraints/.test(err.message) && /contraints\sare\sinvalid/.test(err.message)); 
+        function(err) {
+            return (err instanceof Error &&
+                /bad\sconstraints/.test(err.message) && /contraints\sare\sinvalid/.test(err.message));
         },
         'Defining a route with invalid constraints did not fail as expected');
     assert.throws(
-        function() { 
-            router.add('/invalid/constraint/:param1', 
-                {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': 'value1'}}); 
+        function() {
+            router.add('/invalid/constraint/:param1',
+                {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': 'value1'}});
         },
-        function(err) { 
-            return (err instanceof Error && /bad\sconstraint/.test(err.message) && 
-                /param1/.test(err.message) && /regular\sexpression/.test(err.message)); 
+        function(err) {
+            return (err instanceof Error && /bad\sconstraint/.test(err.message) &&
+                /param1/.test(err.message) && /regular\sexpression/.test(err.message));
         },
         'Defining a route with an invalid constraint did not fail as expected');
     assert.throws(
-        function() { 
-            router.add('/invalid/constraint/:param1', 
-                {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': ['value1', 1, '1']}}); 
+        function() {
+            router.add('/invalid/constraint/:param1',
+                {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': ['value1', 1, '1']}});
         },
-        function(err) { 
-            return (err instanceof Error && /bad\sconstraint/.test(err.message) && 
-                /param1/.test(err.message) && /regular\sexpression/.test(err.message)); 
+        function(err) {
+            return (err instanceof Error && /bad\sconstraint/.test(err.message) &&
+                /param1/.test(err.message) && /regular\sexpression/.test(err.message));
         },
         'Defining a route with an invalid constraint did not fail as expected');
 
     // add duplicate route name
-    router.add.connect('/duplicate/1', {'name': 'duplicate route name', 'method': ['options', 'DELete']}); 
+    router.add.connect('/duplicate/1', {'name': 'duplicate route name', 'method': ['options', 'DELete']});
     assert.throws(
-        function() { router.add('/duplicate/2', {'name': 'duplicate route name', 'method': 'PUT'}); }, 
+        function() { router.add('/duplicate/2', {'name': 'duplicate route name', 'method': 'PUT'}); },
         /duplicate[\s]route/,
-        'Defining a route with a duplicate name did not fail as expected'); 
+        'Defining a route with a duplicate name did not fail as expected');
 
     // route path with 1st route
     router.route('/path/arg1/arg2/ /../a/r/g/3/', {'method': 'POST'});
     assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
-    assert.strictEqual(result.args.param1, 'arg1', 
+    assert.strictEqual(result.args.param1, 'arg1',
         "The path's 1st argument to the 1st route did not match the expected value");
-    assert.strictEqual(result.args.param2, 'arg2', 
+    assert.strictEqual(result.args.param2, 'arg2',
         "The path's 2nd argument to the 1st route did not match the expected value");
-    assert.strictEqual(result.args.param3, 'a/r/g/3', 
+    assert.strictEqual(result.args.param3, 'a/r/g/3',
         "The path's 3rd argument to the 1st route did not match the expected value");
 
     // route paths with 2nd route
     var callback = {'result': {}};
     router.route('path/arg1/arg2', function(args) { callback.result = {'name': this.name, 'args': args}; });
     assert.strictEqual(callback.result.name, 'route 2', 'The path did not match the 2nd route');
-    assert.strictEqual(callback.result.args.param1, 'arg1', 
+    assert.strictEqual(callback.result.args.param1, 'arg1',
         "The path's 1st argument to the 2nd route did not match the expected value");
-    router.route('path/arg1/arg2', {'method': 'get'}, 
+    router.route('path/arg1/arg2', {'method': 'get'},
         function(args) { callback.result = {'name': this.name, 'args': args}; });
     assert.strictEqual(result.name, 'route 2', 'The path did not match the 2nd route');
     assert.strictEqual(callback.result.name, 'route 2', 'The path did not match the 2nd route');
-    assert.strictEqual(result.args.param1, 'arg1', 
+    assert.strictEqual(result.args.param1, 'arg1',
         "The path's 1st argument to the 2nd route did not match the expected value");
-    assert.strictEqual(callback.result.args.param1, 'arg1', 
+    assert.strictEqual(callback.result.args.param1, 'arg1',
         "The path's 1st argument to the 2nd route did not match the expected value");
-    assert.strictEqual(result.args.param2, 'arg2', 
+    assert.strictEqual(result.args.param2, 'arg2',
         "The path's 2nd argument to the 2nd route did not match the expected value");
-    assert.strictEqual(callback.result.args.param2, 'arg2', 
+    assert.strictEqual(callback.result.args.param2, 'arg2',
         "The path's 2nd argument to the 2nd route did not match the expected value");
 
     // route path with 3rd route
     router.route('/arg1/arg2/path/');
     assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
-    assert.strictEqual(result.args.param1, 'arg1', 
+    assert.strictEqual(result.args.param1, 'arg1',
         "The path's 1st argument to the 3rd route did not match the expected value");
-    assert.strictEqual(result.args.param2, 'arg2', 
+    assert.strictEqual(result.args.param2, 'arg2',
         "The path's 2nd argument to the 3rd route did not match the expected value");
 
     // route path with 4th route
@@ -802,7 +822,7 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
     assert.strictEqual(result.name, 'post route', 'The path did not match the POST route');
 
     // route path with GET & POST route
-    assert.strictEqual(routeGetPost, router.route('/get/post/method', {'method': 'GEt'}), 
+    assert.strictEqual(routeGetPost, router.route('/get/post/method', {'method': 'GEt'}),
         'The path did not match the GET & POST route');
     assert.strictEqual(result.name, 'get & post route', 'The path did not match the GET & POST route');
     assert.strictEqual(routeGetPost, router.route('/get/post/method', {'method': 'POST '}),
@@ -814,9 +834,9 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
     // route path with invalid method
     assert.throws(
         function() { router.route('/bad/method/path', {'method': '  bad METHOD '}); },
-        function(err) { 
-            return (err instanceof Error && 
-                /bad\sMETHOD/.test(err.message) && /bad[\/]method[\/]path/.test(err.message)); 
+        function(err) {
+            return (err instanceof Error &&
+                /bad\sMETHOD/.test(err.message) && /bad[\/]method[\/]path/.test(err.message));
         },
         'Routing a path with an invalid method did not fail as expected');
 
@@ -824,37 +844,37 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
 
     // assemble path with 1st route
     result = router.path('route 1', {'param1': 'arg1', 'param2': 'arg2', 'param3': '/a/r/g/3/'});
-    assert.strictEqual(result, '/path/arg1/arg2/a/r/g/3/', 
+    assert.strictEqual(result, '/path/arg1/arg2/a/r/g/3/',
         'The path assembled using the 1st route did not match the expected value');
 
     // assemble path with 2nd route
     result = router.path('route 2', {'param1': 'arg1', 'param2': 'arg2'});
-    assert.strictEqual(result, '/path/arg1/arg2', 
+    assert.strictEqual(result, '/path/arg1/arg2',
         'The path assembled using the 2nd route did not match the expected value');
 
     // assemble path with 3rd route
     result = router.path('route 3', {'param1': 'arg1', 'param2': 'arg2'});
-    assert.strictEqual(result, '/arg1/arg2/path', 
+    assert.strictEqual(result, '/arg1/arg2/path',
         'The path assembled using the 3rd route did not match the expected value');
 
     // assemble path with 4th route
     result = router.path('route 4');
-    assert.strictEqual(result, '/%2F+path/file.ext', 
+    assert.strictEqual(result, '/%2F+path/file.ext',
         'The path assembled using the 4th route did not match the expected value');
 
     // assemble path with constrained routes
     assert.throws(
         function() { router.path('constrained route 1', {'param1': 'not1', 'param2': '1'}); },
-        function(err) { 
-            return (err instanceof Error && 
-                /constrained\sroute\s1/.test(err.message) && /one\sor\smore/.test(err.message)); 
+        function(err) {
+            return (err instanceof Error &&
+                /constrained\sroute\s1/.test(err.message) && /one\sor\smore/.test(err.message));
         },
         'Assembling a path with the 1st constrained route and an invalid argument did not fail as expected');
     assert.throws(
         function() { router.path('constrained route 2', {'param1': 'not2', 'param2': '2'}); },
-        function(err) { 
-            return (err instanceof Error && 
-                /constrained\sroute\s2/.test(err.message) && /param1/.test(err.message) && /not2/.test(err.message)); 
+        function(err) {
+            return (err instanceof Error &&
+                /constrained\sroute\s2/.test(err.message) && /param1/.test(err.message) && /not2/.test(err.message));
         },
         'Assembling a path with the 2nd constrained route and an invalid argument did not fail as expected');
     result = router.path('constrained route 3', {'param1': 'not1', 'param2': 'not2'});
@@ -871,12 +891,18 @@ router.route('/guinea/pig'); // outputs 'Sorry! Not found'
     result = '';
 
     // router events
-    router.on('fail', function() { if (this === router) { result = 'fail'; } });
-    router.route('/*/*/*/no/matching/route/*/*/*/');
-    assert.strictEqual(result, 'fail', "The router 'fail' event did not occur as expected");
-    router.on('success', function(route, args) {
-        if (this === router && route === firstRoute && args.param1 === 'arg1') { result = 'success'; }
+    router.on('fail', function(event) {
+        if (event.pathname !== '/*/*/*/no/matching/route/*/*/*/' || event.method !== '  Get') { return; }
+        if (this !== router) { return; }
+        result = 'fail';
     });
-    router.route('/path/arg1/arg2/arg3', {'method': 'POST'});
+    router.route('/*/*/*/no/matching/route/*/*/*/', {'method': '  Get'});
+    assert.strictEqual(result, 'fail', "The router 'fail' event did not occur as expected");
+    router.on('success', function(event) {
+        if (event.pathname !== '/path/arg1/arg2/arg3' || event.method !== 'PoST') { return; }
+        if (this !== router || event.route !== firstRoute || event.args.param1 !== 'arg1') { return; }
+        result = 'success';
+    });
+    router.route('/path/arg1/arg2/arg3', {'method': 'PoST'});
     assert.strictEqual(result, 'success', "The router 'success' event did not occur as expected");
 })();
