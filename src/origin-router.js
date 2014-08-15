@@ -21,12 +21,12 @@ router.route('/dog/bulldog'); // outputs nothing
 
 /*{ @! example code start } [Route Parameters]
 // add more routes using ':' to denote parameters ...
-router.add('/dog/:color',
-    function(args) { console.log('I have a ' + args.color + ' colored dog'); });
-router.add('/cat/:color',
-    function(args) { console.log('I have a ' + args.color + ' colored cat'); });
-router.add('/:pet/homework',
-    function(args) { console.log('My ' + args.pet + ' ate my homework'); })
+router.add('/dog/:color', function(event) {
+    console.log('I have a ' + event.args.color + ' colored dog'); });
+router.add('/cat/:color', function(event) {
+    console.log('I have a ' + event.args.color + ' colored cat'); });
+router.add('/:pet/homework', function(event) {
+    console.log('My ' + event.args.pet + ' ate my homework'); })
 
 // route some more paths that match the added routes ...
 router.route('/dog/brown'); // outputs 'I have a brown colored dog'
@@ -40,8 +40,8 @@ router.route('/dog/homework');  // outputs 'I have a homework colored dog'
 
 /*{ @! example code start } [Route Wildcard Parameters]
 // add a route with a wildcard parameter denoted by a '*' at the end ...
-router.add('/calico/:pet/:colors*',
-    function(args) { console.log('I have a ' + args.colors + ' ' + args.pet); });
+router.add('/calico/:pet/:colors*', function(event) {
+    console.log('I have a ' + event.args.colors + ' ' + event.args.pet); });
 
 // the wildcard parameter matches anything at the end of the path ...
 router.route('/calico/cat/white/orange/gray'); // outputs
@@ -52,8 +52,8 @@ router.route('/calico/cat/white/orange/gray'); // outputs
 // add a route with parameter constraints ...
 router.add('/dogs/:count/:breed', // count must be more than 0
     {'constraints': function(args) { return parseInt(args.count) > 0; },
-    function(args) {
-        console.log('I have ' + args.count + ' ' + args.breed + 's');
+    function(event) {
+        console.log('I have ' + event.args.count + ' ' + event.args.breed + 's');
     });
 
 router.route('/dogs/0/poodle'); // outputs nothing because the count is invalid
@@ -63,8 +63,9 @@ router.route('/dogs/2/poodles'); // outputs 'I have 2 poodles'
 // as either a regular expression or an array of valid strings ...
 router.add('cats/:count/:breed'
     {'constraints': 'count': /(two|three)/, 'breed': ['persian', 'siamese']},
-    function(args) {
-        console.log('I have ' + args.count + ' ' + args.breed + ' cats');
+    function(event) {
+        console.log('I have ' + event.args.count + ' ' +
+            event.args.breed + ' cats');
     });
 
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
@@ -101,12 +102,16 @@ router.route.post('/bird'); // outputs 'I have a bird'
 
 /*{ @! example code start } [Reverse Routing]
 // add a route and give it a name for future reference ...
-router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(args) {
-    console.log('I have a mix breed ' + args.pet + ' that is a ' + args.breeds); });
+router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
+        console.log('I have a mix breed ' + event.args.pet +
+            ' that is a ' + event.args.breeds);
+    });
 
 // alternatively the route's name can pe passed as the first argument like so...
-router.add('pure breed', '/:pet/pure/:breed', function(args) {
-    console.log('I have a pure breed ' + args.pet + ' that is a ' + args.breed); });
+router.add('pure breed', '/:pet/pure/:breed', function(event) {
+        console.log('I have a pure breed ' + event.args.pet +
+            ' that is a ' + event.args.breed);
+    });
 
 // generate a path using a route ...
 var pathname = router.path('mixed breed', // use the route named 'mixed breed'
@@ -118,8 +123,8 @@ console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 /*{ @! example code start } [Events]
 // know when a route routes a path by listening to the route's 'route' event ...
 var route = router.add('/hamster/:color', {'name': 'hamster'});
-route.on('route',
-    function(args) { console.log('I have a ' + args.color + ' ' + this.name); });
+route.on('route', function(event) {
+    console.log('I have a ' + event.args.color + ' ' + this.name); });
 
 router.route('/hamster/brown'); // outputs 'I have a brown hamster'
 
