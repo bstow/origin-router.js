@@ -7,13 +7,16 @@ require(path.join(__dirname, 'src', package.name + '.js')); // test source
 // readme
 var readme = '';
 
+// examples
+var examples = '';
+
 // license
-var license = fs.readFileSync(path.join(__dirname, 'LICENSE'), 'utf8'); 
+var license = fs.readFileSync(path.join(__dirname, 'LICENSE'), 'utf8');
 var longestLicenseLine = 0; // comment out license
 license.split('\n').forEach(function(line) { longestLicenseLine = Math.max(longestLicenseLine, line.length); });
-license = '/' + Array(longestLicenseLine).join('*') + '\n' + 
-    license.trim() + '\n' + 
-    Array(longestLicenseLine).join('*') + '/\n'; 
+license = '/' + Array(longestLicenseLine).join('*') + '\n' +
+    license.trim() + '\n' +
+    Array(longestLicenseLine).join('*') + '/\n';
 
 // source
 var source = fs.readFileSync(path.join(__dirname, 'src', package.name + '.js'), 'utf8'); // source
@@ -24,6 +27,7 @@ source = source.replace('{ @! version }', package.version); // inject version nu
 // examples
 var exampleStart = '{ @! example code start }';
 var exampleEnd = '{ @! example code end }';
+var firstExample = true;
 while (true) {
     var exampleStartIndex = source.indexOf(exampleStart);
     if (exampleStartIndex == -1) { break; }
@@ -38,6 +42,16 @@ while (true) {
     example = example.split('\n').map(function(line) { return line.replace(/\s*$/, ''); }).join('\n');
     example = example.trim();
 
+    // add the example source to the examples executable
+    examples += '\n';
+    examples += '/**' + Array(title.length).join('*') + '***\n';
+    examples += ' * ' + title + ' *\n';
+    examples += ' **' + Array(title.length).join('*') + '***/' + Array(Math.max(50 - title.length, 0)).join(' ') +
+        'console.log(' +
+            JSON.stringify((firstExample ? '' : '\n') + title + '\n' + Array(title.length).join('-')) +
+        ');\n\n';
+    examples += example + '\n\n';
+
     var readmeExample = '\n####' + title + '\n' + '```javascript\n' + example + '\n```\n\n';
     readme += readmeExample;
 
@@ -45,17 +59,39 @@ while (true) {
     sourceExample.unshift('');
     sourceExample.unshift((' ' + '[Example: ' + title + ']'));
     sourceExample = sourceExample.join('\n * ') + '\n ';
-    
+
     // inject revised example into source
-    source = source.slice(0, exampleStartIndex) + 
-        sourceExample + 
+    source = source.slice(0, exampleStartIndex) +
+        sourceExample +
         source.slice(exampleEndIndex + exampleEnd.length, source.length);
+
+    firstExample = false;
 }
 
 var build = [license, source].join('\n'); // assemble source for build
-fs.writeFileSync(path.join(__dirname, package.name + '.js'), build, 'utf8'); // write build
-fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), build, 'utf8'); // write build
 
-fs.writeFileSync(path.join(__dirname, 'README.md'), readme, 'utf8'); // write build
+fs.writeFileSync(path.join(__dirname, package.name + '.js'), build, 'utf8'); // write executable
+require(path.join(__dirname, package.name + '.js')); // test executable
 
-require(path.join(__dirname, package.name + '.js')); // test build
+fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), build, 'utf8'); // write versioned executable
+require(path.join(__dirname, './builds/v.' + package.version + '.js')); // test versioned executable
+
+examples = "var Router = require('./" + package.name + '.js' + "\').Router;\n\n" + examples;
+fs.writeFileSync(path.join(__dirname, './example.js'), examples, 'utf8'); // write example
+// trap output of example to test for the expected outcome
+var log = console.log;
+var exampleOutputs = []; console.log = function() { exampleOutputs.push([].slice.call(arguments)); };
+require(path.join(__dirname, './example.js')); // test example
+console.log = log; // restore output
+expectedExampleOutputLines = fs.readFileSync(path.join(__dirname, './resources/example-output.txt'), 'utf8').split('\n');
+exampleOutputs.join('\n').split('\n').forEach(function(exampleOutputLine, lineNumber) {
+    if (lineNumber >= expectedExampleOutputLines.length) { throw new Error('Example output was longer than expected'); }
+    if (exampleOutputLine.trim() !== expectedExampleOutputLines[lineNumber].trim()) {
+        throw new Error(
+            "Example output was different than expected ('" +
+                exampleOutputLine + "' did not match '" + expectedExampleOutputLines[lineNumber] + "' " +
+                'on line ' + (lineNumber + 1) + ")");
+    };
+});
+
+fs.writeFileSync(path.join(__dirname, './README.md'), readme, 'utf8'); // write readme

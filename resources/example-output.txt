@@ -1,0 +1,48 @@
+Setup
+----
+
+Routing
+------
+I have a cat
+I have a dog
+I have a dog
+
+Route Parameters
+---------------
+I have a brown colored dog
+I have a white colored cat
+My fish ate my homework
+I have a homework colored dog
+
+Route Wildcard Parameters
+------------------------
+I have a white/orange/gray cat
+
+Parameter Constraints
+--------------------
+I have 2 poodles
+I have two persian cats
+
+HTTP Method-Specific Routing
+---------------------------
+I have a fish
+I have a bird
+I have a bird
+I have a fish
+I have a bird
+I have a fish
+I have a bird
+
+Reverse Routing
+--------------
+/dog/mixed/beagle/pug/terrier
+
+Events
+-----
+I have a brown hamster
+No route found for /guinea/pig
+I have a gray hamster
+/hamster/gray routed by route 'hamster'
+
+Using with a Server
+------------------
