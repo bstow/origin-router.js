@@ -187,9 +187,10 @@ SOFTWARE.
 (function() { 'use strict';
     var events = require('events'), path = require('path'), util = require('util');
 
-    var http = {'methods': ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']}; // http methods
+    var HTTP = {'METHODS': // http methods
+        ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']};
 
-    var argumentMaps = {};
+    var argumentMaps = {}; // argument mappings for functions with variable parameters
 
     /*
      * Route {prototype}                                            - route for http requests
@@ -310,14 +311,14 @@ SOFTWARE.
             'enumerable': false, 'configurable': false});
 
         var methods = routes.methods = {} // routes segregated by method
-        http.methods.forEach(function(method) { methods[method.toLowerCase()] = {}; });
+        HTTP.METHODS.forEach(function(method) { methods[method.toLowerCase()] = {}; });
 
         // setup route stores
         [routes].concat(Object.keys(methods).map(function(key) { return methods[key]; })).forEach(
             function(store) { store.by = {'name': {}, 'order': []}; } // store by name and order
         );
 
-        http.methods.forEach(function(method) {
+        HTTP.METHODS.forEach(function(method) {
             self.add[method.toLowerCase()] = function() { // http method add method
                 var args = argumentMaps.add.apply(self, arguments); // associate arguments to parameters
                 var name = args.name, expression = args.expression, options = args.options, callback = args.callback;
@@ -516,7 +517,7 @@ SOFTWARE.
         if (name in routes.by.name) { // compose path with the named route
             var data = routes.by.name[name], route = data.route, subroutes = data.subroutes;
 
-            // validate
+            // validate constraints
             var constraints = route.constraints;
             var valid = validate(args, constraints);
             if (valid !== true) { // invalid
@@ -530,6 +531,18 @@ SOFTWARE.
                         "one or more of the arguments are invalid according to the route's constraints");
                 }
             }
+
+            // validate arguments
+            subroutes.forEach(function(subroute) {
+                if (typeof subroute === 'object' && !subroute.wildcard) { // non-wildcard parameter marker
+                    var arg = args[subroute.name];
+                    if (arg != undefined && arg.indexOf('/') !== -1) { // invalid argument for non-wildcard parameter
+                        throw new Error("Couldn't generate path with route '" + name + "' because the " +
+                            "'" + subroute.name + "' argument value of '" + arg + "' contains '/' " +
+                            "but isn't a wildcard");
+                    }
+                }
+            });
 
             return compose(subroutes, args);
         } else {
@@ -666,9 +679,8 @@ SOFTWARE.
 
         var subpaths = [];
         subroutes.forEach(function(subroute, index, route) {
-            if (typeof subroute === 'string' || subroute instanceof String) {
-                subpaths.push(subroute);
-            } else if (typeof subroute === 'object') { // parameter marker
+            if (typeof subroute === 'string' || subroute instanceof String) { subpaths.push(subroute); }
+            else if (typeof subroute === 'object') { // parameter marker
                 var arg = args[subroute.name];
                 if (arg == undefined) { arg = ''; }
 

@@ -52,9 +52,11 @@ while (true) {
         ');\n\n';
     examples += example + '\n\n';
 
+    // add the example source to the readme as an example for reference
     var readmeExample = '\n####' + title + '\n' + '```javascript\n' + example + '\n```\n\n';
     readme += readmeExample;
 
+    // add the example to the source code as an example for reference
     var sourceExample = example.split('\n');
     sourceExample.unshift('');
     sourceExample.unshift((' ' + '[Example: ' + title + ']'));
@@ -70,12 +72,16 @@ while (true) {
 
 var build = [license, source].join('\n'); // assemble source for build
 
+// executable
 fs.writeFileSync(path.join(__dirname, package.name + '.js'), build, 'utf8'); // write executable
 require(path.join(__dirname, package.name + '.js')); // test executable
 
-fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), build, 'utf8'); // write versioned executable
+// versioned executable
+fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), build, // write versioned executable
+    'utf8');
 require(path.join(__dirname, './builds/v.' + package.version + '.js')); // test versioned executable
 
+// examples executable
 examples = "var Router = require('./" + package.name + '.js' + "\').Router;\n\n" + examples;
 fs.writeFileSync(path.join(__dirname, './example.js'), examples, 'utf8'); // write example
 // trap output of example to test for the expected outcome
@@ -83,9 +89,13 @@ var log = console.log;
 var exampleOutputs = []; console.log = function() { exampleOutputs.push([].slice.call(arguments)); };
 require(path.join(__dirname, './example.js')); // test example
 console.log = log; // restore output
-expectedExampleOutputLines = fs.readFileSync(path.join(__dirname, './resources/example-output.txt'), 'utf8').split('\n');
+expectedExampleOutputLines = fs.readFileSync(path.join(__dirname, './resources/example-output.txt'),
+    'utf8').split('\n');
 exampleOutputs.join('\n').split('\n').forEach(function(exampleOutputLine, lineNumber) {
-    if (lineNumber >= expectedExampleOutputLines.length) { throw new Error('Example output was longer than expected'); }
+    if (lineNumber >= expectedExampleOutputLines.length) {
+        throw new Error('Example output was longer than expected');
+    }
+
     if (exampleOutputLine.trim() !== expectedExampleOutputLines[lineNumber].trim()) {
         throw new Error(
             "Example output was different than expected ('" +
@@ -94,4 +104,5 @@ exampleOutputs.join('\n').split('\n').forEach(function(exampleOutputLine, lineNu
     };
 });
 
+// readme
 fs.writeFileSync(path.join(__dirname, './README.md'), readme, 'utf8'); // write readme

@@ -154,9 +154,10 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
 (function() { 'use strict';
     var events = require('events'), path = require('path'), util = require('util');
 
-    var http = {'methods': ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']}; // http methods
+    var HTTP = {'METHODS': // http methods
+        ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']};
 
-    var argumentMaps = {};
+    var argumentMaps = {}; // argument mappings for functions with variable parameters
 
     /*
      * Route {prototype}                                            - route for http requests
@@ -277,14 +278,14 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
             'enumerable': false, 'configurable': false});
 
         var methods = routes.methods = {} // routes segregated by method
-        http.methods.forEach(function(method) { methods[method.toLowerCase()] = {}; });
+        HTTP.METHODS.forEach(function(method) { methods[method.toLowerCase()] = {}; });
 
         // setup route stores
         [routes].concat(Object.keys(methods).map(function(key) { return methods[key]; })).forEach(
             function(store) { store.by = {'name': {}, 'order': []}; } // store by name and order
         );
 
-        http.methods.forEach(function(method) {
+        HTTP.METHODS.forEach(function(method) {
             self.add[method.toLowerCase()] = function() { // http method add method
                 var args = argumentMaps.add.apply(self, arguments); // associate arguments to parameters
                 var name = args.name, expression = args.expression, options = args.options, callback = args.callback;
@@ -483,7 +484,7 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
         if (name in routes.by.name) { // compose path with the named route
             var data = routes.by.name[name], route = data.route, subroutes = data.subroutes;
 
-            // validate
+            // validate constraints
             var constraints = route.constraints;
             var valid = validate(args, constraints);
             if (valid !== true) { // invalid
@@ -497,6 +498,18 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
                         "one or more of the arguments are invalid according to the route's constraints");
                 }
             }
+
+            // validate arguments
+            subroutes.forEach(function(subroute) {
+                if (typeof subroute === 'object' && !subroute.wildcard) { // non-wildcard parameter marker
+                    var arg = args[subroute.name];
+                    if (arg != undefined && arg.indexOf('/') !== -1) { // invalid argument for non-wildcard parameter
+                        throw new Error("Couldn't generate path with route '" + name + "' because the " +
+                            "'" + subroute.name + "' argument value of '" + arg + "' contains '/' " +
+                            "but isn't a wildcard");
+                    }
+                }
+            });
 
             return compose(subroutes, args);
         } else {
@@ -633,9 +646,8 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
 
         var subpaths = [];
         subroutes.forEach(function(subroute, index, route) {
-            if (typeof subroute === 'string' || subroute instanceof String) {
-                subpaths.push(subroute);
-            } else if (typeof subroute === 'object') { // parameter marker
+            if (typeof subroute === 'string' || subroute instanceof String) { subpaths.push(subroute); }
+            else if (typeof subroute === 'object') { // parameter marker
                 var arg = args[subroute.name];
                 if (arg == undefined) { arg = ''; }
 
@@ -869,6 +881,15 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
     result = router.path('route 4');
     assert.strictEqual(result, '/%2F+path/file.ext',
         'The path assembled using the 4th route did not match the expected value');
+
+    // assemble path with 1st route
+    assert.throws(
+        function() { router.path('route 1', {'param1': 'arg1', 'param2': 'arg/2', 'param3': '/a/r/g/3/'}); },
+        function(err) {
+            return (err instanceof Error &&
+                /route\s1/.test(err.message) && /param2/.test(err.message) && /arg\/2/.test(err.message));
+        },
+        'Assembling a path with the 1st route and an invalid argument did not fail as expected');
 
     // assemble path with constrained routes
     assert.throws(
