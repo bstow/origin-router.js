@@ -185,7 +185,7 @@ SOFTWARE.
  */
 
 (function() { 'use strict';
-    var events = require('events'), path = require('path'), util = require('util');
+    var events = require('events'), util = require('util');
 
     var HTTP = {'METHODS': // http methods
         ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']};
@@ -202,9 +202,10 @@ SOFTWARE.
      *          .name {string|undefined}                            - route name
      *          .method {string|array<string>|undefined}            - route's applicable http method(s)
      *          .constraints {function|object<RegExp|array<string>>|undefined} - route argument constraints
-     *              [@arguments] {object<string>}                   - url encoded route arguments as name value pairs
+     *              [@arguments] {object<string>}                   - route arguments as name value pairs
      *              this {Route}                                    - route
      *              return {boolean}                                - true if valid, false if invalid
+     *          .encoded {boolean|undefined}                        - url encoded route expression indicator
      *          .ignoreCase {boolean|undefined}                     - case insensitive path matching
      *
      * Route.prototype.expression {string}                          - get route expression
@@ -214,9 +215,11 @@ SOFTWARE.
      * Route.prototype.method {string|array<string>|undefined}      - get route's applicable http method(s)
      *
      * Route.prototype.constraints {function|object<RegExp|<array<string>>|undefined} - route argument constraints
-     *      [@arguments] {object<string>}                           - url encoded route arguments as name value pairs
+     *      [@arguments] {object<string>}                           - route arguments as name value pairs
      *      this {Route}                                            - route
      *      return {boolean}                                        - true if valid, false if invalid
+     *
+     * Route.prototype.encoded {boolean|undefined}                  - get url encoded route expression indicator
      *
      * Route.prototype.ignoreCase {boolean|undefined}               - case insensitive path matching
      *
@@ -227,7 +230,7 @@ SOFTWARE.
      *                  .pathname <string>                          - url encoded pathname
      *                  .method <string|undefined>                  - http method
      *                  .route {Route}                              - route
-     *                  .arguments {object<string>}                 - url encoded route arguments as name value pairs
+     *                  .arguments {object<string>}                 - route arguments as name value pairs
      *              this {Route}                                    - route
      */
     var Route = function(expression, options) {
@@ -235,7 +238,7 @@ SOFTWARE.
 
         var self = this;
 
-        var name, method, ignoreCase, constraints; // options
+        var name, method, constraints, encoded, ignoreCase; // options
         if (options != undefined) { name = options.name, method = options.method; }
 
         // accessors
@@ -249,11 +252,17 @@ SOFTWARE.
         Object.defineProperty(this, 'method', {'get': function() { return method; }, // method getter
             'enumerable': true, 'configurable': false});
 
+        Object.defineProperty(this, 'encoded', {
+            'get': function() { return encoded; }, // encoded getter
+            'enumerable': true, 'configurable': false});
+        if ('encoded' in options) { encoded = options.encoded; } // set encoded
+        else { encoded = false; } // default encoded
+
         Object.defineProperty(this, 'ignoreCase', {
             'get': function() { return ignoreCase; }, // ignore case getter
             'set': function(value) { ignoreCase = value; }, // ignore case setter
             'enumerable': true, 'configurable': false});
-        if ('ignoreCase' in options) { this.ignoreCase = options.ignoreCase; } // set ignore case
+        if ('ignoreCase' in options) { ignoreCase = options.ignoreCase; } // set ignore case
         else { ignoreCase = false; } // default ignore case
 
         Object.defineProperty(this, 'constraints', {
@@ -306,7 +315,7 @@ SOFTWARE.
      *                  .pathname <string>          - url encoded pathname
      *                  .method <string|undefined>  - http method
      *                  .route {Route}              - matching route
-     *                  .arguments {object<string>} - url encoded route arguments as name value pairs
+     *                  .arguments {object<string>} - route arguments as name value pairs
      *              this {Router}                   - router
      *      emits fail {event}                      - occurs upon routing when no matching route found
      *          listener {function}
@@ -373,12 +382,13 @@ SOFTWARE.
      *          .name {string|undefined}                            - route name
      *          .method {string|array<string>|undefined}            - route's applicable http method(s)
      *          .constraints {function|object<RegExp|<array<string>>|undefined} - route argument constraints
-     *              [@arguments] {object<string>}                   - url encoded route arguments as name value pairs
+     *              [@arguments] {object<string>}                   - route arguments as name value pairs
      *              this {Route}                                    - route
      *              return {boolean}                                - true if valid, false if invalid
+     *          .encoded {boolean|undefined}                        - url encoded route expression indicator
      *          .ignoreCase {boolean|undefined}                     - case insensitive path matching
      *      [@callback] {function|undefined}                        - called upon every routing
-     *          [@args] {object<string>}                            - url encoded route arguments as name value pairs
+     *          [@args] {object<string>}                            - route arguments as name value pairs
      *          this {Route}                                        - route
      *      return {Route}                                          - route
      */
@@ -420,12 +430,16 @@ SOFTWARE.
         } else { stores = stores.concat( // collect all method stores
             Object.keys(methods).map(function(key) { return methods[key]; })); }
 
-        var route = new Route(expression, // route event emitter
-            {'name': name, 'method': method, 'constraints': constraints});
-        // forward ignore case option to route
-        if (options != undefined && 'ignoreCase' in options) { route.ignoreCase = options.ignoreCase; }
+        var routeOptions = {'name': name, 'method': method, 'constraints': constraints}; // route options
+        if (options != undefined) { // optional route options
+            // forward encoded option to route
+            if ('encoded' in options) { routeOptions.encoded = options.encoded; }
+            // forward ignore case option to route
+            if ('ignoreCase' in options) { routeOptions.ignoreCase = options.ignoreCase; }
+        }
+        var route = new Route(expression, routeOptions), encoded = route.encoded; // route event emitter
 
-        var subroutes = parse.route(expression); // parse expression into subroutes
+        var subroutes = parse.route(expression, encoded); // parse expression into subroutes
 
         var data = {'route': route, 'subroutes': subroutes};
 
@@ -465,7 +479,7 @@ SOFTWARE.
      *      [@options] {object|undefined}           - options
      *          .method {string|undefined}          - http method
      *      [@callback] {function|undefined}        - called upon routing
-     *          [@args] {object<string>}            - url encoded route arguments as name value pairs
+     *          [@args] {object<string>}            - route arguments as name value pairs
      *          this {Route}                        - route
      *      return {Route|undefined}                - matching route or undefined if no matching route found
      */
@@ -527,7 +541,7 @@ SOFTWARE.
     /*
      * Router.prototype.path {function} - generate a path
      *      @name {string}              - route name
-     *      [@args] {object|undefined}  - url encoded route arguments as name value pairs
+     *      [@args] {object|undefined}  - route arguments as name value pairs
      *      return {string}             - url encoded path
      */
     Router.prototype.path = function(name, args) {
@@ -580,12 +594,15 @@ SOFTWARE.
     /*
      * parse.route {function}                       - parse an expression into subroutes
      *      @expression {string}                    - route expression
-     *      return {array<object|string>}           - parts of the route
+     *      [@decode] {boolean|undefined}           - url decode expression subroutes
+     *      return {array<object>}                  - parts of the route
      *          [...]
-     *              .name {string}                  - route parameter name
+     *              .name {string|undefined}        - route parameter name
      *              .wildcard {boolean|undefined}   - true if route parameter is wildcard
+     *              .path {string|undefined}        - route path part
+     *              .encoded {string|undefined}     - url encoded route path part
      */
-    parse.route = function(expression) {
+    parse.route = function(expression, decode) {
         var last;
 
         var names = {}; // parameter name counts
@@ -599,7 +616,8 @@ SOFTWARE.
 
         var subroutes = expression.split('/');
         subroutes.forEach(function(subroute, index, subroutes) { // parameters
-            if (subroute.charAt(0) === ':') {
+            var marker;
+            if (subroute.charAt(0) === ':') { // parameter
                 last = subroute.length - 1;
 
                 var wildcard = subroute.charAt(last) === '*';
@@ -610,12 +628,23 @@ SOFTWARE.
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
-                var marker = {'name': name}; // parameter marker
+                marker = {'name': name}; // parameter marker
 
                 if (wildcard && index == subroutes.length - 1) { marker.wildcard = true; } // wildcard parameter
+            } else { // path part
+                var path, encoded;
+                if (decode) {
+                    path = decodeURIComponent(subroute);
+                    encoded = subroute;
+                } else {
+                    path = subroute;
+                    encoded = encodeURIComponent(subroute);
+                }
 
-                subroutes[index] = marker;
+                marker = {'path': path, 'encoded': encoded}; // path part marker
             }
+
+            subroutes[index] = marker;
         });
 
         if (collision != undefined) {
@@ -626,34 +655,38 @@ SOFTWARE.
     };
 
     /*
-     * parse.path {function}        - parse path into encoded subpaths
+     * parse.path {function}        - parse url encoded path into subpaths
      *      @pathname {string}      - url encoded path
-     *      return {array<string>}  - url encoded parts of the path
+     *      return {array<string>}  - parts of the path
      */
     parse.path = function(pathname) {
         pathname = pathname.trim();
-
-        // resolve dot directory subpaths for security
-        pathname = path.resolve('/', path.normalize(pathname));
 
         var last = pathname.length - 1;
         if (pathname.charAt(last) === '/') { pathname = pathname.substring(0, last); }
         if (pathname.charAt(0) === '/') { pathname = pathname.substring(1); }
 
-        var subpaths = pathname.split('/');
+        var subpaths = [];
+        pathname.split('/').forEach(function(subpath) {
+            subpath = decodeURIComponent(subpath);
+            if (subpath === '.' || subpath === '..') { return; } // disallow directory subpaths for security
+            subpaths.push(subpath);
+        });
 
         return subpaths;
     };
 
     /*
      * match {function}                             - match subroutes and subpaths
-     *      @subroutes {array<object|string>}       - parts of the route
+     *      @subroutes {array<object>}              - parts of the route
      *          [...]
-     *              .name {string}                  - route parameter name
+     *              .name {string|undefined}        - route parameter name
      *              .wildcard {boolean|undefined}   - true if route parameter is wildcard
-     *      @subpaths {array<string>}               - url encoded parts of the path
-     *      @ignoreCase                             - case insensitive matching
-     *      return {object}                         - url encoded route arguments as name value pairs
+     *              .path {string|undefined}        - route path part
+     *              .encoded {string|undefined}     - url encoded route path part
+     *      @subpaths {array<string>}               - url decoded parts of the path
+     *      [@ignoreCase {boolean|undefined}]        - case insensitive matching
+     *      return {object}                         - route arguments as name value pairs
      */
     var match = function(subroutes, subpaths, ignoreCase) {
         var args = {};
@@ -666,22 +699,24 @@ SOFTWARE.
             var subpath = subpaths[index];
 
             if (subroute == undefined) { return; } // match unsuccessful
-            if (typeof subroute === 'string' || subroute instanceof String) {
-                if (ignoreCase) { // case insensitive match
-                    if (subroute.toLowerCase() === subpath.toLowerCase()) { continue; } // continue matching
-                    else { return; } // match unsuccessful
-                } else { // case sensitive match
-                    if (subroute === subpath) { continue; } // continue matching
-                    else { return; } // match unsuccessful
-                }
-            } else if (typeof subroute === 'object') { // parameter marker
-                if (subroute.wildcard) { // wildcard
-                    wildcard = subroute.name; // wildcard parameter name
-                    break;
-                } else { // parameter
-                    args[subroute.name] = subpath; // store argument
-                    continue; // continue matching
-                }
+            else if (typeof subroute === 'object') {
+                if ('path' in subroute) { // path part marker
+                    if (ignoreCase) { // case insensitive match
+                        if (subroute.path.toLowerCase() === subpath.toLowerCase()) { continue; } // continue matching
+                        else { return; } // match unsuccessful
+                    } else { // case sensitive match
+                        if (subroute.path === subpath) { continue; } // continue matching
+                        else { return; } // match unsuccessful
+                    }
+                } else if ('name' in subroute) { // parameter marker
+                    if (subroute.wildcard) { // wildcard
+                        wildcard = subroute.name; // wildcard parameter name
+                        break;
+                    } else { // parameter
+                        args[subroute.name] = subpath; // store argument
+                        continue; // continue matching
+                    }
+                } else { return; } // match unsuccessful
             } else { break; } // end matching
         }
 
@@ -694,11 +729,13 @@ SOFTWARE.
 
     /*
     * compose {function}                            - compose path from subroutes
-    *       @subroutes {array<object|string>}       - parts of the route
+    *       @subroutes {array<object>}              - parts of the route
     *           [...]
-    *               .name {string}                  - route parameter name
+    *               .name {string|undefined}        - route parameter name
     *               .wildcard {boolean|undefined}   - true if route parameter is wildcard
-    *       [@args] {object|undefined}              - url encoded route arguments as name value pairs
+    *              .path {string|undefined}         - route path part
+    *              .encoded {string|undefined}      - url encoded route path part
+    *       [@args] {object|undefined}              - route arguments as name value pairs
     *       return {string}                         - url encoded path
     */
     var compose = function(subroutes, args) {
@@ -706,14 +743,17 @@ SOFTWARE.
 
         var subpaths = [];
         subroutes.forEach(function(subroute, index, route) {
-            if (typeof subroute === 'string' || subroute instanceof String) { subpaths.push(subroute); }
-            else if (typeof subroute === 'object') { // parameter marker
-                var arg = args[subroute.name];
-                if (arg == undefined) { arg = ''; }
+            if (typeof subroute === 'object') {
+                if ('path' in subroute) { // path part marker
+                    subpaths.push(subroute.encoded);
+                } else if ('name' in subroute) { // parameter marker
+                    var arg = args[subroute.name];
+                    if (arg == undefined) { arg = ''; }
 
-                if (subroute.wildcard) {
-                    subpaths.push(arg.charAt(0) === '/' ? arg.substring(1) : arg); // wildcard parameter
-                } else { subpaths.push(arg); } // parameter
+                    if (subroute.wildcard) {
+                        subpaths.push(arg.charAt(0) === '/' ? arg.substring(1) : arg); // wildcard parameter
+                    } else { subpaths.push(arg); } // parameter
+                }
             }
         });
 
@@ -725,9 +765,9 @@ SOFTWARE.
 
     /*
      * validate {function}                          - validate arguments against constraints
-     *      [@args] {object<string>|undefined}      - url encoded route arguments as name value pairs
+     *      [@args] {object<string>|undefined}      - route arguments as name value pairs
      *      [@constraints] {function|object<RegExp|<array<string>>|undefined} - route argument constraints
-     *          [@arguments] {object<string>}       - url encoded route arguments as name value pairs
+     *          [@arguments] {object<string>}       - route arguments as name value pairs
      *          return {boolean}                    - true if valid, false if invalid
      *      return {boolean|string}                 - true if valid, false if invalid, constraint name if constraint \
      *                                                  in constraints map is invalid
