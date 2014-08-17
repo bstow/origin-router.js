@@ -226,9 +226,9 @@ SOFTWARE.
      * Route.prototype
      *      emits route {event}                                     - occurs upon routing
      *          listener {function}
-     *              @event                                          - event object
-     *                  .pathname <string>                          - url encoded pathname
-     *                  .method <string|undefined>                  - http method
+     *              @event {object}                                 - event object
+     *                  .pathname {string}                          - url encoded pathname
+     *                  .method {string|undefined}                  - http method
      *                  .route {Route}                              - route
      *                  .arguments {object<string>}                 - route arguments as name value pairs
      *              this {Route}                                    - route
@@ -311,7 +311,7 @@ SOFTWARE.
      * Router.prototype
      *      emits success {event}                   - occurs upon routing
      *          listener {function}
-     *              @event                          - event object
+     *              @event {object}                 - event object
      *                  .pathname <string>          - url encoded pathname
      *                  .method <string|undefined>  - http method
      *                  .route {Route}              - matching route
@@ -319,7 +319,7 @@ SOFTWARE.
      *              this {Router}                   - router
      *      emits fail {event}                      - occurs upon routing when no matching route found
      *          listener {function}
-     *              @event                          - event object
+     *              @event {object}                 - event object
      *                  .pathname <string>          - url encoded pathname
      *                  .method <string|undefined>  - http method
      *              this {Router}                   - router
@@ -567,18 +567,6 @@ SOFTWARE.
                 }
             }
 
-            // validate arguments
-            subroutes.forEach(function(subroute) {
-                if (typeof subroute === 'object' && !subroute.wildcard) { // non-wildcard parameter marker
-                    var arg = args[subroute.name];
-                    if (arg != undefined && arg.indexOf('/') !== -1) { // invalid argument for non-wildcard parameter
-                        throw new Error("Couldn't generate path with route '" + name + "' because the " +
-                            "'" + subroute.name + "' argument value of '" + arg + "' contains '/' " +
-                            "but isn't a wildcard");
-                    }
-                }
-            });
-
             return compose(subroutes, args);
         } else {
             throw new Error(
@@ -586,21 +574,63 @@ SOFTWARE.
         }
     };
 
+    /* RoutePathPart {prototype}                        - route path part
+     *
+     * RoutePathPart.prototype.constructor {function}
+     *      @raw {string}                               - raw value
+     *      [@encoded] {string}                         - url encoded value
+     *
+     * RoutePathPart.prototype.raw {string}             - get raw value
+     *
+     * RoutePathPart.prototype.encoded {string}         - get encoded value
+     */
+    var RoutePathPart = function(raw, encoded) {
+        if (encoded == undefined) { encoded = encodeURIComponent(raw); }
+
+        // accessors
+
+        Object.defineProperty(this, 'raw', {'get': function() { return raw; }, // raw value getter
+            'enumerable': true, 'configurable': false});
+
+        Object.defineProperty(this, 'encoded', {'get': function() { return encoded; }, // encoded value getter
+            'enumerable': true, 'configurable': false});
+    };
+
+    /* RouteParameterPart {prototype}                       - route parameter part
+     *
+     * RouteParameterPart.prototype.constructor {function}
+     *      @name {string}                                  - name
+     *
+     * RouteParameterPart.prototype.name {string}           - get name
+     */
+    var RouteParameterPart = function(name) {
+        // accessors
+
+        Object.defineProperty(this, 'name', {'get': function() { return name; }, // name getter
+            'enumerable': true, 'configurable': false});
+    };
+
+    /* RouteWildcardParameterPart {prototype}                       - route wildcard parameter part
+     *      inherits {RouteParameterPart}
+     *
+     * RouteWildcardParameterPart.prototype.constructor {function}
+     *      @name {string}                                          - name
+     */
+    var RouteWildcardParameterPart = function(name) {
+        RouteParameterPart.call(this, name);
+    };
+    util.inherits(RouteWildcardParameterPart, RouteParameterPart);
+
     /*
      * parse {object}
      */
     var parse = {}; // parsing
 
     /*
-     * parse.route {function}                       - parse an expression into subroutes
-     *      @expression {string}                    - route expression
-     *      [@decode] {boolean|undefined}           - url decode expression subroutes
-     *      return {array<object>}                  - parts of the route
-     *          [...]
-     *              .name {string|undefined}        - route parameter name
-     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard
-     *              .path {string|undefined}        - route path part
-     *              .encoded {string|undefined}     - url encoded route path part
+     * parse.route {function}                                   - parse an expression into subroutes
+     *      @expression {string}                                - route expression
+     *      [@decode] {boolean|undefined}                       - url decode expression subroutes
+     *      return {array<RoutePathPart|RouteParameterPart>}    - parts of the route
      */
     parse.route = function(expression, decode) {
         var last;
@@ -616,7 +646,7 @@ SOFTWARE.
 
         var subroutes = expression.split('/');
         subroutes.forEach(function(subroute, index, subroutes) { // parameters
-            var marker;
+            var part;
             if (subroute.charAt(0) === ':') { // parameter
                 last = subroute.length - 1;
 
@@ -628,23 +658,14 @@ SOFTWARE.
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
-                marker = {'name': name}; // parameter marker
-
-                if (wildcard && index == subroutes.length - 1) { marker.wildcard = true; } // wildcard parameter
+                if (wildcard && index == subroutes.length - 1) { part = new RouteWildcardParameterPart(name); }
+                else { part = new RouteParameterPart(name); }
             } else { // path part
-                var path, encoded;
-                if (decode) {
-                    path = decodeURIComponent(subroute);
-                    encoded = subroute;
-                } else {
-                    path = subroute;
-                    encoded = encodeURIComponent(subroute);
-                }
-
-                marker = {'path': path, 'encoded': encoded}; // path part marker
+                if (decode) { part = new RoutePathPart(decodeURIComponent(subroute), subroute); }
+                else { part = new RoutePathPart(subroute); }
             }
 
-            subroutes[index] = marker;
+            subroutes[index] = part;
         });
 
         if (collision != undefined) {
@@ -677,16 +698,11 @@ SOFTWARE.
     };
 
     /*
-     * match {function}                             - match subroutes and subpaths
-     *      @subroutes {array<object>}              - parts of the route
-     *          [...]
-     *              .name {string|undefined}        - route parameter name
-     *              .wildcard {boolean|undefined}   - true if route parameter is wildcard
-     *              .path {string|undefined}        - route path part
-     *              .encoded {string|undefined}     - url encoded route path part
-     *      @subpaths {array<string>}               - url decoded parts of the path
-     *      [@ignoreCase {boolean|undefined}]        - case insensitive matching
-     *      return {object}                         - route arguments as name value pairs
+     * match {function}                                             - match subroutes and subpaths
+     *      @subroutes {array<RoutePathPart|RouteParameterPart>}    - parts of the route
+     *      @subpaths {array<string>}                               - url decoded parts of the path
+     *      [@ignoreCase {boolean|undefined}]                       - case insensitive matching
+     *      return {object}                                         - route arguments as name value pairs
      */
     var match = function(subroutes, subpaths, ignoreCase) {
         var args = {};
@@ -699,25 +715,23 @@ SOFTWARE.
             var subpath = subpaths[index];
 
             if (subroute == undefined) { return; } // match unsuccessful
-            else if (typeof subroute === 'object') {
-                if ('path' in subroute) { // path part marker
-                    if (ignoreCase) { // case insensitive match
-                        if (subroute.path.toLowerCase() === subpath.toLowerCase()) { continue; } // continue matching
-                        else { return; } // match unsuccessful
-                    } else { // case sensitive match
-                        if (subroute.path === subpath) { continue; } // continue matching
-                        else { return; } // match unsuccessful
-                    }
-                } else if ('name' in subroute) { // parameter marker
-                    if (subroute.wildcard) { // wildcard
-                        wildcard = subroute.name; // wildcard parameter name
-                        break;
-                    } else { // parameter
-                        args[subroute.name] = subpath; // store argument
-                        continue; // continue matching
-                    }
-                } else { return; } // match unsuccessful
-            } else { break; } // end matching
+            else if (subroute instanceof RoutePathPart) { // path part
+                if (ignoreCase) { // case insensitive match
+                    if (subroute.raw.toLowerCase() === subpath.toLowerCase()) { continue; } // continue matching
+                    else { return; } // match unsuccessful
+                } else { // case sensitive match
+                    if (subroute.raw === subpath) { continue; } // continue matching
+                    else { return; } // match unsuccessful
+                }
+            } else if (subroute instanceof RouteParameterPart) { // parameter
+                if (subroute instanceof RouteWildcardParameterPart) { // wildcard parameter
+                    wildcard = subroute.name; // wildcard parameter name
+                    break; // end matching
+                } else { // paramter
+                    args[subroute.name] = subpath; // store argument
+                    continue; // continue matching
+                }
+            } else { console.log("Does this happen?"); break; } // end matching
         }
 
         if (wildcard != undefined) {
@@ -728,32 +742,28 @@ SOFTWARE.
     };
 
     /*
-    * compose {function}                            - compose path from subroutes
-    *       @subroutes {array<object>}              - parts of the route
-    *           [...]
-    *               .name {string|undefined}        - route parameter name
-    *               .wildcard {boolean|undefined}   - true if route parameter is wildcard
-    *              .path {string|undefined}         - route path part
-    *              .encoded {string|undefined}      - url encoded route path part
-    *       [@args] {object|undefined}              - route arguments as name value pairs
-    *       return {string}                         - url encoded path
+    * compose {function}                                            - compose path from subroutes
+    *       @subroutes {array<RoutePathPart|RouteParameterPart>}    - parts of the route
+    *       [@args] {object|undefined}                              - route arguments as name value pairs
+    *       return {string}                                         - url encoded path
+    *
+    *       throws error {RouteParameterValueInvalidCharacterError} - occurs upon an argument containing an invalid \
+    *                                                                   character
     */
     var compose = function(subroutes, args) {
         args = args || {};
 
         var subpaths = [];
-        subroutes.forEach(function(subroute, index, route) {
-            if (typeof subroute === 'object') {
-                if ('path' in subroute) { // path part marker
-                    subpaths.push(subroute.encoded);
-                } else if ('name' in subroute) { // parameter marker
-                    var arg = args[subroute.name];
-                    if (arg == undefined) { arg = ''; }
+        subroutes.forEach(function(subroute) {
+            if (subroute instanceof RoutePathPart) { // path part
+                subpaths.push(subroute.encoded);
+            } else if (subroute instanceof RouteParameterPart) { // parameter
+                var arg = args[subroute.name];
+                if (arg == undefined) { arg = ''; }
 
-                    if (subroute.wildcard) {
-                        subpaths.push(arg.charAt(0) === '/' ? arg.substring(1) : arg); // wildcard parameter
-                    } else { subpaths.push(arg); } // parameter
-                }
+                if (subroute instanceof RouteWildcardParameterPart) { // wildcard parameter
+                    subpaths.push(arg.charAt(0) === '/' ? arg.substring(1) : arg);
+                } else { subpaths.push(arg); } // parameter
             }
         });
 
