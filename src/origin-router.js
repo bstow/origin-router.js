@@ -698,7 +698,7 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
                     args[subroute.name] = subpath; // store argument
                     continue; // continue matching
                 }
-            } else { console.log("Does this happen?"); break; } // end matching
+            } else { break; } // end matching
         }
 
         if (wildcard != undefined) {
@@ -761,7 +761,8 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
 
                     var arg = args[name], constraint = constraints[name];
                     if ( // validate argument against parameter constraint
-                        (constraint instanceof RegExp && !constraint.test(arg)) || // regex constraint
+                        (constraint instanceof RegExp && // regex constraint
+                            (constraint.lastIndex = 0) == 0 && !constraint.test(arg)) ||
                         (util.isArray(constraint) && constraint.indexOf(arg) == -1) // array of strings constraint
                     ) { return name; } // invalid
                 }
@@ -784,7 +785,8 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
 
     // add routes
 
-    var firstRoute = router.add('/path/:param1/:param2/:param3*', {'name': 'route 1'}, onRoute); // 1st route
+    var firstRoute = router.add('/%20+%2f%27path%27%2F/:param1/:param2/:param3*',  // 1st route
+        {'name': 'route 1', 'encoded': true}, onRoute);
     router.add('/path/:param1/:param2/', {'name': 'route 2'}).on('route', onRoute); // 2nd route
     router.add(':param1*/:param2/path', {'name': 'route 3'}).on('route', onRoute); // 3rd route
     router.add('%2F+path/file.ext', {'name': 'route 4', 'ignoreCase': true, 'encoded': true}, onRoute); // 4th route
@@ -860,7 +862,7 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
         'Defining a route with a duplicate name did not fail as expected');
 
     // route path with 1st route
-    router.route('/path/arg1/arg2/ /./../a/r/g/ /3/', {'method': 'POST'});
+    router.route("/ +%2f'path'%2F/arg1/arg2/ /./../a/r/g/ /3/", {'method': 'POST'});
     assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
     assert.strictEqual(result.args.param1, 'arg1',
         "The path's 1st argument to the 1st route did not match the expected value");
@@ -941,7 +943,7 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
 
     // assemble path with 1st route
     result = router.path('route 1', {'param1': 'arg1', 'param2': 'arg2', 'param3': '/a/r/g/3/'});
-    assert.strictEqual(result, '/path/arg1/arg2/a/r/g/3/',
+    assert.strictEqual(result, '/%20+%2f%27path%27%2F/arg1/arg2/a/r/g/3/',
         'The path assembled using the 1st route did not match the expected value');
 
     // assemble path with 2nd route
@@ -996,10 +998,10 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
     router.route('/*/*/*/no/matching/route/*/*/*/', {'method': '  Get'});
     assert.strictEqual(result, 'fail', "The router 'fail' event did not occur as expected");
     router.on('success', function(event) {
-        if (event.pathname !== '/path/arg1/arg2/arg3' || event.method !== 'PoST') { return; }
+        if (event.pathname !== '/%20+%2f%27path%27%2F/arg1/arg2/arg3' || event.method !== 'PoST') { return; }
         if (this !== router || event.route !== firstRoute || event.arguments.param1 !== 'arg1') { return; }
         result = 'success';
     });
-    router.route('/path/arg1/arg2/arg3', {'method': 'PoST'});
+    router.route('/%20+%2f%27path%27%2F/arg1/arg2/arg3', {'method': 'PoST'});
     assert.strictEqual(result, 'success', "The router 'success' event did not occur as expected");
 })();

@@ -731,7 +731,7 @@ SOFTWARE.
                     args[subroute.name] = subpath; // store argument
                     continue; // continue matching
                 }
-            } else { console.log("Does this happen?"); break; } // end matching
+            } else { break; } // end matching
         }
 
         if (wildcard != undefined) {
@@ -794,7 +794,8 @@ SOFTWARE.
 
                     var arg = args[name], constraint = constraints[name];
                     if ( // validate argument against parameter constraint
-                        (constraint instanceof RegExp && !constraint.test(arg)) || // regex constraint
+                        (constraint instanceof RegExp && // regex constraint
+                            (constraint.lastIndex = 0) == 0 && !constraint.test(arg)) ||
                         (util.isArray(constraint) && constraint.indexOf(arg) == -1) // array of strings constraint
                     ) { return name; } // invalid
                 }
