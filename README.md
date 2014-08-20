@@ -47,13 +47,14 @@ router.route('/dog/homework');  // outputs 'I have a homework colored dog'
 ```javascript
 // add a route with a wildcard parameter denoted by a '*' at the end ...
 router.add('/calico/:pet/:colors*', function(event) {
-        console.log('I have a ' +
-            event.arguments.colors + ' ' + event.arguments.pet);
+        console.log('I have a ' + event.arguments.colors.join(',') +
+            ' ' + event.arguments.pet);
     });
 
-// the wildcard parameter matches anything at the end of the path ...
+// the wildcard parameter matches anything at the end of the path
+// as an array of subpaths ...
 router.route('/calico/cat/white/orange/gray'); // outputs
-                                               // 'I have a white/orange/gray cat'
+                                               // 'I have a white,orange,gray cat'
 ```
 
 
@@ -71,7 +72,7 @@ router.route('/dogs/0/poodle'); // outputs nothing because the count is invalid
 router.route('/dogs/2/poodle'); // outputs 'I have 2 poodles'
 
 // a route's parameter constraints may be defined per parameter
-// as either a regular expression or an array of valid strings ...
+// as either a function, regular expression or an array of valid strings ...
 router.add('cats/:count/:breed',
     {'constraints': {'count': /(two|three)/, 'breed': ['persian', 'siamese']}},
     function(event) {
@@ -119,7 +120,7 @@ router.route.post('/bird'); // outputs 'I have a bird'
 // add a route and give it a name for future reference ...
 router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
         console.log('I have a mix breed ' + event.arguments.pet +
-            ' that is a ' + event.arguments.breeds);
+            ' that is a ' + event.arguments.breeds.join(','));
     });
 
 // alternatively the route's name can pe passed as the first argument like so...
@@ -130,7 +131,7 @@ router.add('pure breed', '/:pet/pure/:breed', function(event) {
 
 // generate a path using a route ...
 var pathname = router.path('mixed breed', // use the route named 'mixed breed'
-    {'pet': 'dog', 'breeds': 'beagle/pug/terrier'}); // route's parameter arguments
+    {'pet': 'dog', 'breeds': ['beagle', 'pug', 'terrier']}); // parameter arguments
 
 console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 ```

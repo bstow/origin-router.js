@@ -16,7 +16,7 @@ I have a homework colored dog
 
 Route Wildcard Parameters
 ------------------------
-I have a white/orange/gray cat
+I have a white,orange,gray cat
 
 Parameter Constraints
 --------------------
