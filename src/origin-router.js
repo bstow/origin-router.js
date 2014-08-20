@@ -249,7 +249,8 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
                         var constraint = value[key];
 
                         var valid;
-                        if (constraint instanceof RegExp) { valid = true; }
+                        if (constraint instanceof Function) { valid = true; }
+                        else if (constraint instanceof RegExp) { valid = true; }
                         else if (util.isArray(constraint)) {
                             valid = constraint.length !== 0 && constraint.every(
                                 function(str) { return typeof str === 'string' || str instanceof String; });
@@ -259,7 +260,7 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
                             throw new Error("Couldn't set constraints for route " +
                                 (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
                                 "because the contraint '" + key + "' was not a " +
-                                'regular expression or an array of strings');
+                                'function, regular expression or an array of strings');
                         }
                     }
                     constraints = value;
@@ -786,7 +787,7 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
                     var argument = args[name],
                         constraint = constraints[name];
                     if (constraint instanceof Function) { // function
-                        if (!constraint(arg)) { return name; }
+                        if (!constraint(argument)) { return name; }
                     } if (constraint instanceof RegExp) { // regular expression
                         if (util.isArray(argument)) { // array of strings wildcard parameter argument
                             var argumentLength = argument.length;
@@ -804,7 +805,7 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
                             var argumentLength = argument.length;
                             for (var i = 0; i < argumentLength; i++) {
                                 var subargument = argument[i];
-                                if (constraint.indexOf(argument) === -1) { return name; } // invalid
+                                if (constraint.indexOf(subargument) === -1) { return name; } // invalid
                             }
                         } else { // string parameter argument
                             if (constraint.indexOf(argument) === -1) { return name; } // invalid
@@ -850,6 +851,17 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
     constraints = {'param1': ['not 1', 'not 2'], 'param2': /^not\s[1-2]$/};
     router.add('/constraint/:param1/:param2', // 3rd constrained route
         {'name': 'constrained route 3', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
+    constraints = {
+        'param1': function(arg) { return arg === 'arg 1'; },
+        'param2': ['arg 2'],
+        'param3': ['arg 3', 'arg 4', 'arg 5']};
+    router.add.post('constraint/:param1/:param2/:param3*', // 4th constrainted route
+        {'name': 'constrained route 4', 'constraints': constraints}).on('route', onRoute);
+    constraints = {
+        'param1': /arg\s1/,
+        'param3': /arg\s[3-6]/};
+    router.add.post('constraint/:param1/:param2/:param3*', // 5th constrainted route
+        {'name': 'constrained route 5', 'constraints': constraints}).on('route', onRoute);
 
     router.add.get('get route', '/method/:param1', {'name': 'overridden name'}).on('route', onRoute); // GET route
     router.add('/method/:param1', {'name': 'post route', 'method': 'POST'}).on('route', onRoute); // POST route
@@ -956,6 +968,10 @@ router.route('/hamster/gray'); // outputs 'I have a gray hamster'
     assert.strictEqual(result.name, 'constrained route 2', 'The path did not match the 2nd constrained route');
     router.route('/constraint/not%202/not 1', {'method': 'connect'});
     assert.strictEqual(result.name, 'constrained route 3', 'The path did not match the 3rd constrained route');
+    router.route.post('/constraint/arg%201/arg 2/arg 3/arg 5');
+    assert.strictEqual(result.name, 'constrained route 4', 'The path did not match the 4th constrained route');
+    router.route.post('/constraint/arg%201/arg 2/arg 3/arg 5/arg 6');
+    assert.strictEqual(result.name, 'constrained route 5', 'The path did not match the 5th constrained route');
 
     // route path with GET route
     router.route('/method/get', {'method': '  GEt '});

@@ -282,7 +282,8 @@ SOFTWARE.
                         var constraint = value[key];
 
                         var valid;
-                        if (constraint instanceof RegExp) { valid = true; }
+                        if (constraint instanceof Function) { valid = true; }
+                        else if (constraint instanceof RegExp) { valid = true; }
                         else if (util.isArray(constraint)) {
                             valid = constraint.length !== 0 && constraint.every(
                                 function(str) { return typeof str === 'string' || str instanceof String; });
@@ -292,7 +293,7 @@ SOFTWARE.
                             throw new Error("Couldn't set constraints for route " +
                                 (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
                                 "because the contraint '" + key + "' was not a " +
-                                'regular expression or an array of strings');
+                                'function, regular expression or an array of strings');
                         }
                     }
                     constraints = value;
@@ -819,7 +820,7 @@ SOFTWARE.
                     var argument = args[name],
                         constraint = constraints[name];
                     if (constraint instanceof Function) { // function
-                        if (!constraint(arg)) { return name; }
+                        if (!constraint(argument)) { return name; }
                     } if (constraint instanceof RegExp) { // regular expression
                         if (util.isArray(argument)) { // array of strings wildcard parameter argument
                             var argumentLength = argument.length;
@@ -837,7 +838,7 @@ SOFTWARE.
                             var argumentLength = argument.length;
                             for (var i = 0; i < argumentLength; i++) {
                                 var subargument = argument[i];
-                                if (constraint.indexOf(argument) === -1) { return name; } // invalid
+                                if (constraint.indexOf(subargument) === -1) { return name; } // invalid
                             }
                         } else { // string parameter argument
                             if (constraint.indexOf(argument) === -1) { return name; } // invalid
