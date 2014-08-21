@@ -1,5 +1,9 @@
 { @! example code section start } [Setup]
-var router = new Router();
+// require the router module
+var orouter = require('./{ @! name }.js');
+
+// instantiate a new router
+var router = new orouter.Router();
 { @! example code section end }
 
 { @! example code section start } [Routing]

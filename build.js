@@ -34,8 +34,9 @@ originalSource = originalSource.substring( // remove tests
 originalSource = originalSource.replace('{ @! name }', package.name); // embed name
 originalSource = originalSource.replace('{ @! version }', package.version); // embed version number
 
-// ./resources/example-output.txt text
+// ./resources/example-code.txt text
 var exampleCodeText = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
+exampleCodeText = exampleCodeText.replace('{ @! name }', package.name); // embed name
 
 // examples
 var EXAMPLE_START_SECTION = '{ @! example code section start }';
@@ -108,7 +109,6 @@ fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), 
 require(path.join(__dirname, './builds/v.' + package.version + '.js')); // ensure compilation
 
 // ./example.js source code
-exampleSource = "var Router = require('./" + package.name + '.js' + "\').Router;\n\n" + exampleSource;
 fs.writeFileSync(path.join(__dirname, './example.js'), exampleSource, 'utf8'); // write
 
 // trap output of ./example.js to test for the expected output (./resources/example-output.txt)

@@ -1,7 +1,11 @@
 
 ####Setup
 ```javascript
-var router = new Router();
+// require the router module
+var orouter = require('./origin-router.js');
+
+// instantiate a new router
+var router = new orouter.Router();
 ```
 
 
