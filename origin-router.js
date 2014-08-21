@@ -24,12 +24,13 @@ SOFTWARE.
 
 /**** origin-router.js v.0.0.5 **/
 
-/* [Example: Setup]
+/*
+ * [Example: Setup]
  * 
  * var router = new Router();
- */
-
-/* [Example: Routing]
+ * 
+ * 
+ * [Example: Routing]
  * 
  * // add routes to the router with corresponding callbacks ...
  * router.add('/dog', function() { console.log('I have a dog'); });
@@ -43,9 +44,9 @@ SOFTWARE.
  * // attempt to route paths that don't match either route ...
  * router.route('/bulldog'); // outputs nothing
  * router.route('/dog/bulldog'); // outputs nothing
- */
-
-/* [Example: Route Parameters]
+ * 
+ * 
+ * [Example: Route Parameters]
  * 
  * // add more routes using ':' to denote parameters ...
  * router.add('/dog/:color', function(event) {
@@ -63,9 +64,9 @@ SOFTWARE.
  *                                 // this is routed by the dog route and not
  *                                 // the homework route because the dog route
  *                                 // was added before the homework route
- */
-
-/* [Example: Route Wildcard Parameters]
+ * 
+ * 
+ * [Example: Route Wildcard Parameters]
  * 
  * // add a route with a wildcard parameter denoted by a '*' at the end ...
  * router.add('/calico/:pet/:colors*', function(event) {
@@ -77,9 +78,9 @@ SOFTWARE.
  * // as an array of subpaths ...
  * router.route('/calico/cat/white/orange/gray'); // outputs
  *                                                // 'I have a white,orange,gray cat'
- */
-
-/* [Example: Parameter Constraints]
+ * 
+ * 
+ * [Example: Parameter Constraints]
  * 
  * // add a route with parameter constraints ...
  * router.add('/dogs/:count/:breed', // count must be more than 0
@@ -104,9 +105,9 @@ SOFTWARE.
  * router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
  * router.route('/cats/two/bengal'); // outputs nothing because the breed is invalid
  * router.route('/cats/two/persian'); // outputs 'I have two persian cats'
- */
-
-/* [Example: HTTP Method-Specific Routing]
+ * 
+ * 
+ * [Example: HTTP Method-Specific Routing]
  * 
  * // add routes for only certain HTTP methods ...
  * router.add('/fish', {'method': 'GET'},
@@ -132,9 +133,9 @@ SOFTWARE.
  * // alternatively a path may be routed for an HTTP method like so ...
  * router.route.get('/fish'); // outputs 'I have a fish'
  * router.route.post('/bird'); // outputs 'I have a bird'
- */
-
-/* [Example: Reverse Routing]
+ * 
+ * 
+ * [Example: Reverse Routing]
  * 
  * // add a route and give it a name for future reference ...
  * router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
@@ -153,9 +154,9 @@ SOFTWARE.
  *     {'pet': 'dog', 'breeds': ['beagle', 'pug', 'terrier']}); // parameter arguments
  * 
  * console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
- */
-
-/* [Example: Events]
+ * 
+ * 
+ * [Example: Events]
  * 
  * // know when a route routes a path by listening to the route's 'route' event ...
  * var route = router.add('/hamster/:color', {'name': 'hamster'});
@@ -178,9 +179,11 @@ SOFTWARE.
  * 
  * router.route('/hamster/gray'); // outputs 'I have a gray hamster'
  *                                // outputs "/hamster/gray routed by route 'hamster'"
- */
-
-/* [Example: Using with a Server]
+ * 
+ * 
+ * [Example: Using with a Server]
+ * 
+ * 
  * 
  * 
  */
@@ -234,6 +237,7 @@ SOFTWARE.
      *                  .method {string|undefined}                  - http method
      *                  .route {Route}                              - route
      *                  .arguments {object<string|array<string>>}   - route arguments as name value pairs
+     *                  .data {*|undefined}                         - data
      *              this {Route}                                    - route
      */
     var Route = function(expression, options) {
@@ -316,6 +320,11 @@ SOFTWARE.
      * Router.prototype.constructor {function}
      *
      * Router.prototype
+     *      emits add {event}                                       - occurs upon adding a route
+     *          listener {function}
+     *              @event {object}                                 - event object
+     *                  .route {Route}                              - added route
+     *              this {Router}                                   - router
      *      emits success {event}                                   - occurs upon routing
      *          listener {function}
      *              @event {object}                                 - event object
@@ -323,12 +332,14 @@ SOFTWARE.
      *                  .method <string|undefined>                  - http method
      *                  .route {Route}                              - matching route
      *                  .arguments {object<string|array<string>>}   - route arguments as name value pairs
+     *                  .data {*|undefined}                         - data
      *              this {Router}                                   - router
      *      emits fail {event}                                      - occurs upon routing when no matching route found
      *          listener {function}
      *              @event {object}                                 - event object
      *                  .pathname <string>                          - url encoded pathname
      *                  .method <string|undefined>                  - http method
+     *                  .data {*|undefined}                         - data
      *              this {Router}                                   - router
      */
     var Router = module.exports.Router = function() {
@@ -337,7 +348,7 @@ SOFTWARE.
         var self = this;
 
         var routes = {}; // all routes regardless of method
-        Object.defineProperty(this, '___routes', {'get': function() { return routes; }, // routes getter
+        Object.defineProperty(this, '__routes__', {'get': function() { return routes; }, // routes getter
             'enumerable': false, 'configurable': false});
 
         var methods = routes.methods = {} // routes segregated by method
@@ -345,7 +356,7 @@ SOFTWARE.
 
         // setup route stores
         [routes].concat(Object.keys(methods).map(function(key) { return methods[key]; })).forEach(
-            function(store) { store.by = {'name': {}, 'order': []}; } // store by name and order
+            function(stores) { stores.by = {'name': {}, 'order': []}; } // store by name and order
         );
 
         HTTP.METHODS.forEach(function(method) {
@@ -400,7 +411,12 @@ SOFTWARE.
      *          .encoded {boolean|undefined}                        - url encoded route expression indicator
      *          .ignoreCase {boolean|undefined}                     - case insensitive path matching
      *      [@callback] {function|undefined}                        - called upon every routing
-     *          [@arguments] {object<string|array<string>>}         - route arguments as name value pairs
+     *          @event {object}                                     - event object
+     *              .pathname {string}                              - url encoded pathname
+     *              .method {string|undefined}                      - http method
+     *              .route {Route}                                  - route
+     *              .arguments {object<string|array<string>>}       - route arguments as name value pairs
+     *              .data {*|undefined}                             - data
      *          this {Route}                                        - route
      *      return {Route}                                          - route
      */
@@ -411,7 +427,7 @@ SOFTWARE.
             options = args.options,
             callback = args.callback;
 
-        var routes = this.___routes, methods = routes.methods;
+        var routes = this.__routes__, methods = routes.methods;
 
         var method, constraints; // options
         if (options != undefined) {
@@ -468,6 +484,9 @@ SOFTWARE.
 
         if (callback != undefined) { route.on('route', callback); }
 
+        // emit add event upon adding route
+        this.emit('add', {'route': route});
+
         return route;
     };
     argumentMaps.add = function() { // associate arguments to parameters for add methods
@@ -496,10 +515,16 @@ SOFTWARE.
      *      @pathname {string}                              - url encoded path
      *      [@options] {object|undefined}                   - options
      *          .method {string|undefined}                  - http method
+     *          .data {*|undefined}                         - data
      *      [@callback] {function|undefined}                - called upon routing
-     *          [@arguments] {object<string|array<string>>} - route arguments as name value pairs
-     *          this {Route}                                - route
-     *      return {Route|undefined}                        - matching route or undefined if no matching route found
+     *          @event {object}                             - event object
+     *              .pathname {string}                      - url encoded pathname
+     *              .method {string|undefined}              - http method
+     *              .route {Route}                          - matching route
+     *              .arguments {object<string|array<string>>} - matching route arguments as name value pairs
+     *              .data {*|undefined}                     - data
+     *          this {Route}                                - matching route
+     *          return {Route|undefined}                    - matching route or undefined if no matching route found
      */
     Router.prototype.route = function() {
         var args = argumentMaps.route.apply(this, arguments); // associate arguments to parameters
@@ -507,30 +532,33 @@ SOFTWARE.
             options = args.options,
             callback = args.callback;
 
-        var method; // options
-        if (options != undefined) { method = options.method; }
+        var method, data; // options
+        if (options != undefined) {
+            method = options.method;
+            data = options.data;
+        }
 
-        var routes = this.___routes,
+        var routes = this.__routes__,
             methods = routes.methods;
 
-        var store;
+        var stores;
         if (method != undefined) { // convert method to the associated store
-            var store = methods[method.toLowerCase().trim()];
+            var stores = methods[method.toLowerCase().trim()];
 
-            if (store == undefined) { // no associated store
+            if (stores == undefined) { // no associated stores
                 throw new Error("Couldn't route '" + pathname +
                     "' because the method '" + method + "' is not recognized");
             }
-        } else { store = routes; } // all routes
+        } else { stores = routes; } // all routes
 
         var subpaths = parse.path(pathname);
 
         // find matching route
-        var length = store.by.order.length;
+        var length = stores.by.order.length;
         for (var index = 0; index < length; index++) {
-            var data = store.by.order[index];
-            var route = data.route,
-                subroutes = data.subroutes,
+            var store = stores.by.order[index];
+            var route = store.route,
+                subroutes = store.subroutes,
                 ignoreCase = route.ignoreCase;
 
             var args = match(subroutes, subpaths, ignoreCase); // arguments
@@ -540,16 +568,17 @@ SOFTWARE.
 
                 if (callback != undefined) { route.once('route', callback); } // queue callback
 
-                // emit route event on matching route
-                route.emit('route', {'pathname': pathname, 'method': method, 'route': route, 'arguments': args});
-                // emit success event on matching route
-                this.emit('success', {'pathname': pathname, 'method': method, 'route': route, 'arguments': args});
+                route.emit('route', // emit route event from matching route upon matching route
+                    {'pathname': pathname, 'method': method, 'route': route, 'arguments': args, 'data': data});
+                this.emit('success', // emit success event upon mathing route
+                    {'pathname': pathname, 'method': method, 'route': route, 'arguments': args, 'data': data});
 
                 return route; // return matching route
             }
         }
 
-        this.emit('fail', {'pathname': pathname, 'method': method}); // emit fail event on no matching route
+        this.emit('fail', // emit fail event upon no matching route
+            {'pathname': pathname, 'method': method, 'data': data});
         return undefined;
     }
     argumentMaps.route = function() { // associate arguments to parameters
@@ -570,7 +599,7 @@ SOFTWARE.
     Router.prototype.path = function(name, args) {
         args = args || {};
 
-        var routes = this.___routes;
+        var routes = this.__routes__;
 
         if (name in routes.by.name) { // compose path with the named route
             var data = routes.by.name[name],
@@ -581,8 +610,9 @@ SOFTWARE.
             var constraints = route.constraints;
             var valid = validate(args, constraints);
             if (valid !== true) { // invalid
-                if (typeof valid === 'string' || valid instanceof String) { // invalid parameter constraint
-                    var key = valid, value = args[key];
+                if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid parameter constraint
+                    var key = Object.keys(valid)[0],
+                        value = valid[key];
                     throw new Error("Couldn't generate path with route '" + name + "' because the " +
                         "'" + key + "' argument value of '" + value + "' is invalid " +
                         "according to the route's constraints");
@@ -803,9 +833,10 @@ SOFTWARE.
      *      [@constraints] {function|object<RegExp|<array<string>>|undefined} - route argument constraints
      *          [@arguments] {object<string|array<string>>}                 - route arguments as name value pairs
      *          return {boolean}                                            - true if valid, false if invalid
-     *      return {boolean|string}                                         - true if valid, false if invalid, \
-     *                                                                          constraint name if constraint \
-     *                                                                          in constraints map is invalid
+     *      return {boolean|object<string>}                                 - true if valid, false if invalid, \
+     *                                                                          constraint name value pair if \
+     *                                                                          constraint in constraints map is \
+     *                                                                          invalid
      */
     var validate = function(args, constraints) {
         args = args || {};
@@ -820,28 +851,48 @@ SOFTWARE.
                     var argument = args[name],
                         constraint = constraints[name];
                     if (constraint instanceof Function) { // function
-                        if (!constraint(argument)) { return name; }
+                        if (!constraint(argument)) { // invalid
+                            var invalid = {};
+                            invalid[name] = argument;
+                            return invalid;
+                        }
                     } if (constraint instanceof RegExp) { // regular expression
                         if (util.isArray(argument)) { // array of strings wildcard parameter argument
                             var argumentLength = argument.length;
                             for (var i = 0; i < argumentLength; i++) {
                                 var subargument = argument[i];
                                 constraint.lastIndex = 0; // reset regular expression state
-                                if (!constraint.test(subargument)) { return name; } // invalid
+                                if (!constraint.test(subargument)) { // invalid
+                                    var invalid = {};
+                                    invalid[name] = subargument;
+                                    return invalid;
+                                }
                             }
                         } else { // string parameter argument
                             constraint.lastIndex = 0; // reset regular expression state
-                            if (!constraint.test(argument)) { return name; } // invalid
+                            if (!constraint.test(argument)) { // invalid
+                                var invalid = {};
+                                invalid[name] = argument;
+                                return invalid;
+                            }
                         }
                     } else if (util.isArray(constraint)) { // array of strings
                         if (util.isArray(argument)) { // array of strings wildcard parameter argument
                             var argumentLength = argument.length;
                             for (var i = 0; i < argumentLength; i++) {
                                 var subargument = argument[i];
-                                if (constraint.indexOf(subargument) === -1) { return name; } // invalid
+                                if (constraint.indexOf(subargument) === -1) { // invalid
+                                    var invalid = {};
+                                    invalid[name] = subargument;
+                                    return invalid;
+                                }
                             }
                         } else { // string parameter argument
-                            if (constraint.indexOf(argument) === -1) { return name; } // invalid
+                            if (constraint.indexOf(argument) === -1) { // invalid
+                                var invalid = {};
+                                invalid[name] = argument;
+                                return invalid;
+                            }
                         }
                     }
                 }

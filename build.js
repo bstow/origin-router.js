@@ -1,97 +1,126 @@
 var fs = require('fs'), path = require('path');
 
+// ./package.json as an object
 var package = require('./package.json'); // package
 
-require(path.join(__dirname, 'src', package.name + '.js')); // test source
+// include original source (./src/origin-router.js) to ensure it compiles and tests pass
+require(path.join(__dirname, 'src', package.name + '.js'));
 
-// readme
-var readme = '';
+// generated text for ./readme.md
+var readmeMarkdown = '';
+
+// generated source code for ./example.js
+var exampleSource = '';
+
+// ./LICENSE text
+var licenseText = fs.readFileSync(path.join(__dirname, 'LICENSE'), 'utf8');
+
+// find the longest line in the license text for pretty formatting within source code
+var longestLicenseTextLine = 0;
+licenseText.split('\n').forEach(
+    function(line) { longestLicenseTextLine = Math.max(longestLicenseTextLine, line.length); });
+
+// source code compatible (commented out) license
+var licenseSource = '/' + Array(longestLicenseTextLine).join('*') + '\n' +
+    licenseText.trim() + '\n' +
+    Array(longestLicenseTextLine).join('*') + '/\n';
+
+// ./src/origin-router.js source code
+var originalSource = fs.readFileSync(path.join(__dirname, 'src', package.name + '.js'), 'utf8');
+
+// clean up original source and embed info
+originalSource = originalSource.substring( // remove tests
+    0, originalSource.indexOf('{ @! tests }') - '/*'.length).trim();
+originalSource = originalSource.replace('{ @! name }', package.name); // embed name
+originalSource = originalSource.replace('{ @! version }', package.version); // embed version number
+
+// ./resources/example-output.txt text
+var exampleCodeText = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
 
 // examples
-var examples = '';
+var EXAMPLE_START_SECTION = '{ @! example code section start }';
+var EXAMPLE_END_SECTION = '{ @! example code section end }';
 
-// license
-var license = fs.readFileSync(path.join(__dirname, 'LICENSE'), 'utf8');
-var longestLicenseLine = 0; // comment out license
-license.split('\n').forEach(function(line) { longestLicenseLine = Math.max(longestLicenseLine, line.length); });
-license = '/' + Array(longestLicenseLine).join('*') + '\n' +
-    license.trim() + '\n' +
-    Array(longestLicenseLine).join('*') + '/\n';
+// example source code to embed in source
+var sourceExampleSource = '';
 
-// source
-var source = fs.readFileSync(path.join(__dirname, 'src', package.name + '.js'), 'utf8'); // source
-source = source.substring(0, source.indexOf('{ @! tests }') - '/*'.length).trim(); // remove tests from source
-source = source.replace('{ @! name }', package.name); // inject name
-source = source.replace('{ @! version }', package.version); // inject version number
+var exampleStartSectionIndex = 0,
+    exampleEndSectionIndex = 0,
+    firstExampleSection = true;
+while (true) { // iterate over each example section
+    exampleStartSectionIndex = exampleCodeText.indexOf(EXAMPLE_START_SECTION, exampleEndSectionIndex);
+    if (exampleStartSectionIndex == -1) { break; }
 
-// examples
-var exampleStart = '{ @! example code start }';
-var exampleEnd = '{ @! example code end }';
-var firstExample = true;
-while (true) {
-    var exampleStartIndex = source.indexOf(exampleStart);
-    if (exampleStartIndex == -1) { break; }
+    exampleEndSectionIndex = exampleCodeText.indexOf(EXAMPLE_END_SECTION, exampleStartSectionIndex);
+    if (exampleEndSectionIndex == -1) { break; }
 
-    var exampleEndIndex = source.indexOf(exampleEnd);
-    if (exampleEndIndex == -1) { break; }
+    var exampleSectionSource = exampleCodeText.slice(
+        exampleStartSectionIndex + EXAMPLE_START_SECTION.length, exampleEndSectionIndex);
 
-    var example = source.slice(exampleStartIndex + exampleStart.length, exampleEndIndex);
-    var title;
-    example = example.replace(/^\s*\[\s*(.+?)\s*\]/, function(match, $1) { title = $1; return ''; }); // extract title
-    // right trim each line
-    example = example.split('\n').map(function(line) { return line.replace(/\s*$/, ''); }).join('\n');
-    example = example.trim();
+    var exampleSectionTitle; // extract example section title
+    exampleSectionSource = exampleSectionSource.replace(/^\s*\[\s*(.+?)\s*\]/,
+        function(match, $1) { exampleSectionTitle = $1; return ''; });
 
-    // add the example source to the examples executable
-    examples += '\n';
-    examples += '/**' + Array(title.length).join('*') + '***\n';
-    examples += ' * ' + title + ' *\n';
-    examples += ' **' + Array(title.length).join('*') + '***/' + Array(Math.max(50 - title.length, 0)).join(' ') +
+    exampleSectionSource = exampleSectionSource.split('\n').map( // right trim each line of the example section
+        function(line) { return line.replace(/\s*$/, ''); }).join('\n');
+    exampleSectionSource = exampleSectionSource.trim();
+
+    // add the example section source to the example source code
+    exampleSource += '\n';
+    exampleSource += '/**' + Array(exampleSectionTitle.length).join('*') + '***\n';
+    exampleSource += ' * ' + exampleSectionTitle + ' *\n';
+    exampleSource += ' **' + Array(exampleSectionTitle.length).join('*') + '***/' +
+        Array(Math.max(50 - exampleSectionTitle.length, 0)).join(' ') +
         'console.log(' +
-            JSON.stringify((firstExample ? '' : '\n') + title + '\n' + Array(title.length).join('-')) +
+            JSON.stringify((firstExampleSection ? '' : '\n') + exampleSectionTitle + '\n' +
+            Array(exampleSectionTitle.length).join('-')) +
         ');\n\n';
-    examples += example + '\n\n';
+    exampleSource += exampleSectionSource + '\n\n';
 
-    // add the example source to the readme as an example for reference
-    var readmeExample = '\n####' + title + '\n' + '```javascript\n' + example + '\n```\n\n';
-    readme += readmeExample;
+    // add the example section source code to the readme for reference
+    var readmeExampleSectionMarkdown = '\n####' + exampleSectionTitle + '\n' +
+        '```javascript\n' + exampleSectionSource + '\n```\n\n';
+    readmeMarkdown += readmeExampleSectionMarkdown;
 
-    // add the example to the source code as an example for reference
-    var sourceExample = example.split('\n');
-    sourceExample.unshift('');
-    sourceExample.unshift((' ' + '[Example: ' + title + ']'));
-    sourceExample = sourceExample.join('\n * ') + '\n ';
+    // add the example section source code to the source code for reference
+    var sourceExampleSectionSource = exampleSectionSource.split('\n');
+    sourceExampleSectionSource.unshift('');
+    sourceExampleSectionSource.unshift('[Example: ' + exampleSectionTitle + ']');
+    sourceExampleSectionSource.unshift('');
+    sourceExampleSectionSource.push('');
+    sourceExampleSectionSource.push('');
+    sourceExampleSectionSource = sourceExampleSectionSource.join('\n * ');
+    sourceExampleSource += sourceExampleSectionSource;
 
-    // inject revised example into source
-    source = source.slice(0, exampleStartIndex) +
-        sourceExample +
-        source.slice(exampleEndIndex + exampleEnd.length, source.length);
-
-    firstExample = false;
+    firstExampleSection = false;
 }
 
-var build = [license, source].join('\n'); // assemble source for build
+originalSource = originalSource.replace('{ @! example code }', sourceExampleSource + '\n '); // embed examples;
 
-// executable
-fs.writeFileSync(path.join(__dirname, package.name + '.js'), build, 'utf8'); // write executable
-require(path.join(__dirname, package.name + '.js')); // test executable
+var source = [licenseSource, originalSource].join('\n'); // assemble source code for build
 
-// versioned executable
-fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), build, // write versioned executable
-    'utf8');
-require(path.join(__dirname, './builds/v.' + package.version + '.js')); // test versioned executable
+// ./origin-router.js source code
+fs.writeFileSync(path.join(__dirname, package.name + '.js'), source, 'utf8'); // write
+require(path.join(__dirname, package.name + '.js')); // ensure compilation
 
-// examples executable
-examples = "var Router = require('./" + package.name + '.js' + "\').Router;\n\n" + examples;
-fs.writeFileSync(path.join(__dirname, './example.js'), examples, 'utf8'); // write example
-// trap output of example to test for the expected outcome
+// ./builds/v.{version number}.js source code
+fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), source, 'utf8'); // write
+require(path.join(__dirname, './builds/v.' + package.version + '.js')); // ensure compilation
+
+// ./example.js source code
+exampleSource = "var Router = require('./" + package.name + '.js' + "\').Router;\n\n" + exampleSource;
+fs.writeFileSync(path.join(__dirname, './example.js'), exampleSource, 'utf8'); // write
+
+// trap output of ./example.js to test for the expected output (./resources/example-output.txt)
 var log = console.log;
-var exampleOutputs = []; console.log = function() { exampleOutputs.push([].slice.call(arguments)); };
-require(path.join(__dirname, './example.js')); // test example
+var exampleOut = []; console.log = function() { exampleOut.push([].slice.call(arguments)); };
+// ./example.js
+require(path.join(__dirname, './example.js')); // run
 console.log = log; // restore output
+// ./resources/example-output.txt text lines
 expectedExampleOutputLines = fs.readFileSync(path.join(__dirname, './resources/example-output.txt'),
     'utf8').split('\n');
-exampleOutputs.join('\n').split('\n').forEach(function(exampleOutputLine, lineNumber) {
+exampleOut.join('\n').split('\n').forEach(function(exampleOutputLine, lineNumber) {
     if (lineNumber >= expectedExampleOutputLines.length) {
         throw new Error('Example output was longer than expected');
     }
@@ -104,5 +133,5 @@ exampleOutputs.join('\n').split('\n').forEach(function(exampleOutputLine, lineNu
     };
 });
 
-// readme
-fs.writeFileSync(path.join(__dirname, './README.md'), readme, 'utf8'); // write readme
+// ./readme markdown
+fs.writeFileSync(path.join(__dirname, './README.md'), readmeMarkdown, 'utf8'); // write
