@@ -43,7 +43,6 @@ SOFTWARE.
  * // route some paths ...
  * router.route('/cat'); // outputs 'I have a cat'
  * router.route('/dog'); // outputs 'I have a dog'
- * router.route('/dog/'); // outputs 'I have a dog'
  * 
  * // attempt to route paths that don't match either route ...
  * router.route('/bulldog'); // outputs nothing
@@ -52,34 +51,34 @@ SOFTWARE.
  * 
  * [Example: Route Parameters]
  * 
- * // add more routes using ':' to denote parameters ...
+ * // add some more routes that use ':' to denote parameters ...
  * router.add('/dog/:color', function(event) {
- *     console.log('I have a ' + event.arguments.color + ' colored dog'); });
+ *     console.log('I have a ' + event.arguments.color + ' dog'); });
  * router.add('/cat/:color', function(event) {
- *     console.log('I have a ' + event.arguments.color + ' colored cat'); });
+ *     console.log('I have a ' + event.arguments.color + ' cat'); });
  * router.add('/:pet/homework', function(event) {
  *     console.log('My ' + event.arguments.pet + ' ate my homework'); })
  * 
  * // route some more paths that match the added routes ...
- * router.route('/dog/brown'); // outputs 'I have a brown colored dog'
- * router.route('cat/white'); // outputs 'I have a white colored cat'
+ * router.route('/dog/brown'); // outputs 'I have a brown dog'
+ * router.route('cat/white'); // outputs 'I have a white cat'
  * router.route('/fish/homework'); // outputs 'My fish at my homework'
- * router.route('/dog/homework');  // outputs 'I have a homework colored dog'
- *                                 // this is routed by the dog route and not
- *                                 // the homework route because the dog route
- *                                 // was added before the homework route
+ * router.route('/dog/homework');  // outputs 'I have a homework dog'
+ *                                 // this is routed by the dog color route and not
+ *                                 // the homework route only because the dog color
+ *                                 // route was added before the homework route
  * 
  * 
  * [Example: Route Wildcard Parameters]
  * 
  * // add a route with a wildcard parameter denoted by a '*' at the end ...
  * router.add('/calico/:pet/:colors*', function(event) {
- *         console.log('I have a ' + event.arguments.colors.join(',') +
- *             ' ' + event.arguments.pet);
+ *         console.log('I have a ' +
+ *             event.arguments.colors.join(',') + ' ' + event.arguments.pet);
  *     });
  * 
  * // the wildcard parameter matches anything at the end of the path
- * // as an array of subpaths ...
+ * // and translates the argument to an array of subpaths ...
  * router.route('/calico/cat/white/orange/gray'); // outputs
  *                                                // 'I have a white,orange,gray cat'
  * 
@@ -113,13 +112,13 @@ SOFTWARE.
  * 
  * [Example: HTTP Method-Specific Routing]
  * 
- * // add routes for only certain HTTP methods ...
+ * // add routes that apply to only certain HTTP methods ...
  * router.add('/fish', {'method': 'GET'},
  *     function() { console.log('I have a fish'); });
  * router.add('/bird', {'method': ['GET', 'POST']},
  *     function() { console.log('I have a bird'); });
  * 
- * // alternatively routes can be added for an HTTP method like so ...
+ * // alternatively routes can be applied for an HTTP method like so ...
  * router.add.get('/turtle', function() { console.log('I have a turtle'); });
  * router.add.post('/rabbit', function() { console.log('I have a rabbit'); });
  * 
@@ -130,13 +129,13 @@ SOFTWARE.
  * router.route('/bird', {'method': 'POST'}); // outputs 'I have a bird'
  * router.route('/bird', {'method': 'DELETE'}); // outputs nothing
  * 
- * // HTTP method-specific routes are still applicable when no method is specified ...
- * router.route('/fish'); // outputs 'I have a fish'
- * router.route('/bird'); // outputs 'I have a bird'
- * 
  * // alternatively a path may be routed for an HTTP method like so ...
  * router.route.get('/fish'); // outputs 'I have a fish'
  * router.route.post('/bird'); // outputs 'I have a bird'
+ * 
+ * // HTTP method-specific routes are still applicable when no method is specified ...
+ * router.route('/fish'); // outputs 'I have a fish'
+ * router.route('/bird'); // outputs 'I have a bird'
  * 
  * 
  * [Example: Reverse Routing]
@@ -171,18 +170,24 @@ SOFTWARE.
  * 
  * // know when the router is unable to find a matching route to route a path
  * // by listening to the router's 'fail' event ...
- * router.on('fail', function(event) {
- *     console.log('No route found for ' + event.pathname); });
+ * router.once('fail', function(event) {
+ *     console.log('What is a ' + event.pathname.replace('/', '-') + '?'); });
  * 
- * router.route('/guinea/pig'); // outputs 'No route found for /guinea/pig'
+ * router.route('guinea/pig'); // outputs 'What is a guinea-pig?'
  * 
  * // alternatively, know when the router successfully routes any path by listening
  * // to the router's 'success' event ...
- * router.on('success', function(event) {
- *     console.log(event.pathname + " routed by route '" + event.route.name + "'"); });
+ * router.once('success', function(event) {
+ *     console.log('My ' + event.route.name + ' is ' + event.arguments.color); });
  * 
- * router.route('/hamster/gray'); // outputs 'I have a gray hamster'
- *                                // outputs "/hamster/gray routed by route 'hamster'"
+ * router.route('/hamster/yellow'); // outputs 'I have a yellow hamster'
+ *                                  // outputs "My hamster is yellow"
+ * 
+ * // additionally when routing a path, arbitrary data can be attached by setting the
+ * // data object which then will be accessible by any of the triggered listeners ...
+ * router.add('mouse', '/mouse/:color', function(event) {
+ *     console.log(event.data + ' has a ' + event.arguments.color + ' mouse'); });
+ * router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mouse'
  * 
  * 
  * [Example: Using with a Server]

@@ -5,14 +5,13 @@ Routing
 ------
 I have a cat
 I have a dog
-I have a dog
 
 Route Parameters
 ---------------
-I have a brown colored dog
-I have a white colored cat
+I have a brown dog
+I have a white cat
 My fish ate my homework
-I have a homework colored dog
+I have a homework dog
 
 Route Wildcard Parameters
 ------------------------
@@ -40,9 +39,10 @@ Reverse Routing
 Events
 -----
 I have a brown hamster
-No route found for /guinea/pig
-I have a gray hamster
-/hamster/gray routed by route 'hamster'
+What is a guinea-pig?
+I have a yellow hamster
+My hamster is yellow
+John has a white mouse
 
 Using with a Server
 ------------------
