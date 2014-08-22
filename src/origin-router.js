@@ -882,7 +882,7 @@
     // route path with GET route
     router.route('/method/get', {'method': '  GEt '});
     assert.strictEqual(result.name, 'get route', 'The path did not match the GET route');
-    router.route('/method/all');
+    router.route('method/all');
     assert.strictEqual(result.name, 'get route', 'The path did not match the GET route');
 
     // route path with POST route
