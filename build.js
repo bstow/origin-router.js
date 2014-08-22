@@ -38,6 +38,13 @@ originalSource = originalSource.replace('{ @! version }', package.version); // e
 var exampleCodeText = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
 exampleCodeText = exampleCodeText.replace('{ @! name }', package.name); // embed name
 
+// ./resources/documentation.md
+var documentationMarkdown = fs.readFileSync(path.join(__dirname, 'resources', 'documentation.md'), 'utf8');
+
+// add documentation to readme
+readmeMarkdown += documentationMarkdown;
+readmeMarkdown += '\n\n';
+
 // examples
 var EXAMPLE_START_SECTION = '{ @! example code section start }';
 var EXAMPLE_END_SECTION = '{ @! example code section end }';
@@ -74,12 +81,12 @@ while (true) { // iterate over each example section
         Array(Math.max(50 - exampleSectionTitle.length, 0)).join(' ') +
         'console.log(' +
             JSON.stringify((firstExampleSection ? '' : '\n') + exampleSectionTitle + '\n' +
-            Array(exampleSectionTitle.length).join('-')) +
+            Array(exampleSectionTitle.length + 1).join('-')) +
         ');\n\n';
     exampleSource += exampleSectionSource + '\n\n';
 
     // add the example section source code to the readme for reference
-    var readmeExampleSectionMarkdown = '\n####' + exampleSectionTitle + '\n' +
+    var readmeExampleSectionMarkdown = '####' + exampleSectionTitle + '\n' +
         '```javascript\n' + exampleSectionSource + '\n```\n\n';
     readmeMarkdown += readmeExampleSectionMarkdown;
 

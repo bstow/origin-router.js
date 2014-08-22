@@ -73,6 +73,7 @@
         Object.defineProperty(this, 'name', {'get': function() { return name; }, // name getter
             'enumerable': true, 'configurable': false});
 
+        if (util.isArray(method)) { Object.freeze(method); }
         Object.defineProperty(this, 'method', {'get': function() { return method; }, // method getter
             'enumerable': true, 'configurable': false});
 
@@ -89,40 +90,48 @@
         if ('ignoreCase' in options) { ignoreCase = options.ignoreCase; } // set ignore case
         else { ignoreCase = false; } // default ignore case
 
+        if ('constraints' in options) {
+            constraints = options.constraints;
+
+            if (constraints === undefined || constraints === null) { constraints = undefined; }
+            else if (constraints instanceof Function) { // constraint function
+                constraints = (function(constraints) {
+                    return function() { return constraints.apply(self, arguments); }; })(constraints);
+            } else if (constraints === Object(constraints)) { // constraints map
+                for (var key in constraints) {
+                    var constraint = constraints[key];
+
+                    var valid;
+                    if (constraint instanceof Function) {
+                        constraints[key] = (function(constraint) {
+                            return function() { return constraint.apply(self, arguments); }; })(constraint);
+                        valid = true;
+                    } else if (constraint instanceof RegExp) { valid = true; }
+                    else if (util.isArray(constraint)) {
+                        valid = constraint.length !== 0 && constraint.every(
+                            function(str) { return typeof str === 'string' || str instanceof String; });
+                    } else { valid = false; }
+
+                    if (!valid) {
+                        throw new Error("Couldn't set constraints for route " +
+                            (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                            "because the contraint '" + key + "' was not a " +
+                            'function, regular expression or an array of strings');
+                    }
+
+                    try { Object.freeze(constraint); } catch (err) {}
+                }
+            } else {
+                throw new Error("Couldn't set constraints for route " +
+                    (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                    'because the contraints are invalid');
+            }
+
+            try { Object.freeze(constraints); } catch (err) {}
+        }
         Object.defineProperty(this, 'constraints', {
             'get': function() { return constraints; }, // constraints getter
-            'set': function(value) { // constraints setter
-                if (value === undefined || value === null) { constraints = undefined; }
-                else if (value instanceof Function) { // constraint function
-                    constraints = function() { return value.apply(self, arguments); }
-                } else if (value === Object(value)) { // constraints map
-                    for (var key in value) {
-                        var constraint = value[key];
-
-                        var valid;
-                        if (constraint instanceof Function) { valid = true; }
-                        else if (constraint instanceof RegExp) { valid = true; }
-                        else if (util.isArray(constraint)) {
-                            valid = constraint.length !== 0 && constraint.every(
-                                function(str) { return typeof str === 'string' || str instanceof String; });
-                        } else { valid = false; }
-
-                        if (!valid) {
-                            throw new Error("Couldn't set constraints for route " +
-                                (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
-                                "because the contraint '" + key + "' was not a " +
-                                'function, regular expression or an array of strings');
-                        }
-                    }
-                    constraints = value;
-                } else {
-                    throw new Error("Couldn't set constraints for route " +
-                        (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
-                        'because the contraints are invalid');
-                }
-            },
             'enumerable': true, 'configurable': false});
-        if ('constraints' in options) { this.constraints = options.constraints; } // set constraints
     };
     util.inherits(Route, events.EventEmitter);
 
@@ -675,7 +684,6 @@
                             var argumentLength = argument.length;
                             for (var i = 0; i < argumentLength; i++) {
                                 var subargument = argument[i];
-                                constraint.lastIndex = 0; // reset regular expression state
                                 if (!constraint.test(subargument)) { // invalid
                                     var invalid = {};
                                     invalid[name] = subargument;
@@ -683,7 +691,6 @@
                                 }
                             }
                         } else { // string parameter argument
-                            constraint.lastIndex = 0; // reset regular expression state
                             if (!constraint.test(argument)) { // invalid
                                 var invalid = {};
                                 invalid[name] = argument;
@@ -750,7 +757,7 @@
     router.add('/constraint/:param1/:param2', // 3rd constrained route
         {'name': 'constrained route 3', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
     constraints = {
-        'param1': function(arg) { return arg === 'arg 1'; },
+        'param1': function(arg) { return arg === 'arg 1' && this.name === 'constrained route 4'; },
         'param2': ['arg 2'],
         'param3': ['arg 3', 'arg 4', 'arg 5']};
     router.add.post('constraint/:param1/:param2/:param3*', // 4th constrainted route

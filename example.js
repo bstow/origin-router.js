@@ -1,7 +1,7 @@
 
 /*********
  * Setup *
- *********/                                            console.log("Setup\n----");
+ *********/                                            console.log("Setup\n-----");
 
 // require the router module
 var orouter = require('./origin-router.js');
@@ -12,7 +12,7 @@ var router = new orouter.Router();
 
 /***********
  * Routing *
- ***********/                                          console.log("\nRouting\n------");
+ ***********/                                          console.log("\nRouting\n-------");
 
 // add routes to the router with corresponding callbacks ...
 router.add('/dog', function() { console.log('I have a dog'); });
@@ -29,7 +29,7 @@ router.route('/dog/bulldog'); // outputs nothing
 
 /********************
  * Route Parameters *
- ********************/                                 console.log("\nRoute Parameters\n---------------");
+ ********************/                                 console.log("\nRoute Parameters\n----------------");
 
 // add some more routes that use ':' to denote parameters ...
 router.add('/dog/:color', function(event) {
@@ -51,7 +51,7 @@ router.route('/dog/homework');  // outputs 'I have a homework dog'
 
 /*****************************
  * Route Wildcard Parameters *
- *****************************/                        console.log("\nRoute Wildcard Parameters\n------------------------");
+ *****************************/                        console.log("\nRoute Wildcard Parameters\n-------------------------");
 
 // add a route with a wildcard parameter denoted by a '*' at the end ...
 router.add('/calico/:pet/:colors*', function(event) {
@@ -67,7 +67,7 @@ router.route('/calico/cat/white/orange/gray'); // outputs
 
 /*************************
  * Parameter Constraints *
- *************************/                            console.log("\nParameter Constraints\n--------------------");
+ *************************/                            console.log("\nParameter Constraints\n---------------------");
 
 // add a route with parameter constraints ...
 router.add('/dogs/:count/:breed', // count must be more than 0
@@ -90,13 +90,13 @@ router.add('cats/:count/:breed',
     });
 
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
-router.route('/cats/two/bengal'); // outputs nothing because the breed is invalid
+router.route('/cats/two/maltese'); // outputs nothing because the breed is invalid
 router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 
 
 /********************************
  * HTTP Method-Specific Routing *
- ********************************/                     console.log("\nHTTP Method-Specific Routing\n---------------------------");
+ ********************************/                     console.log("\nHTTP Method-Specific Routing\n----------------------------");
 
 // add routes that apply to only certain HTTP methods ...
 router.add('/fish', {'method': 'GET'},
@@ -126,7 +126,7 @@ router.route('/bird'); // outputs 'I have a bird'
 
 /*******************
  * Reverse Routing *
- *******************/                                  console.log("\nReverse Routing\n--------------");
+ *******************/                                  console.log("\nReverse Routing\n---------------");
 
 // add a route and give it a name for future reference ...
 router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
@@ -149,7 +149,7 @@ console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 
 /**********
  * Events *
- **********/                                           console.log("\nEvents\n-----");
+ **********/                                           console.log("\nEvents\n------");
 
 // know when a route routes a path by listening to the route's 'route' event ...
 var route = router.add('/hamster/:color', {'name': 'hamster'});
@@ -171,7 +171,7 @@ router.once('success', function(event) {
     console.log('My ' + event.route.name + ' is ' + event.arguments.color); });
 
 router.route('/hamster/yellow'); // outputs 'I have a yellow hamster'
-                                 // outputs "My hamster is yellow"
+                                 // outputs 'My hamster is yellow'
 
 // additionally when routing a path, arbitrary data can be attached by setting the
 // data object which then will be accessible by any of the triggered listeners ...
@@ -180,9 +180,42 @@ router.add('mouse', '/mouse/:color', function(event) {
 router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mouse'
 
 
-/***********************
- * Using with a Server *
- ***********************/                              console.log("\nUsing with a Server\n------------------");
+/****************
+ * URL Encoding *
+ ****************/                                     console.log("\nURL Encoding\n------------");
+
+// by default, routes should be defined without any URL encoding...
+router.add('/pet name/:name', {'constraints': {'name': ['Pete', 'Mary Jo', 'Al']}},
+    function(event) { console.log("My pet's name is " + event.arguments.name); });
+
+// when routing a path, the path should be in its original URL encoded form ...
+router.route('/pet%20name/Pete'); // outputs "My pet's name is Pete"
+
+// route arguments are URL decoded ...
+router.route('/pet%20name/Mary%20Jo'); // outputs "My pet's name is Mary Jo"
+
+// in some cases, a route may need to be defined with URL encoding ...
+router.add('/%3adogs%2fcats/:actions*', // 1st subpath is ':dogs/cats' URL encoded
+    {'encoded': true}, // indicate that the route is URL encoded
+    function(event) {
+        console.log('Dogs and cats ' +
+            event.arguments.actions.join(' and '));
+    });
+
+router.route('/%3Adogs%2Fcats/run/jump'); // outputs 'Dogs and cats run and jump'
+
+// when generating a path from a route, any passed route parameter arguments
+// shouldn't contain URL encoding ...
+router.add('/pet toys/:pet/:toys*', {'name': 'toys'});
+pathname = router.path('toys',
+    {'pet': 'bengal cat', 'toys': ['ball of yarn', 'catnip']});
+// the generated path is URL encoded ...
+console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
+
+
+/*****************************
+ * Using with an HTTP Server *
+ *****************************/                        console.log("\nUsing with an HTTP Server\n-------------------------");
 
 
 

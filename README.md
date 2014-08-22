@@ -1,3 +1,41 @@
+##Router
+
+To use the router one must `require('./orgin-router.js')`.
+```javascript
+var orouter = require('./orgin-router.js');
+```
+
+
+###Class: orouter.Router
+This is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_eventemitter) with the following events:
+
+###Event: 'add'
+`function(event) {}`
+* event `Object`
+..* .route `Route` the new route added
+
+Emitted each time a new route is added to the router.
+
+###Event: 'success'
+`function(event) {}`
+* event `Object`
+..* .pathname `String` the URL encoded pathname used for routing (See [url.URL](http://nodejs.org/api/url.html#url_url))
+..* .method `String` or `undefined` the HTTP method used for routing
+..* .route `Route` the matching route
+..* .arguments `Object` the route parameter arguments as name value pairs
+..* .data `*` or `undefined` any data passed upon routing
+
+Emitted each time the router successfully routes a path.
+
+###Event: 'fail'
+`function(event) {}`
+* event `Object`
+..* .pathname `String` the URL encoded pathname used for routing (See [url.URL](http://nodejs.org/api/url.html#url_url))
+..* .method `String` or `undefined` the HTTP method used for routing
+..* .data `*` or `undefined` any data passed upon routing
+
+Emitted each time the router can't find any matching route to route a path.
+
 
 ####Setup
 ```javascript
@@ -7,7 +45,6 @@ var orouter = require('./origin-router.js');
 // instantiate a new router
 var router = new orouter.Router();
 ```
-
 
 ####Routing
 ```javascript
@@ -23,7 +60,6 @@ router.route('/dog'); // outputs 'I have a dog'
 router.route('/bulldog'); // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
 ```
-
 
 ####Route Parameters
 ```javascript
@@ -45,7 +81,6 @@ router.route('/dog/homework');  // outputs 'I have a homework dog'
                                 // route was added before the homework route
 ```
 
-
 ####Route Wildcard Parameters
 ```javascript
 // add a route with a wildcard parameter denoted by a '*' at the end ...
@@ -59,7 +94,6 @@ router.add('/calico/:pet/:colors*', function(event) {
 router.route('/calico/cat/white/orange/gray'); // outputs
                                                // 'I have a white,orange,gray cat'
 ```
-
 
 ####Parameter Constraints
 ```javascript
@@ -84,10 +118,9 @@ router.add('cats/:count/:breed',
     });
 
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
-router.route('/cats/two/bengal'); // outputs nothing because the breed is invalid
+router.route('/cats/two/maltese'); // outputs nothing because the breed is invalid
 router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 ```
-
 
 ####HTTP Method-Specific Routing
 ```javascript
@@ -117,7 +150,6 @@ router.route('/fish'); // outputs 'I have a fish'
 router.route('/bird'); // outputs 'I have a bird'
 ```
 
-
 ####Reverse Routing
 ```javascript
 // add a route and give it a name for future reference ...
@@ -138,7 +170,6 @@ var pathname = router.path('mixed breed', // use the route named 'mixed breed'
 
 console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 ```
-
 
 ####Events
 ```javascript
@@ -162,7 +193,7 @@ router.once('success', function(event) {
     console.log('My ' + event.route.name + ' is ' + event.arguments.color); });
 
 router.route('/hamster/yellow'); // outputs 'I have a yellow hamster'
-                                 // outputs "My hamster is yellow"
+                                 // outputs 'My hamster is yellow'
 
 // additionally when routing a path, arbitrary data can be attached by setting the
 // data object which then will be accessible by any of the triggered listeners ...
@@ -171,8 +202,38 @@ router.add('mouse', '/mouse/:color', function(event) {
 router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mouse'
 ```
 
+####URL Encoding
+```javascript
+// by default, routes should be defined without any URL encoding...
+router.add('/pet name/:name', {'constraints': {'name': ['Pete', 'Mary Jo', 'Al']}},
+    function(event) { console.log("My pet's name is " + event.arguments.name); });
 
-####Using with a Server
+// when routing a path, the path should be in its original URL encoded form ...
+router.route('/pet%20name/Pete'); // outputs "My pet's name is Pete"
+
+// route arguments are URL decoded ...
+router.route('/pet%20name/Mary%20Jo'); // outputs "My pet's name is Mary Jo"
+
+// in some cases, a route may need to be defined with URL encoding ...
+router.add('/%3adogs%2fcats/:actions*', // 1st subpath is ':dogs/cats' URL encoded
+    {'encoded': true}, // indicate that the route is URL encoded
+    function(event) {
+        console.log('Dogs and cats ' +
+            event.arguments.actions.join(' and '));
+    });
+
+router.route('/%3Adogs%2Fcats/run/jump'); // outputs 'Dogs and cats run and jump'
+
+// when generating a path from a route, any passed route parameter arguments
+// shouldn't contain URL encoding ...
+router.add('/pet toys/:pet/:toys*', {'name': 'toys'});
+pathname = router.path('toys',
+    {'pet': 'bengal cat', 'toys': ['ball of yarn', 'catnip']});
+// the generated path is URL encoded ...
+console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
+```
+
+####Using with an HTTP Server
 ```javascript
 
 ```

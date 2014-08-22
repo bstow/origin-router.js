@@ -106,7 +106,7 @@ SOFTWARE.
  *     });
  * 
  * router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
- * router.route('/cats/two/bengal'); // outputs nothing because the breed is invalid
+ * router.route('/cats/two/maltese'); // outputs nothing because the breed is invalid
  * router.route('/cats/two/persian'); // outputs 'I have two persian cats'
  * 
  * 
@@ -181,7 +181,7 @@ SOFTWARE.
  *     console.log('My ' + event.route.name + ' is ' + event.arguments.color); });
  * 
  * router.route('/hamster/yellow'); // outputs 'I have a yellow hamster'
- *                                  // outputs "My hamster is yellow"
+ *                                  // outputs 'My hamster is yellow'
  * 
  * // additionally when routing a path, arbitrary data can be attached by setting the
  * // data object which then will be accessible by any of the triggered listeners ...
@@ -190,7 +190,38 @@ SOFTWARE.
  * router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mouse'
  * 
  * 
- * [Example: Using with a Server]
+ * [Example: URL Encoding]
+ * 
+ * // by default, routes should be defined without any URL encoding...
+ * router.add('/pet name/:name', {'constraints': {'name': ['Pete', 'Mary Jo', 'Al']}},
+ *     function(event) { console.log("My pet's name is " + event.arguments.name); });
+ * 
+ * // when routing a path, the path should be in its original URL encoded form ...
+ * router.route('/pet%20name/Pete'); // outputs "My pet's name is Pete"
+ * 
+ * // route arguments are URL decoded ...
+ * router.route('/pet%20name/Mary%20Jo'); // outputs "My pet's name is Mary Jo"
+ * 
+ * // in some cases, a route may need to be defined with URL encoding ...
+ * router.add('/%3adogs%2fcats/:actions*', // 1st subpath is ':dogs/cats' URL encoded
+ *     {'encoded': true}, // indicate that the route is URL encoded
+ *     function(event) {
+ *         console.log('Dogs and cats ' +
+ *             event.arguments.actions.join(' and '));
+ *     });
+ * 
+ * router.route('/%3Adogs%2Fcats/run/jump'); // outputs 'Dogs and cats run and jump'
+ * 
+ * // when generating a path from a route, any passed route parameter arguments
+ * // shouldn't contain URL encoding ...
+ * router.add('/pet toys/:pet/:toys*', {'name': 'toys'});
+ * pathname = router.path('toys',
+ *     {'pet': 'bengal cat', 'toys': ['ball of yarn', 'catnip']});
+ * // the generated path is URL encoded ...
+ * console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
+ * 
+ * 
+ * [Example: Using with an HTTP Server]
  * 
  * 
  * 
@@ -268,6 +299,7 @@ SOFTWARE.
         Object.defineProperty(this, 'name', {'get': function() { return name; }, // name getter
             'enumerable': true, 'configurable': false});
 
+        if (util.isArray(method)) { Object.freeze(method); }
         Object.defineProperty(this, 'method', {'get': function() { return method; }, // method getter
             'enumerable': true, 'configurable': false});
 
@@ -284,40 +316,48 @@ SOFTWARE.
         if ('ignoreCase' in options) { ignoreCase = options.ignoreCase; } // set ignore case
         else { ignoreCase = false; } // default ignore case
 
+        if ('constraints' in options) {
+            constraints = options.constraints;
+
+            if (constraints === undefined || constraints === null) { constraints = undefined; }
+            else if (constraints instanceof Function) { // constraint function
+                constraints = (function(constraints) {
+                    return function() { return constraints.apply(self, arguments); }; })(constraints);
+            } else if (constraints === Object(constraints)) { // constraints map
+                for (var key in constraints) {
+                    var constraint = constraints[key];
+
+                    var valid;
+                    if (constraint instanceof Function) {
+                        constraints[key] = (function(constraint) {
+                            return function() { return constraint.apply(self, arguments); }; })(constraint);
+                        valid = true;
+                    } else if (constraint instanceof RegExp) { valid = true; }
+                    else if (util.isArray(constraint)) {
+                        valid = constraint.length !== 0 && constraint.every(
+                            function(str) { return typeof str === 'string' || str instanceof String; });
+                    } else { valid = false; }
+
+                    if (!valid) {
+                        throw new Error("Couldn't set constraints for route " +
+                            (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                            "because the contraint '" + key + "' was not a " +
+                            'function, regular expression or an array of strings');
+                    }
+
+                    try { Object.freeze(constraint); } catch (err) {}
+                }
+            } else {
+                throw new Error("Couldn't set constraints for route " +
+                    (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                    'because the contraints are invalid');
+            }
+
+            try { Object.freeze(constraints); } catch (err) {}
+        }
         Object.defineProperty(this, 'constraints', {
             'get': function() { return constraints; }, // constraints getter
-            'set': function(value) { // constraints setter
-                if (value === undefined || value === null) { constraints = undefined; }
-                else if (value instanceof Function) { // constraint function
-                    constraints = function() { return value.apply(self, arguments); }
-                } else if (value === Object(value)) { // constraints map
-                    for (var key in value) {
-                        var constraint = value[key];
-
-                        var valid;
-                        if (constraint instanceof Function) { valid = true; }
-                        else if (constraint instanceof RegExp) { valid = true; }
-                        else if (util.isArray(constraint)) {
-                            valid = constraint.length !== 0 && constraint.every(
-                                function(str) { return typeof str === 'string' || str instanceof String; });
-                        } else { valid = false; }
-
-                        if (!valid) {
-                            throw new Error("Couldn't set constraints for route " +
-                                (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
-                                "because the contraint '" + key + "' was not a " +
-                                'function, regular expression or an array of strings');
-                        }
-                    }
-                    constraints = value;
-                } else {
-                    throw new Error("Couldn't set constraints for route " +
-                        (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
-                        'because the contraints are invalid');
-                }
-            },
             'enumerable': true, 'configurable': false});
-        if ('constraints' in options) { this.constraints = options.constraints; } // set constraints
     };
     util.inherits(Route, events.EventEmitter);
 
@@ -870,7 +910,6 @@ SOFTWARE.
                             var argumentLength = argument.length;
                             for (var i = 0; i < argumentLength; i++) {
                                 var subargument = argument[i];
-                                constraint.lastIndex = 0; // reset regular expression state
                                 if (!constraint.test(subargument)) { // invalid
                                     var invalid = {};
                                     invalid[name] = subargument;
@@ -878,7 +917,6 @@ SOFTWARE.
                                 }
                             }
                         } else { // string parameter argument
-                            constraint.lastIndex = 0; // reset regular expression state
                             if (!constraint.test(argument)) { // invalid
                                 var invalid = {};
                                 invalid[name] = argument;

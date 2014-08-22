@@ -1,29 +1,29 @@
 Setup
-----
+-----
 
 Routing
-------
+-------
 I have a cat
 I have a dog
 
 Route Parameters
----------------
+----------------
 I have a brown dog
 I have a white cat
 My fish ate my homework
 I have a homework dog
 
 Route Wildcard Parameters
-------------------------
+-------------------------
 I have a white,orange,gray cat
 
 Parameter Constraints
---------------------
+---------------------
 I have 2 poodles
 I have two persian cats
 
 HTTP Method-Specific Routing
----------------------------
+----------------------------
 I have a fish
 I have a bird
 I have a bird
@@ -33,16 +33,23 @@ I have a fish
 I have a bird
 
 Reverse Routing
---------------
+---------------
 /dog/mixed/beagle/pug/terrier
 
 Events
------
+------
 I have a brown hamster
 What is a guinea-pig?
 I have a yellow hamster
 My hamster is yellow
 John has a white mouse
 
-Using with a Server
-------------------
+URL Encoding
+------------
+My pet's name is Pete
+My pet's name is Mary Jo
+Dogs and cats run and jump
+/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip
+
+Using with an HTTP Server
+-------------------------

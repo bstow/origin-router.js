@@ -74,7 +74,7 @@ router.add('cats/:count/:breed',
     });
 
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
-router.route('/cats/two/bengal'); // outputs nothing because the breed is invalid
+router.route('/cats/two/maltese'); // outputs nothing because the breed is invalid
 router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 { @! example code section end }
 
@@ -146,7 +146,7 @@ router.once('success', function(event) {
     console.log('My ' + event.route.name + ' is ' + event.arguments.color); });
 
 router.route('/hamster/yellow'); // outputs 'I have a yellow hamster'
-                                 // outputs "My hamster is yellow"
+                                 // outputs 'My hamster is yellow'
 
 // additionally when routing a path, arbitrary data can be attached by setting the
 // data object which then will be accessible by any of the triggered listeners ...
@@ -155,6 +155,37 @@ router.add('mouse', '/mouse/:color', function(event) {
 router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mouse'
 { @! example code section end }
 
-{ @! example code section start } [Using with a Server]
+{ @! example code section start } [URL Encoding]
+// by default, routes should be defined without any URL encoding...
+router.add('/pet name/:name', {'constraints': {'name': ['Pete', 'Mary Jo', 'Al']}},
+    function(event) { console.log("My pet's name is " + event.arguments.name); });
+
+// when routing a path, the path should be in its original URL encoded form ...
+router.route('/pet%20name/Pete'); // outputs "My pet's name is Pete"
+
+// route arguments are URL decoded ...
+router.route('/pet%20name/Mary%20Jo'); // outputs "My pet's name is Mary Jo"
+
+// in some cases, a route may need to be defined with URL encoding ...
+router.add('/%3adogs%2fcats/:actions*', // 1st subpath is ':dogs/cats' URL encoded
+    {'encoded': true}, // indicate that the route is URL encoded
+    function(event) {
+        console.log('Dogs and cats ' +
+            event.arguments.actions.join(' and '));
+    });
+
+router.route('/%3Adogs%2Fcats/run/jump'); // outputs 'Dogs and cats run and jump'
+
+// when generating a path from a route, any passed route parameter arguments
+// shouldn't contain URL encoding ...
+router.add('/pet toys/:pet/:toys*', {'name': 'toys'});
+pathname = router.path('toys',
+    {'pet': 'bengal cat', 'toys': ['ball of yarn', 'catnip']});
+// the generated path is URL encoded ...
+console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
+{ @! example code section end }
+
+{ @! example code section start } [Using with an HTTP Server]
+
 
 { @! example code section end }
