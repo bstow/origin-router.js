@@ -476,7 +476,8 @@ SOFTWARE.
             options = args.options,
             callback = args.callback;
 
-        var routes = this.__routes__, methods = routes.methods;
+        var routes = this.__routes__,
+            methods = routes.methods;
 
         var method, constraints; // options
         if (options != undefined) {
