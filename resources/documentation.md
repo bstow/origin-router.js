@@ -22,9 +22,9 @@ The optional `options` `Object` can specify the following properties:
 
 * `name`: `String` the unique name to assign to the route (this is the same as specifying the name as the 1st argument)
 
-* `method`: `String|Array` the HTTP method that the added route should apply to, ex. `'GET'`.  To specify multiple HTTP methods, assign an `Array` of HTTP methods, ex. `['GET', 'POST']`.  By default, the added route will apply to all HTTP methods.
+* `method`: `String | Array` the HTTP method that the added route should apply to, ex. `'GET'`.  To specify multiple HTTP methods, assign an `Array` of HTTP methods, ex. `['GET', 'POST']`.  By default, the added route will apply to all HTTP methods.
 
-* `constraints`: `Function|Object` the constraints to apply to any of the route's parameters during URL path matching.
+* `constraints`: `Function | Object` the constraints to apply to any of the route's parameters during URL path matching.
 
   This option allows for rules to be set to restrict what one or more of the route parameters will match.  The most flexible way to set route parameter constraints is by setting the constraint option to a `Function`.  Upon the route initially matching a URL path, the constraints `Function` will be called and passed the route parameter arguments as an `Object` of name value pairs for evaluation.  The constraints `Function` should return either `true`, indicating that the route parameter arguments are compliant, or `false`, indicating that the route parameters do **not** match the URL path and that the router should continue matching with other subsequent routes.  An example of a constraints `Function` is `function(args) { return args.foo === 'bar' || args.foo === 'qux'; }` where the route will only match a URL path when the `foo` route parameter argument value is either `'bar'` or `'qux'`.
 
@@ -34,7 +34,12 @@ The optional `options` `Object` can specify the following properties:
 
 * `ignoreCase`: `Boolean` if set to `true`, the route expression will match URL paths using a case-insensitive comparison.  By default, route expression matching is case-sensitive.
 
-A `callback` `Function` can be passed as the last argument.  The callback will be called every time a URL path is routed by the added route.  (This is the same as setting a 'route' event listener on the returned `Route` instance.)
+A `callback` `Function` can be passed as the last argument.  The callback will be called every time a URL path is routed by the added route.  (This is the same as setting a 'route' event listener on the returned and newly added `Route` instance.) Upon the added route routing a URL path, the callback will be called and passed an `Object` as the first argument.  The `Object` will contain the following properties:
+* `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
+* `method`: `String | undefined` the HTTP method used
+* `route`: `Route` the matching Route instance
+* `arguments`: `Object` the route parameter arguments as name value pairs
+* `data`: `* | undefined` any data passed upon routing
 
 Returns the created Route instance that has been newly added to the router. (See [orouter.Route](orouter.Route))
 
@@ -56,16 +61,16 @@ This is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_
 ####Event: 'add'
 `function(event) {}`
 * `event`: `Object`
-    * `route`: `Route` the new route added
+    * `route`: `Route` the newly added `Route` instance
 
 Emitted each time a new route is added to the router.
 
 ####Event: 'success'
 `function(event) {}`
 * `event`: `Object`
-    * `pathname`: `String` the URL encoded pathname used for routing (See [url.URL](http://nodejs.org/api/url.html#url_url))
-    * `method`: `String | undefined` the HTTP method used for routing
-    * `route`: `Route` the matching route
+    * `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
+    * `method`: `String | undefined` the HTTP method used
+    * `route`: `Route` the matching `Route` instance
     * `arguments`: `Object` the route parameter arguments as name value pairs
     * `data`: `* | undefined` any data passed upon routing
 
@@ -74,8 +79,8 @@ Emitted each time the router successfully routes a path.
 ####Event: 'fail'
 `function(event) {}`
 * `event`: `Object`
-    * `pathname`: `String` the URL encoded pathname used for routing (See [url.URL](http://nodejs.org/api/url.html#url_url))
-    * `method`: `String | undefined` the HTTP method used for routing
+    * `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
+    * `method`: `String | undefined` the HTTP method used
     * `data`: `* | undefined` any data passed upon routing
 
 Emitted each time the router can't find any matching route to route a path.
