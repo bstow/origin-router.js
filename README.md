@@ -5,13 +5,16 @@ To use the router one must `require('./orgin-router.js')`.
 var orouter = require('./orgin-router.js');
 ```
 
+
 <br>
 
 
 ###Class: orouter.Router
 The `Router` class can be instantiated to create a router instance that allows for routes to be defined. The defined routes then serve to allow the router to predictably route URL paths to specified `Function` handlers.
 
+
 <br>
+
 
 ####router.add([name], expression, [options], [callback])
 Add a route to the router to serve in matching and routing URL paths.
@@ -48,6 +51,9 @@ A `callback` `Function` can be passed as the last argument.  If specified, the c
 Returns the created `Route` instance that has been newly added to the router. (See [orouter.Route](orouter.Route))
 
 
+<br>
+
+
 ####router.add.get([name], expression, [options], [callback])
 ####router.add.post([name], expression, [options], [callback])
 ####router.add.put([name], expression, [options], [callback])
@@ -59,6 +65,8 @@ Returns the created `Route` instance that has been newly added to the router. (S
 
 Aliases for `router.add` that specify the HTTP method option (corresponding to the function name) that the added route should apply to.
 
+
+<br>
 
 
 ####router.route(pathname, [options], [callback])
@@ -83,6 +91,9 @@ A `callback` `Function` can be passed as the last argument.  If specified, the c
 Returns the Route instance that routed the URL path or `undefined` if the URL path couldn't be routed. (See [orouter.Route](orouter.Route))
 
 
+<br>
+
+
 ####router.route.get(pathname, [options], [callback])
 ####router.route.post(pathname, [options], [callback])
 ####router.route.put(pathname, [options], [callback])
@@ -94,6 +105,8 @@ Returns the Route instance that routed the URL path or `undefined` if the URL pa
 
 Aliases for `router.route` that specify the HTTP method option (corresponding to the function name) that should be used in routing the URL path.
 
+
+<br>
 
 
 ####router.path(name, [arguments])
@@ -107,6 +120,7 @@ If the route being used to generate the URL path has parameters, specify the `ar
 Returns the the URL encoded pathname generated using the route specified. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 
 
+<br>
 
 
 This is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_eventemitter) with the following events:
@@ -137,6 +151,10 @@ Emitted each time the router successfully routes a path.
     * `data`: `* | undefined` any data passed upon routing
 
 Emitted each time the router can't find any matching route to route a path.
+
+
+<br>
+
 
 ###Class: orouter.Route
 
