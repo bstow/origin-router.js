@@ -4,7 +4,9 @@ To use the router one must `require('./orgin-router.js')`.
 ```javascript
 var orouter = require('./orgin-router.js');
 ```
-
+  
+  
+  
 
 
 ###Class: orouter.Router
