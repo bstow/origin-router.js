@@ -167,6 +167,9 @@ var orouter = require('./origin-router.js');
 var router = new orouter.Router();
 ```
 
+<br>
+<br>
+
 ####Routing
 ```javascript
 // add routes to the router with corresponding callbacks ...
@@ -181,6 +184,9 @@ router.route('/dog'); // outputs 'I have a dog'
 router.route('/bulldog'); // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
 ```
+
+<br>
+<br>
 
 ####Route Parameters
 ```javascript
@@ -202,6 +208,9 @@ router.route('/dog/homework');  // outputs 'I have a homework dog'
                                 // route was added before the homework route
 ```
 
+<br>
+<br>
+
 ####Route Wildcard Parameters
 ```javascript
 // add a route with a wildcard parameter denoted by a '*' at the end ...
@@ -215,6 +224,9 @@ router.add('/calico/:pet/:colors*', function(event) {
 router.route('/calico/cat/white/orange/gray'); // outputs
                                                // 'I have a white,orange,gray cat'
 ```
+
+<br>
+<br>
 
 ####Parameter Constraints
 ```javascript
@@ -242,6 +254,9 @@ router.route('/cats/four/siamese'); // outputs nothing because the count is inva
 router.route('/cats/two/maltese'); // outputs nothing because the breed is invalid
 router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 ```
+
+<br>
+<br>
 
 ####HTTP Method-Specific Routing
 ```javascript
@@ -271,6 +286,9 @@ router.route('/fish'); // outputs 'I have a fish'
 router.route('/bird'); // outputs 'I have a bird'
 ```
 
+<br>
+<br>
+
 ####Reverse Routing
 ```javascript
 // add a route and give it a name for future reference ...
@@ -291,6 +309,9 @@ var pathname = router.path('mixed breed', // use the route named 'mixed breed'
 
 console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 ```
+
+<br>
+<br>
 
 ####Events
 ```javascript
@@ -323,6 +344,9 @@ router.add('mouse', '/mouse/:color', function(event) {
 router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mouse'
 ```
 
+<br>
+<br>
+
 ####URL Encoding
 ```javascript
 // by default, routes should be defined without any URL encoding...
@@ -354,8 +378,10 @@ pathname = router.path('toys',
 console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
 ```
 
+<br>
+<br>
+
 ####Using with an HTTP Server
 ```javascript
 
 ```
-

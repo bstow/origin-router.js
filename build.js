@@ -8,6 +8,8 @@ require(path.join(__dirname, 'src', package.name + '.js'));
 
 // generated text for ./readme.md
 var readmeMarkdown = '';
+// array of example sections in markdown
+var readmeExampleSectionMarkdowns = [];
 
 // generated source code for ./example.js
 var exampleSource = '';
@@ -87,8 +89,8 @@ while (true) { // iterate over each example section
 
     // add the example section source code to the readme for reference
     var readmeExampleSectionMarkdown = '####' + exampleSectionTitle + '\n' +
-        '```javascript\n' + exampleSectionSource + '\n```\n\n';
-    readmeMarkdown += readmeExampleSectionMarkdown;
+        '```javascript\n' + exampleSectionSource + '\n```';
+    readmeExampleSectionMarkdowns.push(readmeExampleSectionMarkdown);
 
     // add the example section source code to the source code for reference
     var sourceExampleSectionSource = exampleSectionSource.split('\n');
@@ -102,6 +104,8 @@ while (true) { // iterate over each example section
 
     firstExampleSection = false;
 }
+
+readmeMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n<br>\n\n'); // add example sections to the readme
 
 originalSource = originalSource.replace('{ @! example code }', sourceExampleSource + '\n '); // embed examples;
 
