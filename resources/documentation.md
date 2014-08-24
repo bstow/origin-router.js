@@ -42,11 +42,11 @@ The optional `options` `Object` can specify the following properties:
 A `callback` `Function` can be passed as the last argument.  If specified, the callback will be called every time a URL path is routed by the added route.  (This is the same as setting a 'route' event listener on the returned and newly added `Route` instance.) Upon the added route routing a URL path, the callback will be called and passed an `Object` with the following properties:
 * `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
 * `method`: `String | undefined` the HTTP method used
-* `route`: `Route` the `Route` instance that routed the URL path (See [orouter.Route](orouter.Route))
+* `route`: `Route` the `Route` instance that routed the URL path (See `orouter.Route`)
 * `arguments`: `Object` the route parameter arguments as URL decoded name value pairs
 * `data`: `* | undefined` any data passed upon routing
 
-Returns the created `Route` instance that has been newly added to the router. (See [orouter.Route](orouter.Route))
+Returns the created `Route` instance that has been newly added to the router. (See `orouter.Route`)
 
 <br>
 
@@ -81,11 +81,11 @@ The optional `options` `Object` can specify the following properties:
 A `callback` `Function` can be passed as the last argument.  If specified, the callback will be called and passed an `Object` with the following properties upon the URL path being successfully routed:
 * `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
 * `method`: `String | undefined` the HTTP method used
-* `route`: `Route` the `Route` instance that routed the URL path (See [orouter.Route](orouter.Route))
+* `route`: `Route` the `Route` instance that routed the URL path (See `orouter.Route`)
 * `arguments`: `Object` the route parameter arguments as URL decoded name value pairs
 * `data`: `* | undefined` any data passed upon routing
 
-Returns the Route instance that routed the URL path or `undefined` if the URL path couldn't be routed. (See [orouter.Route](orouter.Route))
+Returns the Route instance that routed the URL path or `undefined` if the URL path couldn't be routed. (See `orouter.Route`)
 
 <br>
 
@@ -134,7 +134,7 @@ Emitted each time a new route is added to the router.
 * `event`: `Object`
     * `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
     * `method`: `String | undefined` the HTTP method used
-    * `route`: `Route` the `Route` instance that routed the URL path (See [orouter.Route](orouter.Route))
+    * `route`: `Route` the `Route` instance that routed the URL path (See `orouter.Route`)
     * `arguments`: `Object` the route parameter arguments as URL decoded name value pairs
     * `data`: `* | undefined` any data passed upon routing
 
@@ -156,3 +156,16 @@ Emitted each time the router can't find any matching route to route a path.
 <br>
 
 ###Class: orouter.Route
+
+A `Route` class instance represents a single route and should be used in conjuction with an instance of the `Router` class.  Furthermore, `Router` instances internally create and store `Route` instances to direct the  routing of URL paths. (See `orouter.Router`)
+
+<br>
+<br>
+
+####new Route(expression, [options])
+
+Creates a new `Route` instance.
+
+The `expression` `String` is required and defines if and how the route will match a URL path.  (See `router.add` [`expression`])
+
+The optional `options` `Object` allows for a number of optional route properties to be defined. (See `router.add` [`options`])

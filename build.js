@@ -106,11 +106,11 @@ while (true) { // iterate over each example section
 }
 
 // add example sections to the readme
-
 readmeMarkdown += '\n\n<br>\n<br>\n<br>\n\n';
 readmeMarkdown += '##Examples\n';
 readmeMarkdown += '\n\n<br>\n<br>\n\n';
 readmeMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n<br>\n\n');
+
 originalSource = originalSource.replace('{ @! example code }', sourceExampleSource + '\n '); // embed examples;
 
 var source = [licenseSource, originalSource].join('\n'); // assemble source code for build
