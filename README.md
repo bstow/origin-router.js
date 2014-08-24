@@ -5,16 +5,14 @@ To use the router one must `require('./orgin-router.js')`.
 var orouter = require('./orgin-router.js');
 ```
 
-
 <br>
-
+<br>
 
 ###Class: orouter.Router
 The `Router` class can be instantiated to create a router instance that allows for routes to be defined. The defined routes then serve to allow the router to predictably route URL paths to specified `Function` handlers.
 
-
 <br>
-
+<br>
 
 ####router.add([name], expression, [options], [callback])
 Add a route to the router to serve in matching and routing URL paths.
@@ -50,9 +48,7 @@ A `callback` `Function` can be passed as the last argument.  If specified, the c
 
 Returns the created `Route` instance that has been newly added to the router. (See [orouter.Route](orouter.Route))
 
-
 <br>
-
 
 ####router.add.get([name], expression, [options], [callback])
 ####router.add.post([name], expression, [options], [callback])
@@ -66,6 +62,7 @@ Returns the created `Route` instance that has been newly added to the router. (S
 Aliases for `router.add` that specify the HTTP method option (corresponding to the function name) that the added route should apply to.
 
 
+<br>
 <br>
 
 
@@ -90,9 +87,7 @@ A `callback` `Function` can be passed as the last argument.  If specified, the c
 
 Returns the Route instance that routed the URL path or `undefined` if the URL path couldn't be routed. (See [orouter.Route](orouter.Route))
 
-
 <br>
-
 
 ####router.route.get(pathname, [options], [callback])
 ####router.route.post(pathname, [options], [callback])
@@ -105,25 +100,25 @@ Returns the Route instance that routed the URL path or `undefined` if the URL pa
 
 Aliases for `router.route` that specify the HTTP method option (corresponding to the function name) that should be used in routing the URL path.
 
-
 <br>
-
+<br>
 
 ####router.path(name, [arguments])
 
 Generate a URL path using one of the routes that has been added to the router.
 
-The `name` `String` of the route to use to generate the URL path.  Consequently, only named routes can be used to generate URL paths. 
+The `name` `String` of the route to use to generate the URL path.  Consequently, only named routes can be used to generate URL paths.
 
 If the route being used to generate the URL path has parameters, specify the `arguments` `Object` as URL decoded name value pairs.  The arguments will be mapped to the route parameters and be embedded within the URL path.
 
 Returns the the URL encoded pathname generated using the route specified. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 
-
+<br>
 <br>
 
-
 This is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_eventemitter) with the following events:
+
+<br>
 
 ####Event: 'add'
 `function(event) {}`
@@ -131,6 +126,8 @@ This is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_
     * `route`: `Route` the newly added `Route` instance
 
 Emitted each time a new route is added to the router.
+
+<br>
 
 ####Event: 'success'
 `function(event) {}`
@@ -143,6 +140,8 @@ Emitted each time a new route is added to the router.
 
 Emitted each time the router successfully routes a path.
 
+<br>
+
 ####Event: 'fail'
 `function(event) {}`
 * `event`: `Object`
@@ -152,9 +151,9 @@ Emitted each time the router successfully routes a path.
 
 Emitted each time the router can't find any matching route to route a path.
 
-
 <br>
-
+<br>
+<br>
 
 ###Class: orouter.Route
 
