@@ -5,12 +5,13 @@ To use the router one must `require('./orgin-router.js')`.
 var orouter = require('./orgin-router.js');
 ```
 
+<br>
 
 
 ###Class: orouter.Router
 The `Router` class can be instantiated to create a router instance that allows for routes to be defined. The defined routes then serve to allow the router to predictably route URL paths to specified `Function` handlers.
 
-
+<br>
 
 ####router.add([name], expression, [options], [callback])
 Add a route to the router to serve in matching and routing URL paths.
