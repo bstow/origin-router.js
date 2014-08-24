@@ -6,8 +6,11 @@ var orouter = require('./orgin-router.js');
 ```
 
 
+
 ###Class: orouter.Router
 The `Router` class can be instantiated to create a router instance that allows for routes to be defined. The defined routes then serve to allow the router to predictably route URL paths to specified `Function` handlers.
+
+
 
 ####router.add([name], expression, [options], [callback])
 Add a route to the router to serve in matching and routing URL paths.
@@ -26,7 +29,7 @@ The optional `options` `Object` can specify the following properties:
 
 * `constraints`: `Function | Object` the constraints to apply to any of the route's parameters during URL path matching.
 
-  This option allows for rules to be set to restrict what one or more of the route parameters will match.  The most flexible way to set route parameter constraints is by setting the constraint option to a `Function`.  Upon the route initially matching a URL path, the constraints `Function` will be called and passed the route parameter arguments as an `Object` of name value pairs for evaluation.  The constraints `Function` should return either `true`, indicating that the route parameter arguments are compliant, or `false`, indicating that the route parameters do **not** match the URL path and that the router should continue matching with other subsequent routes.  An example of a constraints `Function` is `function(args) { return args.foo === 'bar' || args.foo === 'qux'; }` where the route will only match a URL path when the `foo` route parameter argument value is either `'bar'` or `'qux'`.
+  This option allows for rules to be set to restrict what one or more of the route parameters will match.  The most flexible way to set route parameter constraints is by setting the constraint option to a `Function`.  Upon the route initially matching a URL path, the constraints `Function` will be called and passed the route parameter arguments as an `Object` of URL decoded name value pairs for evaluation.  The constraints `Function` should return either `true`, indicating that the route parameter arguments are compliant, or `false`, indicating that the route parameters do **not** match the URL path and that the router should continue matching with other subsequent routes.  An example of a constraints `Function` is `function(args) { return args.foo === 'bar' || args.foo === 'qux'; }` where the route will only match a URL path when the `foo` route parameter argument value is either `'bar'` or `'qux'`.
 
   Alternatively, route parameter constraints can be set as an `Object` where the constraint for a route parameter is assigned to a property corresponding to the parameter's name.  Each constraint may be either a `RegExp`, `Array` of matching `Strings`, or a `Function` that accepts the route parameter argument value as the 1st argument and returns `true` or `false` to indicate compliance.  An example of a constraints `Object` is `{'foo': /^[0-9]/, 'bar': ['asdf', 'qwerty'], 'qux': function(arg) { return arg.length > 10; }}`.  In this case, the route will only match a URL path when the `foo` route parameter argument value starts with a number, the `bar` route parameter argument value is either `'asdf'` or `'qwerty'`, and the `qux` route parameter argument value is longer than 10 characters. Moreover, when a `RegExp` or `Array` of `String`s route parameter constraint is applied to a parameter wildcard argument, each URL subpath of the argument value will be tested for compliance.
 
@@ -34,14 +37,14 @@ The optional `options` `Object` can specify the following properties:
 
 * `ignoreCase`: `Boolean` if set to `true`, the route expression will match URL paths using a case-insensitive comparison.  By default, route expression matching is case-sensitive.
 
-A `callback` `Function` can be passed as the last argument.  The callback will be called every time a URL path is routed by the added route.  (This is the same as setting a 'route' event listener on the returned and newly added `Route` instance.) Upon the added route routing a URL path, the callback will be called and passed an `Object` as the first argument.  The `Object` will contain the following properties:
+A `callback` `Function` can be passed as the last argument.  If specified, the callback will be called every time a URL path is routed by the added route.  (This is the same as setting a 'route' event listener on the returned and newly added `Route` instance.) Upon the added route routing a URL path, the callback will be called and passed an `Object` with the following properties:
 * `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
 * `method`: `String | undefined` the HTTP method used
-* `route`: `Route` the matching Route instance
-* `arguments`: `Object` the route parameter arguments as name value pairs
+* `route`: `Route` the `Route` instance that routed the URL path (See [orouter.Route](orouter.Route))
+* `arguments`: `Object` the route parameter arguments as URL decoded name value pairs
 * `data`: `* | undefined` any data passed upon routing
 
-Returns the created Route instance that has been newly added to the router. (See [orouter.Route](orouter.Route))
+Returns the created `Route` instance that has been newly added to the router. (See [orouter.Route](orouter.Route))
 
 
 ####router.add.get([name], expression, [options], [callback])
@@ -53,7 +56,56 @@ Returns the created Route instance that has been newly added to the router. (See
 ####router.add.trace([name], expression, [options], [callback])
 ####router.add.connect([name], expression, [options], [callback])
 
-Aliases for router.add that specify the HTTP method option (corresponding to the function name) that the added route should apply to.
+Aliases for `router.add` that specify the HTTP method option (corresponding to the function name) that the added route should apply to.
+
+
+
+####router.route(pathname, [options], [callback])
+
+Route a URL path using the routes added to the router.
+
+The `pathname` `String` should be passed as the 1st argument and be a URL encoded path. (See [url.URL](http://nodejs.org/api/url.html#url_url))
+
+The optional `options` `Object` can specify the following properties:
+
+* `method`: `String` the HTTP method to be used in routing the URL path
+
+* `data`: `*` arbitrary data to be passed to any callbacks or listeners triggered during the routing process
+
+A `callback` `Function` can be passed as the last argument.  If specified, the callback will be called and passed an `Object` with the following properties upon the URL path being successfully routed:
+* `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
+* `method`: `String | undefined` the HTTP method used
+* `route`: `Route` the `Route` instance that routed the URL path (See [orouter.Route](orouter.Route))
+* `arguments`: `Object` the route parameter arguments as URL decoded name value pairs
+* `data`: `* | undefined` any data passed upon routing
+
+Returns the Route instance that routed the URL path or `undefined` if the URL path couldn't be routed. (See [orouter.Route](orouter.Route))
+
+
+####router.route.get(pathname, [options], [callback])
+####router.route.post(pathname, [options], [callback])
+####router.route.put(pathname, [options], [callback])
+####router.route.delete(pathname, [options], [callback])
+####router.route.head(pathname, [options], [callback])
+####router.route.options(pathname, [options], [callback])
+####router.route.trace(pathname, [options], [callback])
+####router.route.connect(pathname, [options], [callback])
+
+Aliases for `router.route` that specify the HTTP method option (corresponding to the function name) that should be used in routing the URL path.
+
+
+
+####router.path(name, [arguments])
+
+Generate a URL path using one of the routes that has been added to the router.
+
+The `name` `String` of the route to use to generate the URL path.  Consequently, only named routes can be used to generate URL paths. 
+
+If the route being used to generate the URL path has parameters, specify the `arguments` `Object` as URL decoded name value pairs.  The arguments will be mapped to the route parameters and be embedded within the URL path.
+
+Returns the the URL encoded pathname generated using the route specified. (See [url.URL](http://nodejs.org/api/url.html#url_url))
+
+
 
 
 This is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_eventemitter) with the following events:
@@ -70,8 +122,8 @@ Emitted each time a new route is added to the router.
 * `event`: `Object`
     * `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
     * `method`: `String | undefined` the HTTP method used
-    * `route`: `Route` the matching `Route` instance
-    * `arguments`: `Object` the route parameter arguments as name value pairs
+    * `route`: `Route` the `Route` instance that routed the URL path (See [orouter.Route](orouter.Route))
+    * `arguments`: `Object` the route parameter arguments as URL decoded name value pairs
     * `data`: `* | undefined` any data passed upon routing
 
 Emitted each time the router successfully routes a path.

@@ -14,6 +14,7 @@
     /*
      * Route {prototype}                                            - route for http requests
      *      inherits {EventEmitter}
+     *      module.exports.Route
      *
      * Route.prototype.constructor {function}
      *      @expression {string}                                    - route expression
@@ -54,7 +55,7 @@
      *                  .data {*|undefined}                         - data
      *              this {Route}                                    - route
      */
-    var Route = function(expression, options) {
+    var Route = module.exports.Route = function(expression, options) {
         events.EventEmitter.call(this);
 
         var self = this;
