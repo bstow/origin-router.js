@@ -134,7 +134,7 @@ Emitted each time a new route is added to the router.
 * `event`: `Object`
     * `pathname`: `String` the URL encoded pathname used (See [url.URL](http://nodejs.org/api/url.html#url_url))
     * `method`: `String | undefined` the HTTP method used
-    * `route`: `Route` the `Route` instance that routed the URL path (See `orouter.Route`)
+    * `route`: `Route` the `Route` instance that routed the URL path (See [orouter.Route](#Route))
     * `arguments`: `Object` the route parameter arguments as URL decoded name value pairs
     * `data`: `* | undefined` any data passed upon routing
 
@@ -155,7 +155,7 @@ Emitted each time the router can't find any matching route to route a path.
 <br>
 <br>
 
-###Class: orouter.Route
+###<a name="Route"></a>Class: orouter.Route
 
 A `Route` class instance represents a single route and should be used in conjuction with an instance of the `Router` class.  Furthermore, `Router` instances internally create and store `Route` instances to direct the  routing of URL paths. (See `orouter.Router`)
 
@@ -168,4 +168,11 @@ Creates a new `Route` instance.
 
 The `expression` `String` is required and defines if and how the route will match a URL path.  (See `router.add` [`expression`])
 
-The optional `options` `Object` allows for a number of optional route properties to be defined. (See `router.add` [`options`])
+The optional `options` `Object` allows for a number of optional route properties to be defined: (See `router.add` [`options`])
+* `name`: `String` the unique name to assign to the route
+* `method`: `String | Array` the HTTP method or methods that the added route should apply to.  By default, the route will apply to all HTTP methods.
+* `constraints`: `Function | Object` the constraints to apply to any of the route's parameters during URL path matching. (See `router.add` [`options.constraints`])
+* `encoded`: `Boolean` indicator that the route expression uses URL encoding within subpaths
+* `ignoreCase`: `Boolean` if set to `true`, the route expression will match URL paths using a case-insensitive comparison.  By default, route expression matching is case-sensitive.
+
+
