@@ -158,7 +158,19 @@ Emitted each time the router can't find any matching route to route a path.
 ###Class: orouter.Route
 
 
-####Setup
+
+
+<br>
+<br>
+<br>
+
+##Examples
+
+
+<br>
+<br>
+
+####Example: Setup
 ```javascript
 // require the router module
 var orouter = require('./origin-router.js');
@@ -170,7 +182,7 @@ var router = new orouter.Router();
 <br>
 <br>
 
-####Routing
+####Example: Routing
 ```javascript
 // add routes to the router with corresponding callbacks ...
 router.add('/dog', function() { console.log('I have a dog'); });
@@ -188,7 +200,7 @@ router.route('/dog/bulldog'); // outputs nothing
 <br>
 <br>
 
-####Route Parameters
+####Example: Route Parameters
 ```javascript
 // add some more routes that use ':' to denote parameters ...
 router.add('/dog/:color', function(event) {
@@ -211,7 +223,7 @@ router.route('/dog/homework');  // outputs 'I have a homework dog'
 <br>
 <br>
 
-####Route Wildcard Parameters
+####Example: Route Wildcard Parameters
 ```javascript
 // add a route with a wildcard parameter denoted by a '*' at the end ...
 router.add('/calico/:pet/:colors*', function(event) {
@@ -228,7 +240,7 @@ router.route('/calico/cat/white/orange/gray'); // outputs
 <br>
 <br>
 
-####Parameter Constraints
+####Example: Parameter Constraints
 ```javascript
 // add a route with parameter constraints ...
 router.add('/dogs/:count/:breed', // count must be more than 0
@@ -258,7 +270,7 @@ router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 <br>
 <br>
 
-####HTTP Method-Specific Routing
+####Example: HTTP Method-Specific Routing
 ```javascript
 // add routes that apply to only certain HTTP methods ...
 router.add('/fish', {'method': 'GET'},
@@ -289,7 +301,7 @@ router.route('/bird'); // outputs 'I have a bird'
 <br>
 <br>
 
-####Reverse Routing
+####Example: Reverse Routing
 ```javascript
 // add a route and give it a name for future reference ...
 router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
@@ -313,7 +325,7 @@ console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 <br>
 <br>
 
-####Events
+####Example: Events
 ```javascript
 // know when a route routes a path by listening to the route's 'route' event ...
 var route = router.add('/hamster/:color', {'name': 'hamster'});
@@ -347,7 +359,7 @@ router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mou
 <br>
 <br>
 
-####URL Encoding
+####Example: URL Encoding
 ```javascript
 // by default, routes should be defined without any URL encoding...
 router.add('/pet name/:name', {'constraints': {'name': ['Pete', 'Mary Jo', 'Al']}},
@@ -381,7 +393,7 @@ console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catn
 <br>
 <br>
 
-####Using with an HTTP Server
+####Example: Using with an HTTP Server
 ```javascript
 
 ```

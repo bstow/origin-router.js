@@ -88,7 +88,7 @@ while (true) { // iterate over each example section
     exampleSource += exampleSectionSource + '\n\n';
 
     // add the example section source code to the readme for reference
-    var readmeExampleSectionMarkdown = '####' + exampleSectionTitle + '\n' +
+    var readmeExampleSectionMarkdown = '####Example: ' + exampleSectionTitle + '\n' +
         '```javascript\n' + exampleSectionSource + '\n```';
     readmeExampleSectionMarkdowns.push(readmeExampleSectionMarkdown);
 
@@ -105,8 +105,12 @@ while (true) { // iterate over each example section
     firstExampleSection = false;
 }
 
-readmeMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n<br>\n\n'); // add example sections to the readme
+// add example sections to the readme
 
+readmeMarkdown += '\n\n<br>\n<br>\n<br>\n\n';
+readmeMarkdown += '##Examples\n';
+readmeMarkdown += '\n\n<br>\n<br>\n\n';
+readmeMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n<br>\n\n');
 originalSource = originalSource.replace('{ @! example code }', sourceExampleSource + '\n '); // embed examples;
 
 var source = [licenseSource, originalSource].join('\n'); // assemble source code for build
