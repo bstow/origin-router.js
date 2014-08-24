@@ -142,7 +142,7 @@ SOFTWARE.
  * 
  * // add a route and give it a name for future reference ...
  * router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
- *         console.log('I have a mix breed ' + event.arguments.pet +
+ *         console.log('I have a mixed breed ' + event.arguments.pet +
  *             ' that is a ' + event.arguments.breeds.join(','));
  *     });
  * 

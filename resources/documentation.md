@@ -6,7 +6,6 @@ var orouter = require('./orgin-router.js');
 ```
 
 
-
 ###Class: orouter.Router
 The `Router` class can be instantiated to create a router instance that allows for routes to be defined. The defined routes then serve to allow the router to predictably route URL paths to specified `Function` handlers.
 
