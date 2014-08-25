@@ -1,5 +1,14 @@
 {
     "name": "origin-router",
+    "description": "A node.js module for routing HTTP requests",
     "version": "0.0.5",
-    "license" : "MIT"
+    "license" : "MIT",
+    "keywords": ["origin", "router", "origin-router", "origin router", "orouter"],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bstow/origin-router.js"
+    },
+    "bugs": {
+        "url": "https://github.com/bstow/origin-router.js/issues"
+    }
 }
