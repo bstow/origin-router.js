@@ -1,12 +1,12 @@
-{ @! example code section start } [Setup]
+@![example code section <<] [Setup]
 // require the router module
-var orouter = require('./{ @! name }.js');
+var orouter = require('./@![name].js');
 
 // instantiate a new router
 var router = new orouter.Router();
-{ @! example code section end }
+@![>> example code section]
 
-{ @! example code section start } [Routing]
+@![example code section <<] [Routing]
 // add routes to the router with corresponding callbacks ...
 router.add('/dog', function() { console.log('I have a dog'); });
 router.add('/cat', function() { console.log('I have a cat'); });
@@ -18,9 +18,9 @@ router.route('/dog'); // outputs 'I have a dog'
 // attempt to route paths that don't match either route ...
 router.route('/bulldog'); // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
-{ @! example code section end }
+@![>> example code section]
 
-{ @! example code section start } [Route Parameters]
+@![example code section <<] [Route Parameters]
 // add some more routes that use ':' to denote parameters ...
 router.add('/dog/:color', function(event) {
     console.log('I have a ' + event.arguments.color + ' dog'); });
@@ -37,9 +37,9 @@ router.route('/dog/homework');  // outputs 'I have a homework dog'
                                 // this is routed by the dog color route and not
                                 // the homework route only because the dog color
                                 // route was added before the homework route
-{ @! example code section end }
+@![>> example code section]
 
-{ @! example code section start } [Route Wildcard Parameters]
+@![example code section <<] [Route Wildcard Parameters]
 // add a route with a wildcard parameter denoted by a '*' at the end ...
 router.add('/calico/:pet/:colors*', function(event) {
         console.log('I have a ' +
@@ -50,9 +50,9 @@ router.add('/calico/:pet/:colors*', function(event) {
 // and translates the argument to an array of subpaths ...
 router.route('/calico/cat/white/orange/gray'); // outputs
                                                // 'I have a white,orange,gray cat'
-{ @! example code section end }
+@![>> example code section]
 
-{ @! example code section start } [Parameter Constraints]
+@![example code section <<] [Parameter Constraints]
 // add a route with parameter constraints ...
 router.add('/dogs/:count/:breed', // count must be more than 0
     {'constraints': function(args) { return parseInt(args.count) > 0; }},
@@ -76,9 +76,9 @@ router.add('cats/:count/:breed',
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
 router.route('/cats/two/maltese'); // outputs nothing because the breed is invalid
 router.route('/cats/two/persian'); // outputs 'I have two persian cats'
-{ @! example code section end }
+@![>> example code section]
 
-{ @! example code section start } [HTTP Method-Specific Routing]
+@![example code section <<] [HTTP Method-Specific Routing]
 // add routes that apply to only certain HTTP methods ...
 router.add('/fish', {'method': 'GET'},
     function() { console.log('I have a fish'); });
@@ -103,9 +103,9 @@ router.route.post('/bird'); // outputs 'I have a bird'
 // HTTP method-specific routes are still applicable when no method is specified ...
 router.route('/fish'); // outputs 'I have a fish'
 router.route('/bird'); // outputs 'I have a bird'
-{ @! example code section end }
+@![>> example code section]
 
-{ @! example code section start } [Reverse Routing]
+@![example code section <<] [Reverse Routing]
 // add a route and give it a name for future reference ...
 router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
         console.log('I have a mixed breed ' + event.arguments.pet +
@@ -123,9 +123,9 @@ var pathname = router.path('mixed breed', // use the route named 'mixed breed'
     {'pet': 'dog', 'breeds': ['beagle', 'pug', 'terrier']}); // parameter arguments
 
 console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
-{ @! example code section end }
+@![>> example code section]
 
-{ @! example code section start } [Events]
+@![example code section <<] [Events]
 // know when a route routes a path by listening to the route's 'route' event ...
 var route = router.add('/hamster/:color', {'name': 'hamster'});
 route.on('route', function(event) {
@@ -153,9 +153,9 @@ router.route('/hamster/yellow'); // outputs 'I have a yellow hamster'
 router.add('mouse', '/mouse/:color', function(event) {
     console.log(event.data + ' has a ' + event.arguments.color + ' mouse'); });
 router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mouse'
-{ @! example code section end }
+@![>> example code section]
 
-{ @! example code section start } [URL Encoding]
+@![example code section <<] [URL Encoding]
 // by default, routes should be defined without any URL encoding...
 router.add('/pet name/:name', {'constraints': {'name': ['Pete', 'Mary Jo', 'Al']}},
     function(event) { console.log("My pet's name is " + event.arguments.name); });
@@ -183,9 +183,9 @@ pathname = router.path('toys',
     {'pet': 'bengal cat', 'toys': ['ball of yarn', 'catnip']});
 // the generated path is URL encoded ...
 console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
-{ @! example code section end }
+@![>> example code section]
 
-{ @! example code section start } [Using with an HTTP Server]
+@![example code section <<] [Using with an HTTP Server]
 
 
-{ @! example code section end }
+@![>> example code section]

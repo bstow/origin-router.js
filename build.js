@@ -22,23 +22,26 @@ var longestLicenseTextLine = 0;
 licenseText.split('\n').forEach(
     function(line) { longestLicenseTextLine = Math.max(longestLicenseTextLine, line.length); });
 
+// line length for generated lines in source
+var sourceLineLength = Math.max(80, longestLicenseTextLine);
+
 // source code compatible (commented out) license
-var licenseSource = '/' + Array(longestLicenseTextLine).join('*') + '\n' +
+var licenseSource = '/' + Array(sourceLineLength).join('*') + '\n' +
     licenseText.trim() + '\n' +
-    Array(longestLicenseTextLine).join('*') + '/\n';
+    Array(sourceLineLength).join('*') + '/\n';
 
 // ./src/origin-router.js source code
 var originalSource = fs.readFileSync(path.join(__dirname, 'src', package.name + '.js'), 'utf8');
 
 // clean up original source and embed info
 originalSource = originalSource.substring( // remove tests
-    0, originalSource.indexOf('{ @! tests }') - '/*'.length).trim();
-originalSource = originalSource.replace('{ @! name }', package.name); // embed name
-originalSource = originalSource.replace('{ @! version }', package.version); // embed version number
+    0, originalSource.indexOf('@![tests]') - '/*'.length).trim();
+originalSource = originalSource.replace('@![name]', package.name); // embed name
+originalSource = originalSource.replace('@![version]', package.version); // embed version number
 
 // ./resources/example-code.txt text
 var exampleCodeText = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
-exampleCodeText = exampleCodeText.replace('{ @! name }', package.name); // embed name
+exampleCodeText = exampleCodeText.replace('@![name]', package.name); // embed name
 
 // ./resources/documentation.md
 var documentationMarkdown = fs.readFileSync(path.join(__dirname, 'resources', 'documentation.md'), 'utf8');
@@ -48,8 +51,8 @@ readmeMarkdown += documentationMarkdown;
 readmeMarkdown += '\n\n';
 
 // examples
-var EXAMPLE_START_SECTION = '{ @! example code section start }';
-var EXAMPLE_END_SECTION = '{ @! example code section end }';
+var EXAMPLE_START_SECTION = '@![example code section <<]';
+var EXAMPLE_END_SECTION = '@![>> example code section]';
 
 // example source code to embed in source
 var sourceExampleSource = '';
@@ -95,15 +98,23 @@ while (true) { // iterate over each example section
     // add the example section source code to the source code for reference
     var sourceExampleSectionSource = exampleSectionSource.split('\n');
     sourceExampleSectionSource.unshift('');
-    sourceExampleSectionSource.unshift('[Example: ' + exampleSectionTitle + ']');
+
+    var sourceExampleSectionSourceTitleLine = 'Example: ' + exampleSectionTitle;
+    sourceExampleSectionSourceTitleLine = '//// ' + sourceExampleSectionSourceTitleLine + ' ' +
+         Array(Math.max(sourceLineLength - sourceExampleSectionSourceTitleLine.length - 8, 0)).join('/');
+    sourceExampleSectionSource.unshift(sourceExampleSectionSourceTitleLine);
+
     sourceExampleSectionSource.unshift('');
     sourceExampleSectionSource.push('');
     sourceExampleSectionSource.push('');
     sourceExampleSectionSource = sourceExampleSectionSource.join('\n * ');
+
+    if (firstExampleSection) { sourceExampleSource += Array(sourceLineLength - 1).join('*'); }
     sourceExampleSource += sourceExampleSectionSource;
 
     firstExampleSection = false;
 }
+sourceExampleSource += '\n ' + Array(sourceLineLength - 2).join('*');
 
 // add example sections to the readme
 readmeMarkdown += '\n\n<br>\n<br>\n<br>\n\n';
@@ -111,7 +122,7 @@ readmeMarkdown += '##Examples\n';
 readmeMarkdown += '\n\n<br>\n<br>\n\n';
 readmeMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n<br>\n\n');
 
-originalSource = originalSource.replace('{ @!example code }', sourceExampleSource + '\n '); // embed examples;
+originalSource = originalSource.replace('@![example code]', sourceExampleSource); // embed examples;
 
 var source = [licenseSource, originalSource].join('\n'); // assemble source code for build
 

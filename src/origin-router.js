@@ -1,6 +1,6 @@
-/**** { @! name }.js v.{ @! version } **/
+/* @![name].js v.@![version] */
 
-/*{ @! example code }*/
+/*@![example code]*/
 
 (function() { 'use strict';
     var events = require('events'),
@@ -725,7 +725,7 @@
     };
 })();
 
-/*{ @! tests }*/
+/*@![tests]*/
 (function() { // tests
     var assert = require('assert');
 
