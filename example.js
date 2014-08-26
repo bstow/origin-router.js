@@ -1,7 +1,7 @@
 
-/*********
- * Setup *
- *********/                                            console.log("Setup\n-----");
+/*************************
+ * Setting Up the Router *
+ *************************/                            console.log("Setting Up the Router\n---------------------");
 
 // require the router module
 var orouter = require('./origin-router.js');
@@ -10,26 +10,26 @@ var orouter = require('./origin-router.js');
 var router = new orouter.Router();
 
 
-/***********
- * Routing *
- ***********/                                          console.log("\nRouting\n-------");
+/*********************
+ * Routing URL Paths *
+ *********************/                                console.log("\nRouting URL Paths\n-----------------");
 
 // add routes to the router with corresponding callbacks ...
 router.add('/dog', function() { console.log('I have a dog'); });
 router.add('/cat', function() { console.log('I have a cat'); });
 
-// route some paths ...
+// route some URL paths ...
 router.route('/cat'); // outputs 'I have a cat'
 router.route('/dog'); // outputs 'I have a dog'
 
-// attempt to route paths that don't match either route ...
+// attempt to route URL paths that don't match either route ...
 router.route('/bulldog'); // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
 
 
-/********************
- * Route Parameters *
- ********************/                                 console.log("\nRoute Parameters\n----------------");
+/**************************
+ * Routes with Parameters *
+ **************************/                           console.log("\nRoutes with Parameters\n----------------------");
 
 // add some more routes that use ':' to denote parameters ...
 router.add('/dog/:color', function(event) {
@@ -39,7 +39,7 @@ router.add('/cat/:color', function(event) {
 router.add('/:pet/homework', function(event) {
     console.log('My ' + event.arguments.pet + ' ate my homework'); })
 
-// route some more paths that match the added routes ...
+// route some more URL paths that match the added routes ...
 router.route('/dog/brown'); // outputs 'I have a brown dog'
 router.route('cat/white'); // outputs 'I have a white cat'
 router.route('/fish/homework'); // outputs 'My fish at my homework'
@@ -49,9 +49,9 @@ router.route('/dog/homework');  // outputs 'I have a homework dog'
                                 // route was added before the homework route
 
 
-/*****************************
- * Route Wildcard Parameters *
- *****************************/                        console.log("\nRoute Wildcard Parameters\n-------------------------");
+/***********************************
+ * Routes with Wildcard Parameters *
+ ***********************************/                  console.log("\nRoutes with Wildcard Parameters\n-------------------------------");
 
 // add a route with a wildcard parameter denoted by a '*' at the end ...
 router.add('/calico/:pet/:colors*', function(event) {
@@ -59,15 +59,15 @@ router.add('/calico/:pet/:colors*', function(event) {
             event.arguments.colors.join(',') + ' ' + event.arguments.pet);
     });
 
-// the wildcard parameter matches anything at the end of the path
+// the wildcard parameter matches anything at the end of the URL path
 // and translates the argument to an array of subpaths ...
 router.route('/calico/cat/white/orange/gray'); // outputs
                                                // 'I have a white,orange,gray cat'
 
 
-/*************************
- * Parameter Constraints *
- *************************/                            console.log("\nParameter Constraints\n---------------------");
+/********************************************
+ * Applying Constraints to Route Parameters *
+ ********************************************/         console.log("\nApplying Constraints to Route Parameters\n----------------------------------------");
 
 // add a route with parameter constraints ...
 router.add('/dogs/:count/:breed', // count must be more than 0
@@ -108,14 +108,14 @@ router.add('/bird', {'method': ['GET', 'POST']},
 router.add.get('/turtle', function() { console.log('I have a turtle'); });
 router.add.post('/rabbit', function() { console.log('I have a rabbit'); });
 
-// route paths with a corresponding HTTP method specified ...
+// route URL paths with a corresponding HTTP method specified ...
 router.route('/fish', {'method': 'GET'}); // outputs 'I have a fish'
 router.route('/fish', {'method': 'POST'}); // outputs nothing
 router.route('/bird', {'method': 'GET'}); // outputs 'I have a bird'
 router.route('/bird', {'method': 'POST'}); // outputs 'I have a bird'
 router.route('/bird', {'method': 'DELETE'}); // outputs nothing
 
-// alternatively a path may be routed for an HTTP method like so ...
+// alternatively a URL path may be routed for an HTTP method like so ...
 router.route.get('/fish'); // outputs 'I have a fish'
 router.route.post('/bird'); // outputs 'I have a bird'
 
@@ -124,9 +124,9 @@ router.route('/fish'); // outputs 'I have a fish'
 router.route('/bird'); // outputs 'I have a bird'
 
 
-/*******************
- * Reverse Routing *
- *******************/                                  console.log("\nReverse Routing\n---------------");
+/*************************************
+ * Generating URL Paths using Routes *
+ *************************************/                console.log("\nGenerating URL Paths using Routes\n---------------------------------");
 
 // add a route and give it a name for future reference ...
 router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
@@ -140,55 +140,57 @@ router.add('pure breed', '/:pet/pure/:breed', function(event) {
             ' that is a ' + event.arguments.breed);
     });
 
-// generate a path using a route ...
+// generate a URL path using a route ...
 var pathname = router.path('mixed breed', // use the route named 'mixed breed'
     {'pet': 'dog', 'breeds': ['beagle', 'pug', 'terrier']}); // parameter arguments
 
 console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 
 
-/**********
- * Events *
- **********/                                           console.log("\nEvents\n------");
+/************************************
+ * Router and Route Events and Data *
+ ************************************/                 console.log("\nRouter and Route Events and Data\n--------------------------------");
 
-// know when a route routes a path by listening to the route's 'route' event ...
+// know when a route routes a URL path by listening to
+// the route's 'route' event ...
 var route = router.add('/hamster/:color', {'name': 'hamster'});
 route.on('route', function(event) {
     console.log('I have a ' + event.arguments.color + ' ' + this.name); });
 
 router.route('/hamster/brown'); // outputs 'I have a brown hamster'
 
-// know when the router is unable to find a matching route to route a path
+// know when the router is unable to find a matching route to route a URL path
 // by listening to the router's 'fail' event ...
 router.once('fail', function(event) {
     console.log('What is a ' + event.pathname.replace('/', '-') + '?'); });
 
 router.route('guinea/pig'); // outputs 'What is a guinea-pig?'
 
-// alternatively, know when the router successfully routes any path by listening
-// to the router's 'success' event ...
+// alternatively, know when the router successfully routes any URL path by
+// listening to the router's 'success' event ...
 router.once('success', function(event) {
     console.log('My ' + event.route.name + ' is ' + event.arguments.color); });
 
 router.route('/hamster/yellow'); // outputs 'I have a yellow hamster'
                                  // outputs 'My hamster is yellow'
 
-// additionally when routing a path, arbitrary data can be attached by setting the
-// data object which then will be accessible by any of the triggered listeners ...
+// additionally when routing a URL path, arbitrary data can be attached
+// by setting the data object which then will be accessible by any of the
+// triggered listeners ...
 router.add('mouse', '/mouse/:color', function(event) {
     console.log(event.data + ' has a ' + event.arguments.color + ' mouse'); });
 router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mouse'
 
 
-/****************
- * URL Encoding *
- ****************/                                     console.log("\nURL Encoding\n------------");
+/**********************
+ * About URL Encoding *
+ **********************/                               console.log("\nAbout URL Encoding\n------------------");
 
 // by default, routes should be defined without any URL encoding...
 router.add('/pet name/:name', {'constraints': {'name': ['Pete', 'Mary Jo', 'Al']}},
     function(event) { console.log("My pet's name is " + event.arguments.name); });
 
-// when routing a path, the path should be in its original URL encoded form ...
+// when routing a URL path, the path should be in its original URL encoded form ...
 router.route('/pet%20name/Pete'); // outputs "My pet's name is Pete"
 
 // route arguments are URL decoded ...
@@ -204,12 +206,12 @@ router.add('/%3adogs%2fcats/:actions*', // 1st subpath is ':dogs/cats' URL encod
 
 router.route('/%3Adogs%2Fcats/run/jump'); // outputs 'Dogs and cats run and jump'
 
-// when generating a path from a route, any passed route parameter arguments
+// when generating a URL path from a route, any passed route parameter arguments
 // shouldn't contain URL encoding ...
 router.add('/pet toys/:pet/:toys*', {'name': 'toys'});
 pathname = router.path('toys',
     {'pet': 'bengal cat', 'toys': ['ball of yarn', 'catnip']});
-// the generated path is URL encoded ...
+// the generated URL path is URL encoded ...
 console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
 
 

@@ -8,6 +8,8 @@ require(path.join(__dirname, 'src', package.name + '.js'));
 
 // generated text for ./readme.md
 var readmeMarkdown = '';
+// links to generate and embed in markdown
+var readmeMarkdownLinks = {};
 // array of example sections in markdown
 var readmeExampleSectionMarkdowns = [];
 
@@ -36,8 +38,16 @@ var originalSource = fs.readFileSync(path.join(__dirname, 'src', package.name + 
 // clean up original source and embed info
 originalSource = originalSource.substring( // remove tests
     0, originalSource.indexOf('@![tests]') - '/*'.length).trim();
-originalSource = originalSource.replace('@![name]', package.name); // embed name
-originalSource = originalSource.replace('@![version]', package.version); // embed version number
+
+// source code compatible info
+var infoSource = Array(sourceLineLength - 1).join('*') + '\n' +
+    'Name:           ' + package.name.split('-').join(' ').split(' ').map(function(word) {
+        return word.charAt(0).toUpperCase() + word.substring(1); }).join(' ') + '\n' +
+    'Version:        ' + package.version + '\n' +
+    'Description:    ' + package.description + '\n' +
+    Array(sourceLineLength - 1).join('*');
+
+originalSource = originalSource.replace('@![info]', infoSource); // embed info
 
 // ./resources/example-code.txt text
 var exampleCodeText = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
@@ -47,12 +57,13 @@ exampleCodeText = exampleCodeText.replace('@![name]', package.name); // embed na
 var documentationMarkdown = fs.readFileSync(path.join(__dirname, 'resources', 'documentation.md'), 'utf8');
 
 // add documentation to readme
+readmeMarkdown += "##<a name='documentation'>Router Documentation\n\n";
+readmeMarkdown += '<br>\n<br>\n\n';
 readmeMarkdown += documentationMarkdown;
-readmeMarkdown += '\n\n';
 
 // examples
-var EXAMPLE_START_SECTION = '@![example code section <<]';
-var EXAMPLE_END_SECTION = '@![>> example code section]';
+var EXAMPLE_START_SECTION = '@![example section <<]';
+var EXAMPLE_END_SECTION = '@![>> example section]';
 
 // example source code to embed in source
 var sourceExampleSource = '';
@@ -70,9 +81,10 @@ while (true) { // iterate over each example section
     var exampleSectionSource = exampleCodeText.slice(
         exampleStartSectionIndex + EXAMPLE_START_SECTION.length, exampleEndSectionIndex);
 
+    var exampleSectionIdentifier; // extract example section identifier
     var exampleSectionTitle; // extract example section title
-    exampleSectionSource = exampleSectionSource.replace(/^\s*\[\s*(.+?)\s*\]/,
-        function(match, $1) { exampleSectionTitle = $1; return ''; });
+    exampleSectionSource = exampleSectionSource.replace(/^\s*\[\s*(.+?)\s*[:]\s*(.+?)\s*\]/,
+        function(match, $1, $2) { exampleSectionIdentifier = $1, exampleSectionTitle = $2; return ''; });
 
     exampleSectionSource = exampleSectionSource.split('\n').map( // right trim each line of the example section
         function(line) { return line.replace(/\s*$/, ''); }).join('\n');
@@ -90,8 +102,12 @@ while (true) { // iterate over each example section
         ');\n\n';
     exampleSource += exampleSectionSource + '\n\n';
 
+    // allow for the gerneration of example links
+    readmeMarkdownLinks['example_' + exampleSectionIdentifier] = 'Example: ' + exampleSectionTitle;
+
     // add the example section source code to the readme for reference
-    var readmeExampleSectionMarkdown = '####Example: ' + exampleSectionTitle + '\n' +
+    var readmeExampleSectionMarkdown = "####<a name='" + 'example_' + exampleSectionIdentifier + "'>" +
+        'Example: ' + exampleSectionTitle + '\n' +
         '```javascript\n' + exampleSectionSource + '\n```';
     readmeExampleSectionMarkdowns.push(readmeExampleSectionMarkdown);
 
@@ -116,13 +132,15 @@ while (true) { // iterate over each example section
 }
 sourceExampleSource += '\n ' + Array(sourceLineLength - 2).join('*');
 
-// add example sections to the readme
-readmeMarkdown += '\n\n<br>\n<br>\n<br>\n\n';
-readmeMarkdown += '##Examples\n';
-readmeMarkdown += '\n\n<br>\n<br>\n\n';
-readmeMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n<br>\n\n');
+// prepend example sections to the readme
+var readmeExamplesMarkdown = '';
+readmeExamplesMarkdown += "##<a name='examples'>Examples of Using the Router\n\n";
+readmeExamplesMarkdown += '<br>\n<br>\n\n';
+readmeExamplesMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n<br>\n\n') + '\n\n';
+readmeExamplesMarkdown += '<br>\n<br>\n<br>\n\n';
+readmeMarkdown = readmeExamplesMarkdown + readmeMarkdown;
 
-originalSource = originalSource.replace('@![example code]', sourceExampleSource); // embed examples;
+originalSource = originalSource.replace('@![examples]', sourceExampleSource); // embed examples
 
 var source = [licenseSource, originalSource].join('\n'); // assemble source code for build
 
@@ -159,5 +177,11 @@ exampleOut.join('\n').split('\n').forEach(function(exampleOutputLine, lineNumber
     };
 });
 
+// embed markdown links
+for (var readmeMarkdownLinkAnchor in readmeMarkdownLinks) {
+    var readmeMarkdownLinkTitle = readmeMarkdownLinks[readmeMarkdownLinkAnchor];
+    var readmeMarkdownLink = '[' + readmeMarkdownLinkTitle + ']' + '(#' + readmeMarkdownLinkAnchor + ')';
+    readmeMarkdown = readmeMarkdown.split('@![link ' + readmeMarkdownLinkAnchor + ']').join(readmeMarkdownLink);
+}
 // ./readme markdown
 fs.writeFileSync(path.join(__dirname, './README.md'), readmeMarkdown, 'utf8'); // write

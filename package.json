@@ -1,7 +1,7 @@
 {
     "name": "origin-router",
     "description": "A node.js module for routing HTTP requests",
-    "version": "0.0.5",
+    "version": "1.0.0",
     "license" : "MIT",
     "keywords": ["origin", "router", "origin-router", "origin router", "orouter"],
     "repository": {

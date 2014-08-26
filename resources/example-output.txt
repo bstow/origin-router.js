@@ -1,24 +1,24 @@
-Setup
------
+Setting Up the Router
+---------------------
 
-Routing
--------
+Routing URL Paths
+-----------------
 I have a cat
 I have a dog
 
-Route Parameters
-----------------
+Routes with Parameters
+----------------------
 I have a brown dog
 I have a white cat
 My fish ate my homework
 I have a homework dog
 
-Route Wildcard Parameters
--------------------------
+Routes with Wildcard Parameters
+-------------------------------
 I have a white,orange,gray cat
 
-Parameter Constraints
----------------------
+Applying Constraints to Route Parameters
+----------------------------------------
 I have 2 poodles
 I have two persian cats
 
@@ -32,20 +32,20 @@ I have a bird
 I have a fish
 I have a bird
 
-Reverse Routing
----------------
+Generating URL Paths using Routes
+---------------------------------
 /dog/mixed/beagle/pug/terrier
 
-Events
-------
+Router and Route Events and Data
+--------------------------------
 I have a brown hamster
 What is a guinea-pig?
 I have a yellow hamster
 My hamster is yellow
 John has a white mouse
 
-URL Encoding
-------------
+About URL Encoding
+------------------
 My pet's name is Pete
 My pet's name is Mary Jo
 Dogs and cats run and jump

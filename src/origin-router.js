@@ -1,6 +1,6 @@
-/* @![name].js v.@![version] */
+/*@![info]*/
 
-/*@![example code]*/
+/*@![examples]*/
 
 (function() { 'use strict';
     var events = require('events'),
@@ -744,6 +744,7 @@
     router.add(':param1*/:param2/path', {'name': 'route 3'}).on('route', onRoute); // 3rd route
     router.add('%2F%20path/file.ext', {'name': 'route 4', 'ignoreCase': true, 'encoded': true}, onRoute); // 4th route
             // '/ path' ...
+    router.add('/', {'name': 'route 5'}, onRoute); // 5th route
 
     var constraints;
     constraints = function(args) {
@@ -868,6 +869,12 @@
     // route path with 4th route
     router.route('/%2f%20path/file.EXT/', {'method': 'Delete'});
     assert.strictEqual(result.name, 'route 4', 'The path did not match the 4th route');
+
+    // route path with 5th route
+    router.route('/', {'method': 'GET'});
+    assert.strictEqual(result.name, 'route 5', 'The path did not match the 5th route');
+    router.route('', {'method': 'POST'});
+    assert.strictEqual(result.name, 'route 5', 'The path did not match the 5th route');
 
     // route paths with constrained routes
     router.route('/constraint/1/1', {'method': 'connect'});
