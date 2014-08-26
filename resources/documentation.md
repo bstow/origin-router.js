@@ -1,3 +1,38 @@
+@![toc <<]
+* [Class: Router](#Router)
+    * [new Router()](#new_Router)
+    * [router.add([name], expression, [options], [callback])](#router_add)
+    * [router.add.get([name], expression, [options], [callback])](#router_add_get)
+    * [router.add.post([name], expression, [options], [callback])](#router_add_post)
+    * [router.add.put([name], expression, [options], [callback])](#router_add_put)
+    * [router.add.delete([name], expression, [options], [callback])](#router_add_delete)
+    * [router.add.head([name], expression, [options], [callback])](#router_add_head)
+    * [router.add.options([name], expression, [options], [callback])](#router_add_options)
+    * [router.add.trace([name], expression, [options], [callback])](#router_add_trace)
+    * [router.add.connect([name], expression, [options], [callback])](#router_add_connect)
+    * [router.route(pathname, [options], [callback])](#router_route)
+    * [router.route.get(pathname, [options], [callback])](#router_route_get)
+    * [router.route.post(pathname, [options], [callback])](#router_route_post)
+    * [router.route.put(pathname, [options], [callback])](#router_route_put)
+    * [router.route.delete(pathname, [options], [callback])](#router_route_delete)
+    * [router.route.head(pathname, [options], [callback])](#router_route_head)
+    * [router.route.options(pathname, [options], [callback])](#router_route_options)
+    * [router.route.trace(pathname, [options], [callback])](#router_route_trace)
+    * [router.route.connect(pathname, [options], [callback])](#router_route_connect)
+    * [router.path(name, [arguments])](#router_path)
+    * [Event: 'add'](#router_add_event)
+    * [Event: 'success'](#router_success_event)
+    * [Event: 'fail'](#router_fail_event)
+* [Class: Route](#Route)
+    * [new Route(expression, [options])](#new_Route)
+    * [route.name](#route_name)
+    * [route.method](#route_method)
+    * [route.constraints](#route_constraints)
+    * [route.encoded](#route_encoded)
+    * [route.ignoreCase](#route_ignoreCase)
+    * [Event: 'route'](#route_route_event)
+@![>> toc]
+
 To use the router one must `require('./orgin-router.js')`.
 ```javascript
 var orouter = require('./orgin-router.js');

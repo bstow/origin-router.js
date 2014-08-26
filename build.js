@@ -8,6 +8,8 @@ require(path.join(__dirname, 'src', package.name + '.js'));
 
 // generated text for ./readme.md
 var readmeMarkdown = '';
+// readme text for the table of contents
+var readmeTOCMarkdown = '';
 // links to generate and embed in markdown
 var readmeMarkdownLinks = {};
 // array of example sections in markdown
@@ -53,8 +55,22 @@ originalSource = originalSource.replace('@![info]', infoSource); // embed info
 var exampleCodeText = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
 exampleCodeText = exampleCodeText.replace('@![name]', package.name); // embed name
 
+var DOCUMENTATION_TOC_MARKDOWN_START_SECTION = '@![toc <<]';
+var DOCUMENTATION_TOC_MARKDOWN_END_SECTION = '@![>> toc]';
+
 // ./resources/documentation.md
 var documentationMarkdown = fs.readFileSync(path.join(__dirname, 'resources', 'documentation.md'), 'utf8');
+
+// extract documentation TOC
+var documentationStartTOCMarkdownIndex = documentationMarkdown.indexOf(DOCUMENTATION_TOC_MARKDOWN_START_SECTION);
+var documentationEndTOCMarkdownIndex = documentationMarkdown.indexOf(DOCUMENTATION_TOC_MARKDOWN_END_SECTION);
+
+var documentationTOCMarkdown = documentationMarkdown.slice(
+    documentationStartTOCMarkdownIndex + DOCUMENTATION_TOC_MARKDOWN_START_SECTION.length,
+    documentationEndTOCMarkdownIndex);
+
+documentationMarkdown = documentationMarkdown.substring(0, documentationStartTOCMarkdownIndex) +
+    documentationMarkdown.substring(documentationEndTOCMarkdownIndex + DOCUMENTATION_TOC_MARKDOWN_END_SECTION.length);
 
 // add documentation to readme
 readmeMarkdown += "##<a name='documentation'>Router Documentation\n\n";
@@ -176,6 +192,10 @@ exampleOut.join('\n').split('\n').forEach(function(exampleOutputLine, lineNumber
                 'on line ' + (lineNumber + 1) + ")");
     };
 });
+
+// add the TOC to the ./readme markdown
+readmeTOCMarkdown += documentationTOCMarkdown
+readmeMarkdown = readmeTOCMarkdown + '\n\n<br>\n<br\n<br>\n\n' + readmeMarkdown;
 
 // embed markdown links
 for (var readmeMarkdownLinkAnchor in readmeMarkdownLinks) {
