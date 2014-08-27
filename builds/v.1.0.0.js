@@ -163,6 +163,27 @@ Description:    A node.js module for routing HTTP requests
  * console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
  * 
  * 
+ * //// Example: Working with Route Objects ////////////////////////////////////
+ * 
+ * // a route can be instantiated directly ...
+ * var route = new orouter.Route('/:pet/trick/:tricks*',
+ *     {'name': 'tricks', 'method': 'GET'});
+ * 
+ * // the route instance can then be used to generate a URL path
+ * // without being added to a router ...
+ * var pathname = route.path({'pet': 'dog', 'tricks': ['sit', 'roll']});
+ * 
+ * console.log(pathname); // outputs '/dog/trick/sit/roll'
+ * 
+ * // the route can also be added to any router(s)
+ * router.add(route, function(event) {
+ *         console.log('My ' + event.arguments.pet + "'s best " + event.route.name +
+ *             ' are ' + event.arguments.tricks.join(' and '));
+ *     });
+ * 
+ * router.route.get(pathname); // outputs "My dog's best tricks are sit and roll"
+ * 
+ * 
  * //// Example: Router and Route Events and Data //////////////////////////////
  * 
  * // know when a route routes a URL path by listening to
@@ -235,11 +256,20 @@ Description:    A node.js module for routing HTTP requests
  ******************************************************************************/
 
 (function() { 'use strict';
-    var events = require('events'),
-        util = require('util');
+    var events  = require('events'),
+        util    = require('util');
 
-    var HTTP = {'METHODS': // http methods
-        ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'TRACE', 'CONNECT']};
+    var HTTP = { // http methods
+        'METHODS': [
+            'GET',
+            'POST',
+            'PUT',
+            'DELETE',
+            'HEAD',
+            'OPTIONS',
+            'TRACE',
+            'CONNECT'
+        ]};
 
     var argumentMaps = {}; // argument mappings for functions with variable parameters
 
@@ -294,34 +324,42 @@ Description:    A node.js module for routing HTTP requests
 
         var name, method, constraints, encoded, ignoreCase; // options
         if (options != undefined) {
-            name = options.name;
-            method = options.method;
+            name    = options.name;
+            method  = options.method;
         }
 
         // accessors
 
-        Object.defineProperty(this, 'expression', {'get': function() { return expression; }, // expression getter
-            'enumerable': true, 'configurable': false});
+        Object.defineProperty(this, 'expression', {
+            'get':          function() { return expression; }, // expression getter
+            'enumerable':   true,
+            'configurable': false });
 
-        Object.defineProperty(this, 'name', {'get': function() { return name; }, // name getter
-            'enumerable': true, 'configurable': false});
+        Object.defineProperty(this, 'name', {
+            'get':          function() { return name; }, // name getter
+            'enumerable':   true,
+            'configurable': false });
 
         if (util.isArray(method)) { Object.freeze(method); }
-        Object.defineProperty(this, 'method', {'get': function() { return method; }, // method getter
-            'enumerable': true, 'configurable': false});
+        Object.defineProperty(this, 'method', {
+            'get':          function() { return method; }, // method getter
+            'enumerable':   true,
+            'configurable': false });
 
         Object.defineProperty(this, 'encoded', {
-            'get': function() { return encoded; }, // encoded getter
-            'enumerable': true, 'configurable': false});
-        if ('encoded' in options) { encoded = options.encoded; } // set encoded
-        else { encoded = false; } // default encoded
+            'get':          function() { return encoded; }, // encoded getter
+            'enumerable':   true,
+            'configurable': false });
+        if ('encoded' in options)   { encoded = options.encoded; } // set encoded
+        else                        { encoded = false; } // default encoded
 
         Object.defineProperty(this, 'ignoreCase', {
-            'get': function() { return ignoreCase; }, // ignore case getter
-            'set': function(value) { ignoreCase = value; }, // ignore case setter
-            'enumerable': true, 'configurable': false});
-        if ('ignoreCase' in options) { ignoreCase = options.ignoreCase; } // set ignore case
-        else { ignoreCase = false; } // default ignore case
+            'get':          function() { return ignoreCase; }, // ignore case getter
+            'set':          function(value) { ignoreCase = value; }, // ignore case setter
+            'enumerable':   true,
+            'configurable': false });
+        if ('ignoreCase' in options)    { ignoreCase = options.ignoreCase; } // set ignore case
+        else                            { ignoreCase = false; } // default ignore case
 
         if ('constraints' in options) {
             constraints = options.constraints;
@@ -347,7 +385,7 @@ Description:    A node.js module for routing HTTP requests
 
                     if (!valid) {
                         throw new Error("Couldn't set constraints for route " +
-                            (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                            (this.name != undefined ? "'" + this.name + "'" + ' ' : '') +
                             "because the contraint '" + key + "' was not a " +
                             'function, regular expression or an array of strings');
                     }
@@ -356,17 +394,55 @@ Description:    A node.js module for routing HTTP requests
                 }
             } else {
                 throw new Error("Couldn't set constraints for route " +
-                    (this.name != undefined ? "\'" + this.name + "\'" + ' ' : '') +
+                    (this.name != undefined ? "'" + this.name + "'" + ' ' : '') +
                     'because the contraints are invalid');
             }
 
             try { Object.freeze(constraints); } catch (err) {}
         }
         Object.defineProperty(this, 'constraints', {
-            'get': function() { return constraints; }, // constraints getter
-            'enumerable': true, 'configurable': false});
+            'get':          function() { return constraints; }, // constraints getter
+            'enumerable':   true,
+            'configurable': false });
+
+        var subroutes = parse.route(this.expression, this.encoded);
+        Object.defineProperty(this, '__subroutes__', { // private
+            'get':          function() { return subroutes; }, // subroutes getter
+            'enumerable':   false,
+            'configurable': false });
     };
     util.inherits(Route, events.EventEmitter);
+
+    /*
+     * Route.prototype.path {function}                  - generate a path
+     *      [@arguments] {object<string|array<string>>} - route arguments as name value pairs
+     *      return {string}                             - url encoded path
+     */
+    Route.prototype.path = function(args) {
+        args = args || {};
+
+        var subroutes = this.__subroutes__;
+
+        // validate constraints
+        var constraints     = this.constraints;
+        var valid           = validate(args, constraints);
+        if (valid !== true) { // invalid
+            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid parameter constraint
+                var key     = Object.keys(valid)[0],
+                    value   = valid[key];
+                throw new Error("Couldn't generate path with route " +
+                    (this.name != undefined ? "'" + this.name + "'" + ' ' : '') +
+                    "because the " + "'" + key + "' argument value of '" + value + "' is invalid " +
+                    "according to the route's constraints");
+            } else { // invalid constraints
+                throw new Error("Couldn't generate path with route " +
+                    (this.name != undefined ? "'" + this.name + "'" + ' ' : '') +
+                    "because one or more of the arguments are invalid according to the route's constraints");
+            }
+        }
+
+        return compose(subroutes, args);
+    };
 
     /*
      * Router {prototype}                                           - router for http requests
@@ -404,8 +480,10 @@ Description:    A node.js module for routing HTTP requests
         var self = this;
 
         var routes = {}; // all routes regardless of method
-        Object.defineProperty(this, '__routes__', {'get': function() { return routes; }, // routes getter
-            'enumerable': false, 'configurable': false});
+        Object.defineProperty(this, '__routes__', { // private
+            'get':          function() { return routes; }, // routes getter
+            'enumerable':   false,
+            'configurable': false });
 
         var methods = routes.methods = {} // routes segregated by method
         HTTP.METHODS.forEach(function(method) { methods[method.toLowerCase()] = {}; });
@@ -417,27 +495,36 @@ Description:    A node.js module for routing HTTP requests
 
         HTTP.METHODS.forEach(function(method) {
             self.add[method.toLowerCase()] = function() { // http method add method
-                var args = argumentMaps.add.apply(self, arguments); // associate arguments to parameters
-                var name = args.name,
-                    expression = args.expression,
-                    options = args.options,
-                    callback = args.callback;
+                var args        = argumentMaps.add.apply(self, arguments); // associate arguments to parameters
+                var route       = args.route,
+                    name        = args.name,
+                    expression  = args.expression,
+                    options     = args.options,
+                    callback    = args.callback;
+
+                if (route != undefined) {
+                    throw new Error('A route instance can not be added to the router using the ' +
+                        "'add." + method.toLowerCase() + "' method and should instead be added using the " +
+                        "router's 'add' method");
+                }
 
                 // add method to arguments
-                options = options || {}, options.method = options.method || [];
-                if (util.isArray(options.method)) { options.method.unshift(method); }
-                else { options.method = [options.method, method]; }
+                options         = options || {},
+                options.method  = options.method || [];
+                if (util.isArray(options.method))   { options.method.unshift(method); }
+                else                                { options.method = [options.method, method]; }
 
                 return self.add(name, expression, options, callback);
             };
 
             self.route[method.toLowerCase()] = function() { // http method route method
-                var args = argumentMaps.route.apply(self, arguments); // associate arguments to parameters
-                var pathname = args.pathname,
-                    options = args.options,
-                    callback = args.callback;
+                var args        = argumentMaps.route.apply(self, arguments); // associate arguments to parameters
+                var pathname    = args.pathname,
+                    options     = args.options,
+                    callback    = args.callback;
 
-                options = options || {}, options.method = method; // add method to arguments
+                options         = options || {},
+                options.method  = method; // add method to arguments
 
                 return self.route(pathname, options, callback);
             };
@@ -475,21 +562,39 @@ Description:    A node.js module for routing HTTP requests
      *              .data {*|undefined}                             - data
      *          this {Route}                                        - route
      *      return {Route}                                          - route
+     *
+     * Router.prototype.add {function}                              - add a route
+     *      [@route] {Route}                                        - route
+     *      [@callback] {function|undefined}                        - called upon every routing
+     *          @event {object}                                     - event object
+     *              .pathname {string}                              - url encoded pathname
+     *              .method {string|undefined}                      - http method
+     *              .route {Route}                                  - route
+     *              .arguments {object<string|array<string>>}       - route arguments as name value pairs
+     *              .data {*|undefined}                             - data
+     *          this {Route}                                        - route
+     *      return {Route}                                          - route
      */
     Router.prototype.add = function() {
-        var args = argumentMaps.add.apply(this, arguments); // associate arguments to parameters
-        var name = args.name,
-            expression = args.expression,
-            options = args.options,
-            callback = args.callback;
+        var args        = argumentMaps.add.apply(this, arguments); // associate arguments to parameters
+        var route       = args.route,
+            name        = args.name,
+            expression  = args.expression,
+            options     = args.options,
+            callback    = args.callback;
 
-        var routes = this.__routes__,
-            methods = routes.methods;
+        var routes      = this.__routes__,
+            methods     = routes.methods;
 
         var method, constraints; // options
-        if (options != undefined) {
-            name = name || options.name;
-            method = options.method;
+        if (route != undefined) { // route object argument
+            name        = route.name;
+            expression  = route.expression;
+            method      = route.method;
+            constraints = route.constraints;
+        } else if (options != undefined) {
+            name        = name || options.name;
+            method      = options.method;
             constraints = options.constraints;
         }
 
@@ -511,7 +616,7 @@ Description:    A node.js module for routing HTTP requests
                 var store = methods[index];
 
                 if (store == undefined) { // no associated store
-                    throw new Error("Couldn't add route " + (name != undefined ? "\'" + name + "\'" + ' ' : '') +
+                    throw new Error("Couldn't add route " + (name != undefined ? "'" + name + "'" + ' ' : '') +
                         "because the method '" + method + "' is not recognized");
                 }
 
@@ -520,23 +625,19 @@ Description:    A node.js module for routing HTTP requests
         } else { stores = stores.concat( // collect all method stores
             Object.keys(methods).map(function(key) { return methods[key]; })); }
 
-        var routeOptions = {'name': name, 'method': method, 'constraints': constraints}; // route options
-        if (options != undefined) { // optional route options
-            // forward encoded option to route
-            if ('encoded' in options) { routeOptions.encoded = options.encoded; }
-            // forward ignore case option to route
-            if ('ignoreCase' in options) { routeOptions.ignoreCase = options.ignoreCase; }
+        if (route == undefined) { // create route object
+            var routeOptions = {'name': name, 'method': method, 'constraints': constraints}; // route options
+            if (options != undefined) { // optional route options
+                // forward encoded and ignore case option to route
+                if ('encoded' in options)       { routeOptions.encoded      = options.encoded; }
+                if ('ignoreCase' in options)    { routeOptions.ignoreCase   = options.ignoreCase; }
+            }
+            route = new Route(expression, routeOptions); // route object
         }
-        var route = new Route(expression, routeOptions), // route event emitter
-            encoded = route.encoded;
-
-        var subroutes = parse.route(expression, encoded); // parse expression into subroutes
-
-        var data = {'route': route, 'subroutes': subroutes};
 
         stores.forEach(function(store) {
-            store.by.order.push(data); // store by order
-            if (name != undefined) { store.by.name[name] = data; } // store by name
+            store.by.order.push(route); // store by order
+            if (name != undefined) { store.by.name[name] = route; } // store by name
         });
 
         if (callback != undefined) { route.on('route', callback); }
@@ -547,16 +648,19 @@ Description:    A node.js module for routing HTTP requests
         return route;
     };
     argumentMaps.add = function() { // associate arguments to parameters for add methods
-        var name, expression, options, callback;
+        var route, name, expression, options, callback;
 
         var args = Array.prototype.slice.call(arguments);
-        if (args.length >= 2) {
-            if ((typeof args[1] === 'string' || args[1] instanceof String)) { name = args.shift(); }
-            expression = args.shift();
-            if (args.length > 0 && !(args[0] instanceof Function)) { options = args.shift(); }
+        if (args.length >= 1 && args[0] instanceof Route) {
+            route = args.shift();
             if (args.length > 0 && args[0] instanceof Function) { callback = args.shift(); }
+        } else if (args.length >= 2) {
+            if ((typeof args[1] === 'string' || args[1] instanceof String))     { name      = args.shift(); }
+            expression = args.shift();
+            if (args.length > 0 && !(args[0] instanceof Function))              { options   = args.shift(); }
+            if (args.length > 0 && args[0] instanceof Function)                 { callback  = args.shift(); }
         }
-        return {'name': name, 'expression': expression, 'options': options, 'callback': callback};
+        return {'route': route, 'name': name, 'expression': expression, 'options': options, 'callback': callback};
     };
 
     /*
@@ -584,19 +688,19 @@ Description:    A node.js module for routing HTTP requests
      *          return {Route|undefined}                    - matching route or undefined if no matching route found
      */
     Router.prototype.route = function() {
-        var args = argumentMaps.route.apply(this, arguments); // associate arguments to parameters
-        var pathname = args.pathname,
-            options = args.options,
-            callback = args.callback;
+        var args        = argumentMaps.route.apply(this, arguments); // associate arguments to parameters
+        var pathname    = args.pathname,
+            options     = args.options,
+            callback    = args.callback;
 
         var method, data; // options
         if (options != undefined) {
-            method = options.method;
-            data = options.data;
+            method      = options.method;
+            data        = options.data;
         }
 
-        var routes = this.__routes__,
-            methods = routes.methods;
+        var routes      = this.__routes__,
+            methods     = routes.methods;
 
         var stores;
         if (method != undefined) { // convert method to the associated store
@@ -613,10 +717,9 @@ Description:    A node.js module for routing HTTP requests
         // find matching route
         var length = stores.by.order.length;
         for (var index = 0; index < length; index++) {
-            var store = stores.by.order[index];
-            var route = store.route,
-                subroutes = store.subroutes,
-                ignoreCase = route.ignoreCase;
+            var route       = stores.by.order[index],
+                subroutes   = route.__subroutes__,
+                ignoreCase  = route.ignoreCase;
 
             var args = match(subroutes, subpaths, ignoreCase); // arguments
             if (args != undefined) { // match
@@ -639,11 +742,13 @@ Description:    A node.js module for routing HTTP requests
         return undefined;
     }
     argumentMaps.route = function() { // associate arguments to parameters
-        var pathname = arguments[0], options, callback;
+        var pathname    = arguments[0],
+            options,
+            callback;
         if (arguments.length === 2) {
-            if (arguments[1] instanceof Function) { callback = arguments[1]; }
-            else { options = arguments[1]; }
-        } else if (arguments.length >= 3) { options = arguments[1], callback = arguments[2]; }
+            if (arguments[1] instanceof Function)   { callback  = arguments[1]; }
+            else                                    { options   = arguments[1]; }
+        } else if (arguments.length >= 3)           { options   = arguments[1], callback = arguments[2]; }
         return {'pathname': pathname, 'options': options, 'callback': callback};
     };
 
@@ -654,33 +759,12 @@ Description:    A node.js module for routing HTTP requests
      *      return {string}                             - url encoded path
      */
     Router.prototype.path = function(name, args) {
-        args = args || {};
-
         var routes = this.__routes__;
 
-        if (name in routes.by.name) { // compose path with the named route
-            var data = routes.by.name[name],
-                route = data.route,
-                subroutes = data.subroutes;
-
-            // validate constraints
-            var constraints = route.constraints;
-            var valid = validate(args, constraints);
-            if (valid !== true) { // invalid
-                if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid parameter constraint
-                    var key = Object.keys(valid)[0],
-                        value = valid[key];
-                    throw new Error("Couldn't generate path with route '" + name + "' because the " +
-                        "'" + key + "' argument value of '" + value + "' is invalid " +
-                        "according to the route's constraints");
-                } else { // invalid constraints
-                    throw new Error("Couldn't generate path with route '" + name + "' because " +
-                        "one or more of the arguments are invalid according to the route's constraints");
-                }
-            }
-
-            return compose(subroutes, args);
-        } else {
+        if (name in routes.by.name) { // named route
+            var route = routes.by.name[name];
+            return route.path(args);
+        } else { // named route doesn't exist
             throw new Error(
                 "Couldn't generate path with route '" + name + "' because no route named '" + name + "' exists");
         }
@@ -701,11 +785,15 @@ Description:    A node.js module for routing HTTP requests
 
         // accessors
 
-        Object.defineProperty(this, 'raw', {'get': function() { return raw; }, // raw value getter
-            'enumerable': true, 'configurable': false});
+        Object.defineProperty(this, 'raw', {
+            'get':          function() { return raw; }, // raw value getter
+            'enumerable':   true,
+            'configurable': false });
 
-        Object.defineProperty(this, 'encoded', {'get': function() { return encoded; }, // encoded value getter
-            'enumerable': true, 'configurable': false});
+        Object.defineProperty(this, 'encoded', {
+            'get':          function() { return encoded; }, // encoded value getter
+            'enumerable':   true,
+            'configurable': false });
     };
 
     /* RouteParameterPart {prototype}                       - route parameter part
@@ -718,8 +806,10 @@ Description:    A node.js module for routing HTTP requests
     var RouteParameterPart = function(name) {
         // accessors
 
-        Object.defineProperty(this, 'name', {'get': function() { return name; }, // name getter
-            'enumerable': true, 'configurable': false});
+        Object.defineProperty(this, 'name', {
+            'get':          function() { return name; }, // name getter
+            'enumerable':   true,
+            'configurable': false });
     };
 
     /* RouteWildcardParameterPart {prototype}                       - route wildcard parameter part
@@ -753,8 +843,8 @@ Description:    A node.js module for routing HTTP requests
         expression = expression.trim();
 
         last = expression.length - 1;
-        if (expression.charAt(last) === '/') { expression = expression.substring(0, last); }
-        if (expression.charAt(0) === '/') { expression = expression.substring(1); }
+        if (expression.charAt(last) === '/')    { expression = expression.substring(0, last); }
+        if (expression.charAt(0) === '/')       { expression = expression.substring(1); }
 
         var subroutes = expression.split('/');
         subroutes.forEach(function(subroute, index, subroutes) { // parameters
@@ -762,19 +852,19 @@ Description:    A node.js module for routing HTTP requests
             if (subroute.charAt(0) === ':') { // parameter
                 last = subroute.length - 1;
 
-                var wildcard = subroute.charAt(last) === '*';
-                var name = wildcard ? subroute.substring(1, last) : subroute.substring(1);
+                var wildcard    = subroute.charAt(last) === '*';
+                var name        = wildcard ? subroute.substring(1, last) : subroute.substring(1);
 
                 if (name in names) { // parameter name collision
                     if (collision == undefined) { collision = name; }
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
-                if (wildcard && index == subroutes.length - 1) { part = new RouteWildcardParameterPart(name); }
-                else { part = new RouteParameterPart(name); }
+                if (wildcard && index == subroutes.length - 1)  { part = new RouteWildcardParameterPart(name); }
+                else                                            { part = new RouteParameterPart(name); }
             } else { // path part
                 if (decode) { part = new RoutePathPart(decodeURIComponent(subroute), subroute); }
-                else { part = new RoutePathPart(subroute); }
+                else        { part = new RoutePathPart(subroute); }
             }
 
             subroutes[index] = part;
@@ -796,8 +886,8 @@ Description:    A node.js module for routing HTTP requests
         pathname = pathname.trim();
 
         var last = pathname.length - 1;
-        if (pathname.charAt(last) === '/') { pathname = pathname.substring(0, last); }
-        if (pathname.charAt(0) === '/') { pathname = pathname.substring(1); }
+        if (pathname.charAt(last) === '/')  { pathname = pathname.substring(0, last); }
+        if (pathname.charAt(0) === '/')     { pathname = pathname.substring(1); }
 
         var subpaths = [];
         pathname.split('/').forEach(function(subpath) { subpaths.push(decodeURIComponent(subpath)); });
@@ -816,19 +906,20 @@ Description:    A node.js module for routing HTTP requests
         var args = {};
 
         var wildcard;
-        var index, length = subpaths.length;
+        var index,
+            length = subpaths.length;
         for (index = 0; index < length; index++) { // traverse subpaths and subroutes
-            var subroute = subroutes[index],
-                subpath = subpaths[index];
+            var subroute    = subroutes[index],
+                subpath     = subpaths[index];
 
             if (subroute == undefined) { return; } // match unsuccessful
             else if (subroute instanceof RoutePathPart) { // path part
                 if (ignoreCase) { // case insensitive match
-                    if (subroute.raw.toLowerCase() === subpath.toLowerCase()) { continue; } // continue matching
-                    else { return; } // match unsuccessful
+                    if (subroute.raw.toLowerCase() === subpath.toLowerCase())   { continue; }   // continue matching
+                    else                                                        { return; }     // match unsuccessful
                 } else { // case sensitive match
-                    if (subroute.raw === subpath) { continue; } // continue matching
-                    else { return; } // match unsuccessful
+                    if (subroute.raw === subpath)   { continue; }   // continue matching
+                    else                            { return; }     // match unsuccessful
                 }
             } else if (subroute instanceof RouteParameterPart) { // parameter
                 if (subroute instanceof RouteWildcardParameterPart) { // wildcard parameter
@@ -905,8 +996,8 @@ Description:    A node.js module for routing HTTP requests
                 for (var name in constraints) { // iterate parameter names within constraints
                     if (!(name in args)) { continue; } // no argument to validate
 
-                    var argument = args[name],
-                        constraint = constraints[name];
+                    var argument    = args[name],
+                        constraint  = constraints[name];
                     if (constraint instanceof Function) { // function
                         if (!constraint(argument)) { // invalid
                             var invalid = {};

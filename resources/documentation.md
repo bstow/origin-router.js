@@ -2,6 +2,7 @@
 * [Class: Router](#Router)
     * [new Router()](#new_Router)
     * [router.add([name], expression, [options], [callback])](#router_add)
+    * [router.add(route, [callback])](#router_add_alt)
     * [router.add.get([name], expression, [options], [callback])](#router_add_get)
     * [router.add.post([name], expression, [options], [callback])](#router_add_post)
     * [router.add.put([name], expression, [options], [callback])](#router_add_put)
@@ -30,6 +31,7 @@
     * [route.constraints](#route_constraints)
     * [route.encoded](#route_encoded)
     * [route.ignoreCase](#route_ignoreCase)
+    * [route.path([arguments])](#route_path)
     * [Event: 'route'](#route_route_event)
 @![>> toc]
 
@@ -92,6 +94,17 @@ Returns the created [Route](#Route) instance that has been newly added to the ro
 
 <br>
 
+####<a name='router_add_alt'></a>router.add(route, [callback])
+Add a [Route](#Route) instance to the router to serve in matching and routing URL paths.  (This is an alternative method call to [router.add([name], expression, [options], [callback])](#router_add) which instead allows for an already instantiated [Route](#Route) to be added to the router.)
+
+<a name='router_add_alt__route'></a>The `route` `Route` is the [Route](#Route) instance to be added to the router and should be passed as the 1st argument. (See @![link example_route_objects])
+
+<a name='router_add_alt__callback'></a>A `callback` `Function` can be passed as the last argument. (See See [router.add([name], expression, [options], [callback])](#router_add) [[callback](#router_add__callback)]))
+
+Returns the [Route](#Route) instance added to the router.
+
+<br>
+
 ####<a name='router_add_get'></a>router.add.get([name], expression, [options], [callback])
 ####<a name='router_add_post'></a>router.add.post([name], expression, [options], [callback])
 ####<a name='router_add_put'></a>router.add.put([name], expression, [options], [callback])
@@ -149,7 +162,7 @@ Generate a URL path using one of the routes that has been added to the router. (
 
 <a name='router_path__name'></a>The `name` `String` of the route to use to generate the URL path.  Consequently, only named routes can be used to generate URL paths.
 
-<a name='router_path__arguments'></a>If the route being used to generate the URL path has parameters, specify the `arguments` `Object` as URL decoded name value pairs.  The arguments will be mapped to the route parameters and be embedded within the URL path.
+<a name='router_path__arguments'></a>If the route being used to generate the URL path has parameters, specify the `arguments` `Object` as URL decoded name value pairs.  The arguments will be mapped to the route parameters and be embedded within the URL path.  (Note that the arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
 
 Returns the the URL encoded pathname generated using the route specified. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 
@@ -254,6 +267,17 @@ Create a new `Route` instance.
 ####<a name='route_ignoreCase'></a>route.ignoreCase
 
 * `Boolean` get indicator of case-insensitive matching of URL paths by the route expression
+
+<br>
+<br>
+
+####<a name='route_path'></a>route.path([arguments])
+
+Generate a URL path using the route. (See @![link example_route_objects])
+
+<a name='route_path__arguments'></a>If the route has parameters, specify the `arguments` `Object` as URL decoded name value pairs.  The arguments will be mapped to the route parameters and be embedded within the URL path. (Note that the arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
+
+Returns the the URL encoded pathname generated using the route. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 
 <br>
 <br>

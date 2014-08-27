@@ -1,4 +1,5 @@
-var fs = require('fs'), path = require('path');
+var fs      = require('fs'),
+    path    = require('path');
 
 // ./package.json as an object
 var package = require('./package.json'); // package
@@ -52,18 +53,18 @@ var infoSource = Array(sourceLineLength - 1).join('*') + '\n' +
 originalSource = originalSource.replace('@![info]', infoSource); // embed info
 
 // ./resources/example-code.txt text
-var exampleCodeText = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
-exampleCodeText = exampleCodeText.replace('@![name]', package.name); // embed name
+var exampleCodeText     = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
+exampleCodeText         = exampleCodeText.replace('@![name]', package.name); // embed name
 
-var DOCUMENTATION_TOC_MARKDOWN_START_SECTION = '@![toc <<]';
-var DOCUMENTATION_TOC_MARKDOWN_END_SECTION = '@![>> toc]';
+var DOCUMENTATION_TOC_MARKDOWN_START_SECTION    = '@![toc <<]';
+var DOCUMENTATION_TOC_MARKDOWN_END_SECTION      = '@![>> toc]';
 
 // ./resources/documentation.md
 var documentationMarkdown = fs.readFileSync(path.join(__dirname, 'resources', 'documentation.md'), 'utf8');
 
 // extract documentation TOC
-var documentationStartTOCMarkdownIndex = documentationMarkdown.indexOf(DOCUMENTATION_TOC_MARKDOWN_START_SECTION);
-var documentationEndTOCMarkdownIndex = documentationMarkdown.indexOf(DOCUMENTATION_TOC_MARKDOWN_END_SECTION);
+var documentationStartTOCMarkdownIndex  = documentationMarkdown.indexOf(DOCUMENTATION_TOC_MARKDOWN_START_SECTION);
+var documentationEndTOCMarkdownIndex    = documentationMarkdown.indexOf(DOCUMENTATION_TOC_MARKDOWN_END_SECTION);
 
 var documentationTOCMarkdown = documentationMarkdown.slice(
     documentationStartTOCMarkdownIndex + DOCUMENTATION_TOC_MARKDOWN_START_SECTION.length,
@@ -78,17 +79,17 @@ readmeMarkdown += '<br>\n<br>\n\n';
 readmeMarkdown += documentationMarkdown;
 
 // examples
-var EXAMPLE_START_SECTION = '@![example section <<]';
-var EXAMPLE_END_SECTION = '@![>> example section]';
+var EXAMPLE_START_SECTION   = '@![example section <<]';
+var EXAMPLE_END_SECTION     = '@![>> example section]';
 
 // example source code to embed in source
 var sourceExampleSource = '';
 
 readmeTOCMarkdown += '* [Examples of Using the Router](#examples)\n';
 
-var exampleStartSectionIndex = 0,
-    exampleEndSectionIndex = 0,
-    firstExampleSection = true;
+var exampleStartSectionIndex    = 0,
+    exampleEndSectionIndex      = 0,
+    firstExampleSection         = true;
 while (true) { // iterate over each example section
     exampleStartSectionIndex = exampleCodeText.indexOf(EXAMPLE_START_SECTION, exampleEndSectionIndex);
     if (exampleStartSectionIndex == -1) { break; }
@@ -207,7 +208,7 @@ readmeMarkdown = readmeTOCMarkdown + '\n\n<br>\n<br\n<br>\n\n' + readmeMarkdown;
 // embed markdown links
 for (var readmeMarkdownLinkAnchor in readmeMarkdownLinks) {
     var readmeMarkdownLinkTitle = readmeMarkdownLinks[readmeMarkdownLinkAnchor];
-    var readmeMarkdownLink = '[' + readmeMarkdownLinkTitle + ']' + '(#' + readmeMarkdownLinkAnchor + ')';
+    var readmeMarkdownLink      = '[' + readmeMarkdownLinkTitle + ']' + '(#' + readmeMarkdownLinkAnchor + ')';
     readmeMarkdown = readmeMarkdown.split('@![link ' + readmeMarkdownLinkAnchor + ']').join(readmeMarkdownLink);
 }
 // ./readme markdown

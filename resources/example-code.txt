@@ -125,6 +125,26 @@ var pathname = router.path('mixed breed', // use the route named 'mixed breed'
 console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 @![>> example section]
 
+@![example section <<] [route_objects:Working with Route Objects]
+// a route can be instantiated directly ...
+var route = new orouter.Route('/:pet/trick/:tricks*',
+    {'name': 'tricks', 'method': 'GET'});
+
+// the route instance can then be used to generate a URL path
+// without being added to a router ...
+var pathname = route.path({'pet': 'dog', 'tricks': ['sit', 'roll']});
+
+console.log(pathname); // outputs '/dog/trick/sit/roll'
+
+// the route can also be added to any router(s)
+router.add(route, function(event) {
+        console.log('My ' + event.arguments.pet + "'s best " + event.route.name +
+            ' are ' + event.arguments.tricks.join(' and '));
+    });
+
+router.route.get(pathname); // outputs "My dog's best tricks are sit and roll"
+@![>> example section]
+
 @![example section <<] [events:Router and Route Events and Data]
 // know when a route routes a URL path by listening to
 // the route's 'route' event ...

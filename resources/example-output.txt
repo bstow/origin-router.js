@@ -36,6 +36,11 @@ Generating URL Paths using Routes
 ---------------------------------
 /dog/mixed/beagle/pug/terrier
 
+Working with Route Objects
+--------------------------
+/dog/trick/sit/roll
+My dog's best tricks are sit and roll
+
 Router and Route Events and Data
 --------------------------------
 I have a brown hamster
