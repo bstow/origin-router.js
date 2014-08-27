@@ -306,6 +306,8 @@ Description:    A node.js module for routing HTTP requests
      *
      * Route.prototype.ignoreCase {boolean|undefined}               - case insensitive path matching
      *
+     * Route.prototype.pathSourceCode {string}                      - get source code for function to generate a path
+     *
      * Route.prototype
      *      emits route {event}                                     - occurs upon routing
      *          listener {function}
@@ -410,6 +412,12 @@ Description:    A node.js module for routing HTTP requests
             'get':          function() { return subroutes; }, // subroutes getter
             'enumerable':   false,
             'configurable': false });
+
+        var pathSourceCode = compose.sourceCode(subroutes);
+        Object.defineProperty(this, 'pathSourceCode', {
+            'get':          function() { return pathSourceCode; }, // path source code getter
+            'enumerable':   true,
+            'configurable': false });
     };
     util.inherits(Route, events.EventEmitter);
 
@@ -493,6 +501,7 @@ Description:    A node.js module for routing HTTP requests
             function(stores) { stores.by = {'name': {}, 'order': []}; } // store by name and order
         );
 
+        // http method-specific methods
         HTTP.METHODS.forEach(function(method) {
             self.add[method.toLowerCase()] = function() { // http method add method
                 var args        = argumentMaps.add.apply(self, arguments); // associate arguments to parameters
@@ -770,6 +779,24 @@ Description:    A node.js module for routing HTTP requests
         }
     };
 
+    /*
+     * Router.prototype.pathSourceCode {function}       - source code to generate a path
+     *      @name {string}                              - route name
+     *      return {string}                             - source code to generate a path
+     */
+    Router.prototype.pathSourceCode = function(name) {
+        var routes = this.__routes__;
+
+        if (name in routes.by.name) { // named route
+            var route = routes.by.name[name];
+            return route.pathSourceCode;
+        } else { // named route doesn't exist
+            throw new Error(
+                "Couldn't get source code to generate path with route '" + name + "'" +
+                " because no route named '" + name + "' exists");
+        }
+    };
+
     /* RoutePathPart {prototype}                        - route path part
      *
      * RoutePathPart.prototype.constructor {function}
@@ -943,10 +970,7 @@ Description:    A node.js module for routing HTTP requests
     * compose {function}                                            - compose path from subroutes
     *       @subroutes {array<RoutePathPart|RouteParameterPart>}    - parts of the route
     *       [@arguments] {object<string|array<string>>}             - route arguments as name value pairs
-    *       return {string}                                         - url encoded path
-    *
-    *       throws error {RouteParameterValueInvalidCharacterError} - occurs upon an argument containing an invalid \
-    *                                                                   character
+    *       return {string}                                         - url encoded path                                                                  character
     */
     var compose = function(subroutes, args) {
         args = args || {};
@@ -974,6 +998,61 @@ Description:    A node.js module for routing HTTP requests
 
         return pathname;
     };
+
+    /*
+    * compose.sourceCode {function}                                 - compose source code to generate path
+    *       @subroutes {array<RoutePathPart|RouteParameterPart>}    - parts of the route
+    *       return {string}                                         - source code of function to generate path
+    */
+    compose.sourceCode = function(subroutes) {
+        var sourceCode = compose.sourceCode.START;
+
+        subroutes.forEach(function(subroute) {
+            if (subroute instanceof RoutePathPart) { // path part
+                sourceCode +=       'subpath(' + JSON.stringify(subroute.encoded) + '); ';
+            } else if (subroute instanceof RouteParameterPart) { // parameter
+                if (subroute instanceof RouteWildcardParameterPart) { // wildcard parameter
+                    sourceCode +=   'parameter.wildcard(' + JSON.stringify(subroute.name) + '); ';
+                } else { // parameter
+                    sourceCode +=   'parameter(' + JSON.stringify(subroute.name) + '); ';
+                }
+            }
+        });
+
+        sourceCode += compose.sourceCode.END;
+
+        return sourceCode;
+    };
+    compose.sourceCode.START =  'function(args) { ' +
+                                    'var subpaths = []; ' +
+
+                                    'var subpath = function(encoded) { ' +
+                                        'subpaths.push(String(encoded)); ' +
+                                    '}; ' +
+
+                                    'var parameter = function(name) { ' +
+                                        "subpaths.push(encodeURIComponent(String(args[String(name)] || ''))); " +
+                                    '}; ' +
+
+                                    'parameter.wildcard = function(name) { ' +
+                                        'var value = args[String(name)]; ' +
+                                        'if (' +
+                                            'value instanceof Array || ' +
+                                            "Object.prototype.toString.call(value) === '[object Array]'" +
+                                        ') { ' +
+                                            'var length = value.length; ' +
+                                            'for (var index = 0; index < length; index++) { ' +
+                                                "subpaths.push(encodeURIComponent(String(value[index] || ''))); " +
+                                            '} ' +
+                                        '} else { ' +
+                                            "subpaths.push(encodeURIComponent(String(value || ''))); " +
+                                        '} ' +
+                                    '}; ';
+                                    // ...
+    compose.sourceCode.END =        "var pathname = subpaths.join('/'); " +
+                                    "if (pathname.charAt(0) !== '/') { pathname = '/' + pathname; } " +
+                                    'return pathname; ' +
+                                '}';
 
     /*
      * validate {function}                                                  - validate arguments against constraints
