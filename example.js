@@ -105,8 +105,8 @@ router.add('/bird', {'method': ['GET', 'POST']},
     function() { console.log('I have a bird'); });
 
 // alternatively routes can be applied for an HTTP method like so ...
-router.add.get('/turtle', function() { console.log('I have a turtle'); });
-router.add.post('/rabbit', function() { console.log('I have a rabbit'); });
+router.addGet('/turtle', function() { console.log('I have a turtle'); });
+router.addPost('/rabbit', function() { console.log('I have a rabbit'); });
 
 // route URL paths with a corresponding HTTP method specified ...
 router.route('/fish', {'method': 'GET'}); // outputs 'I have a fish'
@@ -116,8 +116,8 @@ router.route('/bird', {'method': 'POST'}); // outputs 'I have a bird'
 router.route('/bird', {'method': 'DELETE'}); // outputs nothing
 
 // alternatively a URL path may be routed for an HTTP method like so ...
-router.route.get('/fish'); // outputs 'I have a fish'
-router.route.post('/bird'); // outputs 'I have a bird'
+router.routeGet('/fish'); // outputs 'I have a fish'
+router.routePost('/bird'); // outputs 'I have a bird'
 
 // HTTP method-specific routes are still applicable when no method is specified ...
 router.route('/fish'); // outputs 'I have a fish'
@@ -167,7 +167,7 @@ router.add(route, function(event) {
             ' are ' + event.arguments.tricks.join(' and '));
     });
 
-router.route.get(pathname); // outputs "My dog's best tricks are sit and roll"
+router.routeGet(pathname); // outputs "My dog's best tricks are sit and roll"
 
 
 /************************************

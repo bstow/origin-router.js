@@ -4,8 +4,11 @@ var fs      = require('fs'),
 // ./package.json as an object
 var package = require('./package.json'); // package
 
-// include original source (./src/origin-router.js) to ensure it compiles and tests pass
+// include original source (./src/origin-router.js) to ensure it compiles
 require(path.join(__dirname, 'src', package.name + '.js'));
+
+// run tests
+require(path.join(__dirname, 'tests'));
 
 // generated text for ./readme.md
 var readmeMarkdown = '';
@@ -39,9 +42,7 @@ var licenseSource = '/' + Array(sourceLineLength).join('*') + '\n' +
 var originalSource = fs.readFileSync(path.join(__dirname, 'src', package.name + '.js'), 'utf8');
 
 // clean up original source and embed info
-originalSource = originalSource.substring( // remove tests
-    0, originalSource.indexOf('@![tests]') - '/*'.length).trim();
-
+originalSource = originalSource.trim();
 // source code compatible info
 var infoSource = Array(sourceLineLength - 1).join('*') + '\n' +
     'Name:           ' + package.name.split('-').join(' ').split(' ').map(function(word) {
@@ -49,7 +50,6 @@ var infoSource = Array(sourceLineLength - 1).join('*') + '\n' +
     'Version:        ' + package.version + '\n' +
     'Description:    ' + package.description + '\n' +
     Array(sourceLineLength - 1).join('*');
-
 originalSource = originalSource.replace('@![info]', infoSource); // embed info
 
 // ./resources/example-code.txt text
