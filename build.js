@@ -1,14 +1,16 @@
 var fs      = require('fs'),
-    path    = require('path');
+    path    = require('path'),
+    orouter;
 
 // ./package.json as an object
 var package = require('./package.json'); // package
 
-// include original source (./src/origin-router.js) to ensure it compiles
-require(path.join(__dirname, 'src', package.name + '.js'));
+// unit tests
+var tests = require(path.join(__dirname, 'tests'));
 
-// run tests
-require(path.join(__dirname, 'tests'));
+// include original source (./src/origin-router.js) to ensure it compiles
+orouter = require(path.join(__dirname, 'src', package.name + '.js'));
+tests.run(orouter); // run tests against the compiled source
 
 // generated text for ./readme.md
 var readmeMarkdown = '';
@@ -168,11 +170,13 @@ var source = [licenseSource, originalSource].join('\n'); // assemble source code
 
 // ./origin-router.js source code
 fs.writeFileSync(path.join(__dirname, package.name + '.js'), source, 'utf8'); // write
-require(path.join(__dirname, package.name + '.js')); // ensure compilation
+orouter = require(path.join(__dirname, package.name + '.js')); // ensure compilation
+tests.run(orouter); // run tests against the compiled source
 
 // ./builds/v.{version number}.js source code
 fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), source, 'utf8'); // write
-require(path.join(__dirname, './builds/v.' + package.version + '.js')); // ensure compilation
+orouter = require(path.join(__dirname, './builds/v.' + package.version + '.js')); // ensure compilation
+tests.run(orouter); // run tests against the compiled source
 
 // ./example.js source code
 fs.writeFileSync(path.join(__dirname, './example.js'), exampleSource, 'utf8'); // write

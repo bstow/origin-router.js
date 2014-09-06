@@ -1,6 +1,11 @@
-(function() { // tests
-    var assert  = require('assert'),
-        orouter = require('../src/origin-router.js');
+/*
+ * run {function}                   - run the unit tests
+ *      module.exports.run
+ *      @orouter {module}           - router module to unit test
+ *      return {undefined}
+ */
+var run = function(orouter) { // run tests
+    var assert  = require('assert');
 
     var router = new orouter.Router(); // test router
 
@@ -370,4 +375,9 @@
     });
     router.route('/%27%20path%20%27/arg1/arg2/arg3', {'method': 'PoST', 'data': {'info': 'pass-to-listener'}});
     assert.strictEqual(result, 'success', "The router 'success' event did not occur as expected");
-})();
+};
+module.exports.run = run;
+
+// run the tests on the original source
+var orouter = require('../src/origin-router.js');
+run(orouter);
