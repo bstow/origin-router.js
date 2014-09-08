@@ -235,7 +235,7 @@ var pathSourceCode = router.pathSourceCode("my pet's age");
 var pathFunction;
 eval('pathFunction = ' + pathSourceCode);
 
-// generate a URL by running the the compiled function and passing any
+// generate a URL by running the compiled function and passing any
 // route parameter arguments
 console.log(pathFunction({'pet': 'cat', 'years': 2})); // outputs /cat/age/2
 ```
