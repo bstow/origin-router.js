@@ -6,6 +6,7 @@
     * [Example: Applying Constraints to Route Parameters](#example_parameter_constraints)
     * [Example: HTTP Method-Specific Routing](#example_http_methods)
     * [Example: Generating URL Paths using Routes](#example_reverse_routing)
+    * [Example: Generating URL Paths on the Client-Side](#example_client_side_reverse_routing)
     * [Example: Working with Route Objects](#example_route_objects)
     * [Example: Router and Route Events and Data](#example_events)
     * [Example: About URL Encoding](#example_url_encoding)
@@ -36,6 +37,7 @@
         * [router.routeTrace(pathname, [options], [callback])](#router_routeTrace)
         * [router.routeConnect(pathname, [options], [callback])](#router_routeConnect)
         * [router.path(name, [arguments])](#router_path)
+        * [router.pathSourceCode(name)](#router_pathSourceCode)
         * [Event: 'add'](#router_add_event)
         * [Event: 'success'](#router_success_event)
         * [Event: 'fail'](#router_fail_event)
@@ -47,6 +49,7 @@
         * [route.encoded](#route_encoded)
         * [route.ignoreCase](#route_ignoreCase)
         * [route.path([arguments])](#route_path)
+        * [route.pathSourceCode](#route_pathSourceCode)
         * [Event: 'route'](#route_route_event)
     
 
@@ -193,22 +196,48 @@ router.route('/bird'); // outputs 'I have a bird'
 ####<a name='example_reverse_routing'>Example: Generating URL Paths using Routes
 ```javascript
 // add a route and give it a name for future reference ...
-router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
+router.add('/:pet/mixed/:breeds*', {'name': 'my mix breed'}, function(event) {
         console.log('I have a mixed breed ' + event.arguments.pet +
             ' that is a ' + event.arguments.breeds.join(','));
     });
 
 // alternatively the route's name can pe passed as the first argument like so...
-router.add('pure breed', '/:pet/pure/:breed', function(event) {
+router.add('my pure breed', '/:pet/pure/:breed', function(event) {
         console.log('I have a pure breed ' + event.arguments.pet +
             ' that is a ' + event.arguments.breed);
     });
 
-// generate a URL path using a route ...
-var pathname = router.path('mixed breed', // use the route named 'mixed breed'
+// generate a URL path using the route named 'my mix breed' ...
+var pathname = router.path('my mix breed', // use the route named 'my mix breed'
     {'pet': 'dog', 'breeds': ['beagle', 'pug', 'terrier']}); // parameter arguments
 
 console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
+```
+
+<br>
+<br>
+
+####<a name='example_client_side_reverse_routing'>Example: Generating URL Paths on the Client-Side
+```javascript
+// add a route and give it a name for future reference ...
+router.add('/:pet/age/:years', {'name': "my pet's age"}, function(event) {
+        console.log('I have a ' + event.arguments.years + ' year old ' +
+            event.arguments.pet);
+    });
+
+// get the source code for the function to generate a URL path using
+// the route named "my pet's age" ...
+var pathSourceCode = router.pathSourceCode("my pet's age");
+
+// compile the source code into a function using eval, although typically
+// the source code would be included and compiled within a script sent to and
+// processed by the client ...
+var pathFunction;
+eval('pathFunction = ' + pathSourceCode);
+
+// generate a URL by running the the compiled function and passing any
+// route parameter arguments
+console.log(pathFunction({'pet': 'cat', 'years': 2})); // outputs /cat/age/2
 ```
 
 <br>
@@ -451,10 +480,23 @@ Generate a URL path using one of the routes that has been added to the router. (
 
 <a name='router_path__name'></a>The `name` `String` of the route to use to generate the URL path.  Consequently, only named routes can be used to generate URL paths.
 
-<a name='router_path__arguments'></a>If the route being used to generate the URL path has parameters, specify the `arguments` `Object` as URL decoded name value pairs.  The arguments will be mapped to the route parameters and be embedded within the URL path.  (Note that the arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
+<a name='router_path__arguments'></a>If the route being used to generate the URL path has parameters, specify the route parameter `arguments` `Object` as URL decoded name value pairs.  The route parameter arguments will be mapped to the route parameters and be embedded within the URL path.  (Note that the route parameter arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
 
 Returns the the URL encoded pathname generated using the route specified. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 
+<br>
+<br>
+
+####<a name='router_pathSourceCode'></a>router.pathSourceCode(name)
+
+Get the source code `String` for a `Function` that will generate a URL path using the route specified.  Upon compiling the source code, the `Function` may be called and optionally passed a route parameter arguments `Object` of URL decoded name value pairs as the 1st parameter to be mapped and embedded within the generated URL path.  (Note that the route parameter arguments are **not** validated for compliance against the corresponding route constraints.)
+  
+  This is primarily useful in allowing for a URL path to be dynamically generated on the client-side. (See [Example: Generating URL Paths on the Client-Side](#example_client_side_reverse_routing))
+
+<a name='router_pathSourceCode__name'></a>The `name` `String` of the route to use to generate the source code `String` of the URL path generating `Function`.  Consequently, only named routes can be used with this feature.
+
+Returns the source code `String` for a `Function` that will generate a URL path using the route specified.
+  
 <br>
 <br>
 
@@ -564,9 +606,18 @@ Create a new `Route` instance.
 
 Generate a URL path using the route. (See [Example: Working with Route Objects](#example_route_objects))
 
-<a name='route_path__arguments'></a>If the route has parameters, specify the `arguments` `Object` as URL decoded name value pairs.  The arguments will be mapped to the route parameters and be embedded within the URL path. (Note that the arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
+<a name='route_path__arguments'></a>If the route has parameters, specify the route parameter `arguments` `Object` as URL decoded name value pairs.  The route parameter arguments will be mapped to the route parameters and be embedded within the URL path. (Note that the route parameter arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
 
 Returns the the URL encoded pathname generated using the route. (See [url.URL](http://nodejs.org/api/url.html#url_url))
+
+<br>
+<br>
+
+####<a name='route_pathSourceCode'></a>route.pathSourceCode
+
+* `String` get the source code for a `Function` that will generate a URL path using the route.  Upon compiling the source code, the `Function` may be called and optionally passed a route parameter arguments `Object` of URL decoded name value pairs as the 1st parameter to be mapped and embedded within the generated URL path.  (Note that the route parameter arguments are **not** validated for compliance against the corresponding route constraints.)  
+  
+  This is primarily useful in allowing for a URL path to be dynamically generated on the client-side. (See [Example: Generating URL Paths on the Client-Side](#example_client_side_reverse_routing))
 
 <br>
 <br>

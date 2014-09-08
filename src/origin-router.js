@@ -759,10 +759,11 @@
             if (subroute instanceof RoutePathPart) { // path part
                 sourceCode +=       'subpath(' + JSON.stringify(subroute.encoded) + '); ';
             } else if (subroute instanceof RouteParameterPart) { // parameter
+                var stringifiedSubrouteName = JSON.stringify(subroute.name);
                 if (subroute instanceof RouteWildcardParameterPart) { // wildcard parameter
-                    sourceCode +=   'parameter.wildcard(' + JSON.stringify(subroute.name) + '); ';
+                    sourceCode +=   'parameter.wildcard(' + stringifiedSubrouteName + '); ';
                 } else { // parameter
-                    sourceCode +=   'parameter(' + JSON.stringify(subroute.name) + '); ';
+                    sourceCode +=   'parameter(' + stringifiedSubrouteName + '); ';
                 }
             }
         });

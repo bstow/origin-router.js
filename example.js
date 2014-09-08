@@ -129,22 +129,47 @@ router.route('/bird'); // outputs 'I have a bird'
  *************************************/                console.log("\nGenerating URL Paths using Routes\n---------------------------------");
 
 // add a route and give it a name for future reference ...
-router.add('/:pet/mixed/:breeds*', {'name': 'mixed breed'}, function(event) {
+router.add('/:pet/mixed/:breeds*', {'name': 'my mix breed'}, function(event) {
         console.log('I have a mixed breed ' + event.arguments.pet +
             ' that is a ' + event.arguments.breeds.join(','));
     });
 
 // alternatively the route's name can pe passed as the first argument like so...
-router.add('pure breed', '/:pet/pure/:breed', function(event) {
+router.add('my pure breed', '/:pet/pure/:breed', function(event) {
         console.log('I have a pure breed ' + event.arguments.pet +
             ' that is a ' + event.arguments.breed);
     });
 
-// generate a URL path using a route ...
-var pathname = router.path('mixed breed', // use the route named 'mixed breed'
+// generate a URL path using the route named 'my mix breed' ...
+var pathname = router.path('my mix breed', // use the route named 'my mix breed'
     {'pet': 'dog', 'breeds': ['beagle', 'pug', 'terrier']}); // parameter arguments
 
 console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
+
+
+/*******************************************
+ * Generating URL Paths on the Client-Side *
+ *******************************************/          console.log("\nGenerating URL Paths on the Client-Side\n---------------------------------------");
+
+// add a route and give it a name for future reference ...
+router.add('/:pet/age/:years', {'name': "my pet's age"}, function(event) {
+        console.log('I have a ' + event.arguments.years + ' year old ' +
+            event.arguments.pet);
+    });
+
+// get the source code for the function to generate a URL path using
+// the route named "my pet's age" ...
+var pathSourceCode = router.pathSourceCode("my pet's age");
+
+// compile the source code into a function using eval, although typically
+// the source code would be included and compiled within a script sent to and
+// processed by the client ...
+var pathFunction;
+eval('pathFunction = ' + pathSourceCode);
+
+// generate a URL by running the the compiled function and passing any
+// route parameter arguments
+console.log(pathFunction({'pet': 'cat', 'years': 2})); // outputs /cat/age/2
 
 
 /******************************

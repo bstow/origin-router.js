@@ -36,6 +36,10 @@ Generating URL Paths using Routes
 ---------------------------------
 /dog/mixed/beagle/pug/terrier
 
+Generating URL Paths on the Client-Side
+---------------------------------------
+/cat/age/2
+
 Working with Route Objects
 --------------------------
 /dog/trick/sit/roll

@@ -21,6 +21,7 @@
     * [router.routeTrace(pathname, [options], [callback])](#router_routeTrace)
     * [router.routeConnect(pathname, [options], [callback])](#router_routeConnect)
     * [router.path(name, [arguments])](#router_path)
+    * [router.pathSourceCode(name)](#router_pathSourceCode)
     * [Event: 'add'](#router_add_event)
     * [Event: 'success'](#router_success_event)
     * [Event: 'fail'](#router_fail_event)
@@ -32,6 +33,7 @@
     * [route.encoded](#route_encoded)
     * [route.ignoreCase](#route_ignoreCase)
     * [route.path([arguments])](#route_path)
+    * [route.pathSourceCode](#route_pathSourceCode)
     * [Event: 'route'](#route_route_event)
 @![>> toc]
 
@@ -162,10 +164,23 @@ Generate a URL path using one of the routes that has been added to the router. (
 
 <a name='router_path__name'></a>The `name` `String` of the route to use to generate the URL path.  Consequently, only named routes can be used to generate URL paths.
 
-<a name='router_path__arguments'></a>If the route being used to generate the URL path has parameters, specify the `arguments` `Object` as URL decoded name value pairs.  The arguments will be mapped to the route parameters and be embedded within the URL path.  (Note that the arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
+<a name='router_path__arguments'></a>If the route being used to generate the URL path has parameters, specify the route parameter `arguments` `Object` as URL decoded name value pairs.  The route parameter arguments will be mapped to the route parameters and be embedded within the URL path.  (Note that the route parameter arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
 
 Returns the the URL encoded pathname generated using the route specified. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 
+<br>
+<br>
+
+####<a name='router_pathSourceCode'></a>router.pathSourceCode(name)
+
+Get the source code `String` for a `Function` that will generate a URL path using the route specified.  Upon compiling the source code, the `Function` may be called and optionally passed a route parameter arguments `Object` of URL decoded name value pairs as the 1st parameter to be mapped and embedded within the generated URL path.  (Note that the route parameter arguments are **not** validated for compliance against the corresponding route constraints.)
+  
+  This is primarily useful in allowing for a URL path to be dynamically generated on the client-side. (See @![link example_client_side_reverse_routing])
+
+<a name='router_pathSourceCode__name'></a>The `name` `String` of the route to use to generate the source code `String` of the URL path generating `Function`.  Consequently, only named routes can be used with this feature.
+
+Returns the source code `String` for a `Function` that will generate a URL path using the route specified.
+  
 <br>
 <br>
 
@@ -275,9 +290,18 @@ Create a new `Route` instance.
 
 Generate a URL path using the route. (See @![link example_route_objects])
 
-<a name='route_path__arguments'></a>If the route has parameters, specify the `arguments` `Object` as URL decoded name value pairs.  The arguments will be mapped to the route parameters and be embedded within the URL path. (Note that the arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
+<a name='route_path__arguments'></a>If the route has parameters, specify the route parameter `arguments` `Object` as URL decoded name value pairs.  The route parameter arguments will be mapped to the route parameters and be embedded within the URL path. (Note that the route parameter arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
 
 Returns the the URL encoded pathname generated using the route. (See [url.URL](http://nodejs.org/api/url.html#url_url))
+
+<br>
+<br>
+
+####<a name='route_pathSourceCode'></a>route.pathSourceCode
+
+* `String` get the source code for a `Function` that will generate a URL path using the route.  Upon compiling the source code, the `Function` may be called and optionally passed a route parameter arguments `Object` of URL decoded name value pairs as the 1st parameter to be mapped and embedded within the generated URL path.  (Note that the route parameter arguments are **not** validated for compliance against the corresponding route constraints.)  
+  
+  This is primarily useful in allowing for a URL path to be dynamically generated on the client-side. (See @![link example_client_side_reverse_routing])
 
 <br>
 <br>
