@@ -379,5 +379,5 @@ var run = function(orouter) { // run tests
 module.exports.run = run;
 
 // run the tests on the original source
-var orouter = require('../src/origin-router.js');
+var orouter = require('../src/index.js');
 run(orouter);

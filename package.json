@@ -4,6 +4,7 @@
     "version": "1.0.0",
     "license" : "MIT",
     "keywords": ["origin", "router", "origin-router", "origin router", "orouter"],
+    "main": "index.js",
     "repository": {
         "type": "git",
         "url": "https://github.com/bstow/origin-router.js"

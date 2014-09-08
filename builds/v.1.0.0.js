@@ -32,7 +32,7 @@ Description:    A node.js module for routing HTTP requests
  * //// Example: Setting Up the Router /////////////////////////////////////////
  * 
  * // require the router module
- * var orouter = require('./origin-router.js');
+ * var orouter = require('./index.js');
  * 
  * // instantiate a new router
  * var router = new orouter.Router();

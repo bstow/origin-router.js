@@ -1,6 +1,6 @@
 @![example section <<] [setup:Setting Up the Router]
 // require the router module
-var orouter = require('./@![name].js');
+var orouter = require('./@![main]');
 
 // instantiate a new router
 var router = new orouter.Router();

@@ -8,8 +8,8 @@ var package = require('./package.json'); // package
 // unit tests
 var tests = require(path.join(__dirname, 'tests'));
 
-// include original source (./src/origin-router.js) to ensure it compiles
-orouter = require(path.join(__dirname, 'src', package.name + '.js'));
+// include original source (./src/index.js) to ensure it compiles
+orouter = require(path.join(__dirname, 'src', package.main));
 tests.run(orouter); // run tests against the compiled source
 
 // generated text for ./readme.md
@@ -40,8 +40,8 @@ var licenseSource = '/' + Array(sourceLineLength).join('*') + '\n' +
     licenseText.trim() + '\n' +
     Array(sourceLineLength).join('*') + '/\n';
 
-// ./src/origin-router.js source code
-var originalSource = fs.readFileSync(path.join(__dirname, 'src', package.name + '.js'), 'utf8');
+// ./src/index.js source code
+var originalSource = fs.readFileSync(path.join(__dirname, 'src', package.main), 'utf8');
 
 // clean up original source and embed info
 originalSource = originalSource.trim();
@@ -56,7 +56,7 @@ originalSource = originalSource.replace('@![info]', infoSource); // embed info
 
 // ./resources/example-code.txt text
 var exampleCodeText     = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
-exampleCodeText         = exampleCodeText.replace('@![name]', package.name); // embed name
+exampleCodeText         = exampleCodeText.replace('@![main]', package.main); // embed name
 
 var DOCUMENTATION_TOC_MARKDOWN_START_SECTION    = '@![toc <<]';
 var DOCUMENTATION_TOC_MARKDOWN_END_SECTION      = '@![>> toc]';
@@ -168,9 +168,9 @@ originalSource = originalSource.replace('@![examples]', sourceExampleSource); //
 
 var source = [licenseSource, originalSource].join('\n'); // assemble source code for build
 
-// ./origin-router.js source code
-fs.writeFileSync(path.join(__dirname, package.name + '.js'), source, 'utf8'); // write
-orouter = require(path.join(__dirname, package.name + '.js')); // ensure compilation
+// ./index.js source code
+fs.writeFileSync(path.join(__dirname, package.main), source, 'utf8'); // write
+orouter = require(path.join(__dirname, package.main)); // ensure compilation
 tests.run(orouter); // run tests against the compiled source
 
 // ./builds/v.{version number}.js source code

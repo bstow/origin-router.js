@@ -4,7 +4,7 @@
  *************************/                            console.log("Setting Up the Router\n---------------------");
 
 // require the router module
-var orouter = require('./origin-router.js');
+var orouter = require('./index.js');
 
 // instantiate a new router
 var router = new orouter.Router();
