@@ -273,13 +273,89 @@ Description:    A node.js module for routing HTTP requests
  * 
  * //// Example: Using with an HTTP Server /////////////////////////////////////
  * 
+ * var http = require('http');
  * 
+ * // instantiate a new router ...
+ * var router = new orouter.Router();
+ * 
+ * // create the server on port 3000 ...
+ * http.createServer(function(request, response) {
+ *     // pass HTTP requests to the router, and upon each request, pass
+ *     // the HTTP request and response objects for use within the
+ *     // corresponding route callbacks ...
+ *     router.route(request, {'data': {'request': request, 'response': response}});
+ * }).listen(3000);
+ * 
+ * // add a route to show all members ...
+ * router.add('all members', '/members/all', function(event) {
+ *     var response = event.data.response;
+ * 
+ *     var entry1 = {'member': 'John Doe', 'pet': 'Cat', 'name': 'Ginger'};
+ *     var entry2 = {'member': 'Jane Doe', 'pet': 'Dog', 'name': 'Harley'};
+ *     var entry3 = {'member': 'Joe No Show'};
+ * 
+ *     response.writeHead(200, {'Content-Type': 'text/html'});
+ * 
+ *     // list members with links to each member's information
+ *     response.write(['<html><head></head><body>',
+ *             '<h3>Members:</h3>',
+ *             '<a href="' + router.path('member', entry1) + '">',
+ *                 entry1.member,
+ *             '</a><br />',
+ *             '<a href="' + router.path('member', entry2) + '">',
+ *                 entry2.member,
+ *             '</a><br />',
+ *             '<a href="/member/inactive">',
+ *                 '<strike>' + entry3.member + '<strike>',
+ *             '</a><br />',
+ *         '</body></html>'].join('\n'));
+ *     response.end();
+ * });
+ * 
+ * // add another route to show a member's information ...
+ * router.add('member', '/member/:member/:pet/:name', function(event) {
+ *     var response = event.data.response;
+ * 
+ *     response.writeHead(200, {'Content-Type': 'text/html'});
+ * 
+ *     response.write(['<html><head></head><body>',
+ *             '<h4>Member: ' + event.arguments.member + '</h4>',
+ *             '<b>Pet Type:</b> ' + event.arguments.pet + '<br />',
+ *             '<b>Pet Name:</b> ' + event.arguments.name + '<br />',
+ *         '</body></html>'].join('\n'));
+ *     response.end();
+ * });
+ * 
+ * // add a homepage route that will redirect to the show all members page ...
+ * router.add('/', function(event) {
+ *     var response = event.data.response;
+ * 
+ *     response.writeHead(302, {'Location': router.path('all members')});
+ *     response.end();
+ * });
+ * 
+ * // catch any requests that do not match a route and show a 404 message ...
+ * router.on('fail', function(event) {
+ *     var request = event.data.request,
+ *         response = event.data.response;
+ * 
+ *     response.writeHead(404, {'Content-Type': 'text/html'});
+ * 
+ *     response.write(['<html><head></head><body>',
+ *             '<h4 style="color: red">',
+ *                 'Sorry, a page for ' + request.url + " wasn't found",
+ *             '</h4>',
+ *         '</body></html>'].join('\n'));
+ *     response.end();
+ * });
  * 
  * 
  ******************************************************************************/
 
 (function() { 'use strict';
     var events  = require('events'),
+        http    = require('http'),
+        url     = require('url'),
         util    = require('util');
 
     var HTTP = { // http methods
@@ -298,7 +374,7 @@ Description:    A node.js module for routing HTTP requests
 
     /*
      * Route {prototype}                                            - route for http requests
-     *      inherits {EventEmitter}
+     *      inherits {events.EventEmitter}
      *      module.exports.Route
      *
      * Route.prototype.constructor {function}
@@ -477,7 +553,7 @@ Description:    A node.js module for routing HTTP requests
 
     /*
      * Router {prototype}                                           - router for http requests
-     *      inherits {EventEmitter}
+     *      inherits {events.EventEmitter}
      *      module.exports.Router
      *
      * Router.prototype.constructor {function}
@@ -692,7 +768,7 @@ Description:    A node.js module for routing HTTP requests
      * Router.prototype.routeOptions {function}             - route a path using the HTTP OPTIONS method
      * Router.prototype.routeTrace {function}               - route a path using the HTTP TRACE method
      * Router.prototype.routeConnect {function}             - route a path using the HTTP CONNECT method
-     *      @pathname {string}                              - url encoded path
+     *      @pathname {string|http.IncomingMessage|url.URL} - url encoded path, request or url object
      *      [@options] {object|undefined}                   - options
      *          .method {string|undefined}                  - http method
      *          .data {*|undefined}                         - data
@@ -716,6 +792,20 @@ Description:    A node.js module for routing HTTP requests
         if (options != undefined) {
             method      = options.method;
             data        = options.data;
+        }
+
+        // resolve pathname argument to pathname string
+        var obj = pathname;
+        if (typeof obj === 'string' || obj instanceof String) { pathname = obj; } // pathname is string
+        else if (obj instanceof http.IncomingMessage) { // pathname is http incoming message
+            var message         = obj,
+                messageURL      = url.parse(message.url),
+                messageMethod   = message.method;
+
+            pathname = messageURL.pathname;
+            if (method == undefined) { method = messageMethod; }
+        } else if (obj != undefined && (typeof obj.pathname === 'string' || obj.pathname instanceof String)) { // url
+            pathname = obj.pathname;
         }
 
         var routes      = this.__routes__,

@@ -5,11 +5,14 @@
  *      return {undefined}
  */
 var run = function(orouter) { // run tests
-    var assert  = require('assert');
+    var assert  = require('assert'),
+        http    = require('http'),
+        url     = require('url');
 
     var router = new orouter.Router(); // test router
 
-    var result;
+    var result,
+        request;
 
     result      = {};
     var onRoute = function(event) { result = {'name': this.name, 'args': event.arguments, 'data': event.data}; };
@@ -182,6 +185,12 @@ var run = function(orouter) { // run tests
         "The path's 1st argument to the 3rd route did not match the expected value");
     assert.strictEqual(result.args.param2, 'arg2',
         "The path's 2nd argument to the 3rd route did not match the expected value");
+    router.route(url.parse('http://host.domain:3000/arg1/arg2/path/'));
+    assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
+    request = new http.IncomingMessage();
+    request.url = 'http://host.domain:3000/arg1/arg2/path/';
+    router.route(request);
+    assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
 
     // route path with 4th route
     router.route('/%2f%20path/file.EXT/', {'method': 'Delete'});
@@ -218,6 +227,11 @@ var run = function(orouter) { // run tests
 
     // route path with POST route
     router.routePost('/method/post');
+    assert.strictEqual(result.name, 'post route', 'The path did not match the POST route');
+    request = new http.IncomingMessage();
+    request.url = '/method/post';
+    request.method = 'POST';
+    router.route(request);
     assert.strictEqual(result.name, 'post route', 'The path did not match the POST route');
 
     // route path with GET & POST route

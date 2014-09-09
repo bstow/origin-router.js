@@ -125,7 +125,7 @@ Aliases for [router.add](#router_add) that specify the HTTP method option (corre
 
 Route a URL path using the routes added to the router.
 
-<a name='router_route__pathname'></a>The `pathname` `String` should be passed as the 1st argument and be a URL encoded path. (See [url.URL](http://nodejs.org/api/url.html#url_url))
+<a name='router_route__pathname'></a>The `pathname` `String | http.IncomingMessage | url.URL` should be passed as the 1st argument and be either a URL encoded path, an HTTP request (See [http.IncomingMessage](http://nodejs.org/api/http.html#http_http_incomingmessage)) or a URL (See [url.URL](http://nodejs.org/api/url.html#url_url)).
 
 <a name='router_route__options'></a>The optional `options` `Object` can specify the following properties:
 

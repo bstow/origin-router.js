@@ -339,7 +339,81 @@ console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catn
 
 ####<a name='example_http_server'>Example: Using with an HTTP Server
 ```javascript
+var http = require('http');
 
+// instantiate a new router ...
+var router = new orouter.Router();
+
+// create the server on port 3000 ...
+http.createServer(function(request, response) {
+    // pass HTTP requests to the router, and upon each request, pass
+    // the HTTP request and response objects for use within the
+    // corresponding route callbacks ...
+    router.route(request, {'data': {'request': request, 'response': response}});
+}).listen(3000);
+
+// add a route to show all members ...
+router.add('all members', '/members/all', function(event) {
+    var response = event.data.response;
+
+    var entry1 = {'member': 'John Doe', 'pet': 'Cat', 'name': 'Ginger'};
+    var entry2 = {'member': 'Jane Doe', 'pet': 'Dog', 'name': 'Harley'};
+    var entry3 = {'member': 'Joe No Show'};
+
+    response.writeHead(200, {'Content-Type': 'text/html'});
+
+    // list members with links to each member's information
+    response.write(['<html><head></head><body>',
+            '<h3>Members:</h3>',
+            '<a href="' + router.path('member', entry1) + '">',
+                entry1.member,
+            '</a><br />',
+            '<a href="' + router.path('member', entry2) + '">',
+                entry2.member,
+            '</a><br />',
+            '<a href="/member/inactive">',
+                '<strike>' + entry3.member + '<strike>',
+            '</a><br />',
+        '</body></html>'].join('\n'));
+    response.end();
+});
+
+// add another route to show a member's information ...
+router.add('member', '/member/:member/:pet/:name', function(event) {
+    var response = event.data.response;
+
+    response.writeHead(200, {'Content-Type': 'text/html'});
+
+    response.write(['<html><head></head><body>',
+            '<h4>Member: ' + event.arguments.member + '</h4>',
+            '<b>Pet Type:</b> ' + event.arguments.pet + '<br />',
+            '<b>Pet Name:</b> ' + event.arguments.name + '<br />',
+        '</body></html>'].join('\n'));
+    response.end();
+});
+
+// add a homepage route that will redirect to the show all members page ...
+router.add('/', function(event) {
+    var response = event.data.response;
+
+    response.writeHead(302, {'Location': router.path('all members')});
+    response.end();
+});
+
+// catch any requests that do not match a route and show a 404 message ...
+router.on('fail', function(event) {
+    var request = event.data.request,
+        response = event.data.response;
+
+    response.writeHead(404, {'Content-Type': 'text/html'});
+
+    response.write(['<html><head></head><body>',
+            '<h4 style="color: red">',
+                'Sorry, a page for ' + request.url + " wasn't found",
+            '</h4>',
+        '</body></html>'].join('\n'));
+    response.end();
+});
 ```
 
 <br>
@@ -441,7 +515,7 @@ Aliases for [router.add](#router_add) that specify the HTTP method option (corre
 
 Route a URL path using the routes added to the router.
 
-<a name='router_route__pathname'></a>The `pathname` `String` should be passed as the 1st argument and be a URL encoded path. (See [url.URL](http://nodejs.org/api/url.html#url_url))
+<a name='router_route__pathname'></a>The `pathname` `String | http.IncomingMessage | url.URL` should be passed as the 1st argument and be either a URL encoded path, an HTTP request (See [http.IncomingMessage](http://nodejs.org/api/http.html#http_http_incomingmessage)) or a URL (See [url.URL](http://nodejs.org/api/url.html#url_url)).
 
 <a name='router_route__options'></a>The optional `options` `Object` can specify the following properties:
 

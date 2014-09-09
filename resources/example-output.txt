@@ -62,3 +62,4 @@ Dogs and cats run and jump
 
 Using with an HTTP Server
 -------------------------
+Browse to http://localhost:3000

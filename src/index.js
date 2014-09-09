@@ -4,6 +4,8 @@
 
 (function() { 'use strict';
     var events  = require('events'),
+        http    = require('http'),
+        url     = require('url'),
         util    = require('util');
 
     var HTTP = { // http methods
@@ -22,7 +24,7 @@
 
     /*
      * Route {prototype}                                            - route for http requests
-     *      inherits {EventEmitter}
+     *      inherits {events.EventEmitter}
      *      module.exports.Route
      *
      * Route.prototype.constructor {function}
@@ -201,7 +203,7 @@
 
     /*
      * Router {prototype}                                           - router for http requests
-     *      inherits {EventEmitter}
+     *      inherits {events.EventEmitter}
      *      module.exports.Router
      *
      * Router.prototype.constructor {function}
@@ -416,7 +418,7 @@
      * Router.prototype.routeOptions {function}             - route a path using the HTTP OPTIONS method
      * Router.prototype.routeTrace {function}               - route a path using the HTTP TRACE method
      * Router.prototype.routeConnect {function}             - route a path using the HTTP CONNECT method
-     *      @pathname {string}                              - url encoded path
+     *      @pathname {string|http.IncomingMessage|url.URL} - url encoded path, request or url object
      *      [@options] {object|undefined}                   - options
      *          .method {string|undefined}                  - http method
      *          .data {*|undefined}                         - data
@@ -440,6 +442,20 @@
         if (options != undefined) {
             method      = options.method;
             data        = options.data;
+        }
+
+        // resolve pathname argument to pathname string
+        var obj = pathname;
+        if (typeof obj === 'string' || obj instanceof String) { pathname = obj; } // pathname is string
+        else if (obj instanceof http.IncomingMessage) { // pathname is http incoming message
+            var message         = obj,
+                messageURL      = url.parse(message.url),
+                messageMethod   = message.method;
+
+            pathname = messageURL.pathname;
+            if (method == undefined) { method = messageMethod; }
+        } else if (obj != undefined && (typeof obj.pathname === 'string' || obj.pathname instanceof String)) { // url
+            pathname = obj.pathname;
         }
 
         var routes      = this.__routes__,
