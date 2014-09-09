@@ -273,58 +273,58 @@ var http = require('http');
 var router = new orouter.Router();
 
 // create the server on port 3000 ...
-http.createServer(function(request, response) {
+var server = http.createServer(function(request, response) {
     // pass HTTP requests to the router, and upon each request, pass
     // the HTTP request and response objects for use within the
     // corresponding route callbacks ...
     router.route(request, {'data': {'request': request, 'response': response}});
 }).listen(3000);
 
-// add a route to show all members ...
-router.add('all members', '/members/all', function(event) {
+// add a route to show all users ...
+router.add('all users', '/users/all', function(event) {
     var response = event.data.response;
 
-    var entry1 = {'member': 'John Doe', 'pet': 'Cat', 'name': 'Ginger'};
-    var entry2 = {'member': 'Jane Doe', 'pet': 'Dog', 'name': 'Harley'};
-    var entry3 = {'member': 'Joe No Show'};
+    var entry1 = {'username': 'John Doe', 'pet': 'cat', 'color': 'brown'};
+    var entry2 = {'username': 'Jane Doe', 'pet': 'dog', 'color': 'white'};
+    var entry3 = {'username': 'Joe No Show'};
 
     response.writeHead(200, {'Content-Type': 'text/html'});
 
-    // list members with links to each member's information
+    // list users with links to each user's information
     response.write(['<html><head></head><body>',
-            '<h3>Members:</h3>',
-            '<a href="' + router.path('member', entry1) + '">',
-                entry1.member,
+            '<h3>Users:</h3>',
+            '<a href="' + router.path('user', entry1) + '">',
+                entry1.username,
             '</a><br />',
-            '<a href="' + router.path('member', entry2) + '">',
-                entry2.member,
+            '<a href="' + router.path('user', entry2) + '">',
+                entry2.username,
             '</a><br />',
-            '<a href="/member/inactive">',
-                '<strike>' + entry3.member + '<strike>',
+            '<a href="/user/inactive">',
+                '<strike>' + entry3.username + '<strike>',
             '</a><br />',
         '</body></html>'].join('\n'));
     response.end();
 });
 
-// add another route to show a member's information ...
-router.add('member', '/member/:member/:pet/:name', function(event) {
+// add another route to show information about a user's pet ...
+router.add('user', '/user/:username/:pet/:color', function(event) {
     var response = event.data.response;
 
     response.writeHead(200, {'Content-Type': 'text/html'});
 
     response.write(['<html><head></head><body>',
-            '<h4>Member: ' + event.arguments.member + '</h4>',
-            '<b>Pet Type:</b> ' + event.arguments.pet + '<br />',
-            '<b>Pet Name:</b> ' + event.arguments.name + '<br />',
+            '<h4>User: ' + event.arguments.username + '</h4>',
+            event.arguments.username + ' has a ' +
+                event.arguments.color + ' ' + event.arguments.pet,
         '</body></html>'].join('\n'));
     response.end();
 });
 
-// add a homepage route that will redirect to the show all members page ...
+// add a homepage route that will redirect to the show all users page ...
 router.add('/', function(event) {
     var response = event.data.response;
 
-    response.writeHead(302, {'Location': router.path('all members')});
+    response.writeHead(302, {'Location': router.path('all users')});
     response.end();
 });
 
@@ -342,4 +342,6 @@ router.on('fail', function(event) {
         '</body></html>'].join('\n'));
     response.end();
 });
+
+console.log('Browse to http://localhost:3000');
 

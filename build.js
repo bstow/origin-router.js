@@ -1,4 +1,5 @@
 var fs      = require('fs'),
+    http    = require('http'),
     path    = require('path'),
     orouter;
 
@@ -83,6 +84,9 @@ readmeMarkdown += documentationMarkdown;
 // examples
 var EXAMPLE_START_SECTION   = '@![example section <<]';
 var EXAMPLE_END_SECTION     = '@![>> example section]';
+
+var EXAMPLE_START_CLEAN   = '@![example clean <<]';
+var EXAMPLE_END_CLEAN     = '@![>> example clean]';
 
 // example source code to embed in source
 var sourceExampleSource = '';
@@ -184,8 +188,18 @@ fs.writeFileSync(path.join(__dirname, './example.js'), exampleSource, 'utf8'); /
 // trap output of ./example.js to test for the expected output (./resources/example-output.txt)
 var log = console.log;
 var exampleOut = []; console.log = function() { exampleOut.push([].slice.call(arguments)); };
+// capture the server used in ./example.js upon creation to allow for it to be shutdown afterwards
+var httpCreateServer = http.createServer;
+var exampleServer;
+http.createServer = function() {
+    exampleServer = httpCreateServer.apply(http, arguments);
+    return exampleServer;
+};
+var shutdownExampleServer = function() { exampleServer.close(); }
 // ./example.js
 require(path.join(__dirname, './example.js')); // run
+shutdownExampleServer(); // shutdown the server used in ./example.js
+http.createServer = httpCreateServer; // restore http create server
 console.log = log; // restore output
 // ./resources/example-output.txt text lines
 expectedExampleOutputLines = fs.readFileSync(path.join(__dirname, './resources/example-output.txt'),
