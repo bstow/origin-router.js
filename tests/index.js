@@ -4,7 +4,7 @@
  *      @orouter {module}           - router module to unit test
  *      return {undefined}
  */
-var run = function(orouter) { // run tests
+var run = function(orouter) { 'use strict'; // run tests
     var assert  = require('assert'),
         http    = require('http'),
         url     = require('url');

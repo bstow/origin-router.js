@@ -1,15 +1,20 @@
 {
     "name": "origin-router",
-    "description": "A node.js module for routing HTTP requests",
+    "description": "Node.js module for routing HTTP requests",
+    "author": "Brandon Stow",
     "version": "1.0.0",
     "license" : "MIT",
     "keywords": ["origin", "router", "origin-router", "origin router", "orouter"],
     "main": "index.js",
+    "scripts": {
+        "test": "node ./tests/index.js"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/bstow/origin-router.js"
     },
     "bugs": {
         "url": "https://github.com/bstow/origin-router.js/issues"
-    }
+    },
+    "engines": {"node": "*"}
 }
