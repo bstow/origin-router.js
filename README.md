@@ -1,3 +1,8 @@
+[![Build Status](https://travis-ci.org/bstow/origin-router.js.svg?branch=master)](https://travis-ci.org/bstow/origin-router.js)
+
+<br>
+<br>
+
 * [Examples of Using the Router](#examples)
     * [Example: Setting Up the Router](#example_setup)
     * [Example: Routing URL Paths](#example_routing)

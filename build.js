@@ -178,9 +178,11 @@ orouter = require(path.join(__dirname, package.main)); // ensure compilation
 tests.run(orouter); // run tests against the compiled source
 
 // ./builds/v.{version number}.js source code
-fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), source, 'utf8'); // write
-orouter = require(path.join(__dirname, './builds/v.' + package.version + '.js')); // ensure compilation
-tests.run(orouter); // run tests against the compiled source
+if (parseInt(package.version.split('.')[2]) === 0) {
+    fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), source, 'utf8'); // write
+    orouter = require(path.join(__dirname, './builds/v.' + package.version + '.js')); // ensure compilation
+    tests.run(orouter); // run tests against the compiled source
+}
 
 // ./example.js source code
 fs.writeFileSync(path.join(__dirname, './example.js'), exampleSource, 'utf8'); // write
@@ -229,5 +231,12 @@ for (var readmeMarkdownLinkAnchor in readmeMarkdownLinks) {
     var readmeMarkdownLink      = '[' + readmeMarkdownLinkTitle + ']' + '(#' + readmeMarkdownLinkAnchor + ')';
     readmeMarkdown = readmeMarkdown.split('@![link ' + readmeMarkdownLinkAnchor + ']').join(readmeMarkdownLink);
 }
+
+// add build status to the ./readme markdown
+readmeMarkdown = '[![Build Status](https://travis-ci.org/bstow/origin-router.js.svg?branch=master)]' +
+    '(https://travis-ci.org/bstow/origin-router.js)\n' +
+    '\n<br>\n<br>\n\n' +
+     readmeMarkdown;
+
 // ./readme markdown
 fs.writeFileSync(path.join(__dirname, './README.md'), readmeMarkdown, 'utf8'); // write
