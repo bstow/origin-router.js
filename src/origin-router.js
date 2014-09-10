@@ -1,358 +1,6 @@
-/*******************************************************************************
-The MIT License (MIT)
+/*@![info]*/
 
-Copyright (c) 2014 bstow
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*******************************************************************************/
-
-/*******************************************************************************
-Name:           Origin Router
-Version:        1.1.0
-Description:    Node.js module for routing HTTP requests
-*******************************************************************************/
-
-/*******************************************************************************
- * //// Example: Setting Up the Router /////////////////////////////////////////
- * 
- * // require the router module
- * var orouter = require('./index.js');
- * 
- * // instantiate a new router
- * var router = new orouter.Router();
- * 
- * 
- * //// Example: Routing URL Paths /////////////////////////////////////////////
- * 
- * // add routes to the router with corresponding callbacks ...
- * router.add('/dog', function() { console.log('I have a dog'); });
- * router.add('/cat', function() { console.log('I have a cat'); });
- * 
- * // route some URL paths ...
- * router.route('/cat'); // outputs 'I have a cat'
- * router.route('/dog'); // outputs 'I have a dog'
- * 
- * // attempt to route URL paths that don't match either route ...
- * router.route('/bulldog'); // outputs nothing
- * router.route('/dog/bulldog'); // outputs nothing
- * 
- * 
- * //// Example: Routes with Parameters ////////////////////////////////////////
- * 
- * // add some more routes that use ':' to denote parameters ...
- * router.add('/dog/:color', function(event) {
- *     console.log('I have a ' + event.arguments.color + ' dog'); });
- * router.add('/cat/:color', function(event) {
- *     console.log('I have a ' + event.arguments.color + ' cat'); });
- * router.add('/:pet/homework', function(event) {
- *     console.log('My ' + event.arguments.pet + ' ate my homework'); })
- * 
- * // route some more URL paths that match the added routes ...
- * router.route('/dog/brown'); // outputs 'I have a brown dog'
- * router.route('cat/white'); // outputs 'I have a white cat'
- * router.route('/fish/homework'); // outputs 'My fish at my homework'
- * router.route('/dog/homework');  // outputs 'I have a homework dog'
- *                                 // this is routed by the dog color route and not
- *                                 // the homework route only because the dog color
- *                                 // route was added before the homework route
- * 
- * 
- * //// Example: Routes with Wildcard Parameters ///////////////////////////////
- * 
- * // add a route with a wildcard parameter denoted by a '*' at the end ...
- * router.add('/calico/:pet/:colors*', function(event) {
- *         console.log('I have a ' +
- *             event.arguments.colors.join(',') + ' ' + event.arguments.pet);
- *     });
- * 
- * // the wildcard parameter matches anything at the end of the URL path
- * // and translates the argument to an array of subpaths ...
- * router.route('/calico/cat/white/orange/gray'); // outputs
- *                                                // 'I have a white,orange,gray cat'
- * 
- * 
- * //// Example: Applying Constraints to Route Parameters //////////////////////
- * 
- * // add a route with parameter constraints ...
- * router.add('/dogs/:count/:breed', // count must be more than 0
- *     {'constraints': function(args) { return parseInt(args.count) > 0; }},
- *     function(event) {
- *         console.log('I have ' +
- *             event.arguments.count + ' ' + event.arguments.breed + 's');
- *     });
- * 
- * router.route('/dogs/0/poodle'); // outputs nothing because the count is invalid
- * router.route('/dogs/2/poodle'); // outputs 'I have 2 poodles'
- * 
- * // a route's parameter constraints may be defined per parameter
- * // as either a function, regular expression or an array of valid strings ...
- * router.add('cats/:count/:breed',
- *     {'constraints': {'count': /(two|three)/, 'breed': ['persian', 'siamese']}},
- *     function(event) {
- *         console.log('I have ' +
- *             event.arguments.count + ' ' + event.arguments.breed + ' cats');
- *     });
- * 
- * router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
- * router.route('/cats/two/maltese'); // outputs nothing because the breed is invalid
- * router.route('/cats/two/persian'); // outputs 'I have two persian cats'
- * 
- * 
- * //// Example: HTTP Method-Specific Routing //////////////////////////////////
- * 
- * // add routes that apply to only certain HTTP methods ...
- * router.add('/fish', {'method': 'GET'},
- *     function() { console.log('I have a fish'); });
- * router.add('/bird', {'method': ['GET', 'POST']},
- *     function() { console.log('I have a bird'); });
- * 
- * // alternatively routes can be applied for an HTTP method like so ...
- * router.addGet('/turtle', function() { console.log('I have a turtle'); });
- * router.addPost('/rabbit', function() { console.log('I have a rabbit'); });
- * 
- * // route URL paths with a corresponding HTTP method specified ...
- * router.route('/fish', {'method': 'GET'}); // outputs 'I have a fish'
- * router.route('/fish', {'method': 'POST'}); // outputs nothing
- * router.route('/bird', {'method': 'GET'}); // outputs 'I have a bird'
- * router.route('/bird', {'method': 'POST'}); // outputs 'I have a bird'
- * router.route('/bird', {'method': 'DELETE'}); // outputs nothing
- * 
- * // alternatively a URL path may be routed for an HTTP method like so ...
- * router.routeGet('/fish'); // outputs 'I have a fish'
- * router.routePost('/bird'); // outputs 'I have a bird'
- * 
- * // HTTP method-specific routes are still applicable when no method is specified ...
- * router.route('/fish'); // outputs 'I have a fish'
- * router.route('/bird'); // outputs 'I have a bird'
- * 
- * 
- * //// Example: Generating URL Paths using Routes /////////////////////////////
- * 
- * // add a route and give it a name for future reference ...
- * router.add('/:pet/mixed/:breeds*', {'name': 'my mix breed'}, function(event) {
- *         console.log('I have a mixed breed ' + event.arguments.pet +
- *             ' that is a ' + event.arguments.breeds.join(','));
- *     });
- * 
- * // alternatively the route's name can pe passed as the first argument like so...
- * router.add('my pure breed', '/:pet/pure/:breed', function(event) {
- *         console.log('I have a pure breed ' + event.arguments.pet +
- *             ' that is a ' + event.arguments.breed);
- *     });
- * 
- * // generate a URL path using the route named 'my mix breed' ...
- * var pathname = router.path('my mix breed', // use the route named 'my mix breed'
- *     {'pet': 'dog', 'breeds': ['beagle', 'pug', 'terrier']}); // parameter arguments
- * 
- * console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
- * 
- * 
- * //// Example: Generating URL Paths on the Client-Side ///////////////////////
- * 
- * // add a route and give it a name for future reference ...
- * router.add('/:pet/age/:years', {'name': "my pet's age"}, function(event) {
- *         console.log('I have a ' + event.arguments.years + ' year old ' +
- *             event.arguments.pet);
- *     });
- * 
- * // get the source code for the function to generate a URL path using
- * // the route named "my pet's age" ...
- * var pathSourceCode = router.pathSourceCode("my pet's age");
- * 
- * // compile the source code into a function using eval, although typically
- * // the source code would be included and compiled within a script sent to and
- * // processed by the client ...
- * var pathFunction;
- * eval('pathFunction = ' + pathSourceCode);
- * 
- * // generate a URL by running the compiled function and passing any
- * // route parameter arguments
- * console.log(pathFunction({'pet': 'cat', 'years': 2})); // outputs /cat/age/2
- * 
- * 
- * //// Example: Working with Route Objects ////////////////////////////////////
- * 
- * // a route can be instantiated directly ...
- * var route = new orouter.Route('/:pet/trick/:tricks*',
- *     {'name': 'tricks', 'method': 'GET'});
- * 
- * // the route instance can then be used to generate a URL path
- * // without being added to a router ...
- * var pathname = route.path({'pet': 'dog', 'tricks': ['sit', 'roll']});
- * 
- * console.log(pathname); // outputs '/dog/trick/sit/roll'
- * 
- * // the route can also be added to any router(s)
- * router.add(route, function(event) {
- *         console.log('My ' + event.arguments.pet + "'s best " + event.route.name +
- *             ' are ' + event.arguments.tricks.join(' and '));
- *     });
- * 
- * router.routeGet(pathname); // outputs "My dog's best tricks are sit and roll"
- * 
- * 
- * //// Example: Router and Route Events and Data //////////////////////////////
- * 
- * // know when a route routes a URL path by listening to
- * // the route's 'route' event ...
- * var route = router.add('/hamster/:color', {'name': 'hamster'});
- * route.on('route', function(event) {
- *     console.log('I have a ' + event.arguments.color + ' ' + this.name); });
- * 
- * router.route('/hamster/brown'); // outputs 'I have a brown hamster'
- * 
- * // know when the router is unable to find a matching route to route a URL path
- * // by listening to the router's 'fail' event ...
- * router.once('fail', function(event) {
- *     console.log('What is a ' + event.pathname.replace('/', '-') + '?'); });
- * 
- * router.route('guinea/pig'); // outputs 'What is a guinea-pig?'
- * 
- * // alternatively, know when the router successfully routes any URL path by
- * // listening to the router's 'success' event ...
- * router.once('success', function(event) {
- *     console.log('My ' + event.route.name + ' is ' + event.arguments.color); });
- * 
- * router.route('/hamster/yellow'); // outputs 'I have a yellow hamster'
- *                                  // outputs 'My hamster is yellow'
- * 
- * // additionally when routing a URL path, arbitrary data can be attached
- * // by setting the data object which then will be accessible by any of the
- * // triggered listeners ...
- * router.add('mouse', '/mouse/:color', function(event) {
- *     console.log(event.data + ' has a ' + event.arguments.color + ' mouse'); });
- * router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mouse'
- * 
- * 
- * //// Example: About URL Encoding ////////////////////////////////////////////
- * 
- * // by default, routes should be defined without any URL encoding...
- * router.add('/pet name/:name', {'constraints': {'name': ['Pete', 'Mary Jo', 'Al']}},
- *     function(event) { console.log("My pet's name is " + event.arguments.name); });
- * 
- * // when routing a URL path, the path should be in its original URL encoded form ...
- * router.route('/pet%20name/Pete'); // outputs "My pet's name is Pete"
- * 
- * // route arguments are URL decoded ...
- * router.route('/pet%20name/Mary%20Jo'); // outputs "My pet's name is Mary Jo"
- * 
- * // in some cases, a route may need to be defined with URL encoding ...
- * router.add('/%3adogs%2fcats/:actions*', // 1st subpath is ':dogs/cats' URL encoded
- *     {'encoded': true}, // indicate that the route is URL encoded
- *     function(event) {
- *         console.log('Dogs and cats ' +
- *             event.arguments.actions.join(' and '));
- *     });
- * 
- * router.route('/%3Adogs%2Fcats/run/jump'); // outputs 'Dogs and cats run and jump'
- * 
- * // when generating a URL path from a route, any passed route parameter arguments
- * // shouldn't contain URL encoding ...
- * router.add('/pet toys/:pet/:toys*', {'name': 'toys'});
- * pathname = router.path('toys',
- *     {'pet': 'bengal cat', 'toys': ['ball of yarn', 'catnip']});
- * // the generated URL path is URL encoded ...
- * console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
- * 
- * 
- * //// Example: Using with an HTTP Server /////////////////////////////////////
- * 
- * var http = require('http');
- * 
- * // instantiate a new router ...
- * var router = new orouter.Router();
- * 
- * // create the server on port 3000 ...
- * var server = http.createServer(function(request, response) {
- *     // pass HTTP requests to the router, and upon each request, pass
- *     // the HTTP request and response objects for use within the
- *     // corresponding route callbacks ...
- *     router.route(request, {'data': {'request': request, 'response': response}});
- * }).listen(3000);
- * 
- * // add a route to show all users ...
- * router.add('all users', '/users/all', function(event) {
- *     var response = event.data.response;
- * 
- *     var entry1 = {'username': 'John Doe', 'pet': 'cat', 'color': 'brown'};
- *     var entry2 = {'username': 'Jane Doe', 'pet': 'dog', 'color': 'white'};
- *     var entry3 = {'username': 'Joe No Show'};
- * 
- *     response.writeHead(200, {'Content-Type': 'text/html'});
- * 
- *     // list users with links to each user's information
- *     response.write(['<html><head></head><body>',
- *             '<h3>Users:</h3>',
- *             '<a href="' + router.path('user', entry1) + '">',
- *                 entry1.username,
- *             '</a><br />',
- *             '<a href="' + router.path('user', entry2) + '">',
- *                 entry2.username,
- *             '</a><br />',
- *             '<a href="/user/inactive">',
- *                 '<strike>' + entry3.username + '<strike>',
- *             '</a><br />',
- *         '</body></html>'].join('\n'));
- *     response.end();
- * });
- * 
- * // add another route to show information about a user's pet ...
- * router.add('user', '/user/:username/:pet/:color', function(event) {
- *     var response = event.data.response;
- * 
- *     response.writeHead(200, {'Content-Type': 'text/html'});
- * 
- *     response.write(['<html><head></head><body>',
- *             '<h4>User: ' + event.arguments.username + '</h4>',
- *             event.arguments.username + ' has a ' +
- *                 event.arguments.color + ' ' + event.arguments.pet,
- *         '</body></html>'].join('\n'));
- *     response.end();
- * });
- * 
- * // add a homepage route that will redirect to the show all users page ...
- * router.add('/', function(event) {
- *     var response = event.data.response;
- * 
- *     response.writeHead(302, {'Location': router.path('all users')});
- *     response.end();
- * });
- * 
- * // catch any requests that do not match a route and show a 404 message ...
- * router.on('fail', function(event) {
- *     var request = event.data.request,
- *         response = event.data.response;
- * 
- *     response.writeHead(404, {'Content-Type': 'text/html'});
- * 
- *     response.write(['<html><head></head><body>',
- *             '<h4 style="color: red">',
- *                 'Sorry, a page for ' + request.url + " wasn't found",
- *             '</h4>',
- *         '</body></html>'].join('\n'));
- *     response.end();
- * });
- * 
- * console.log('Browse to http://localhost:3000');
- * 
- * 
- ******************************************************************************/
+/*@![examples]*/
 
 (function() { 'use strict';
     var events  = require('events'),
@@ -912,17 +560,17 @@ Description:    Node.js module for routing HTTP requests
         }
     };
 
-    /* RoutePathPart {prototype}                        - route path part
+    /* RouteSubpath {prototype}                         - route subpath part
      *
-     * RoutePathPart.prototype.constructor {function}
+     * RouteSubpath.prototype.constructor {function}
      *      @raw {string}                               - raw value
      *      [@encoded] {string}                         - url encoded value
      *
-     * RoutePathPart.prototype.raw {string}             - get raw value
+     * RouteSubpath.prototype.raw {string}              - get raw value
      *
-     * RoutePathPart.prototype.encoded {string}         - get encoded value
+     * RouteSubpath.prototype.encoded {string}          - get encoded value
      */
-    var RoutePathPart = function(raw, encoded) {
+    var RouteSubpath = function(raw, encoded) {
         if (encoded == undefined) { encoded = encodeURIComponent(raw); }
 
         // accessors
@@ -938,14 +586,14 @@ Description:    Node.js module for routing HTTP requests
             'configurable': false });
     };
 
-    /* RouteParameterPart {prototype}                       - route parameter part
+    /* RouteParameter {prototype}                       - route parameter part
      *
-     * RouteParameterPart.prototype.constructor {function}
-     *      @name {string}                                  - name
+     * RouteParameter.prototype.constructor {function}
+     *      @name {string}                              - name
      *
-     * RouteParameterPart.prototype.name {string}           - get name
+     * RouteParameter.prototype.name {string}           - get name
      */
-    var RouteParameterPart = function(name) {
+    var RouteParameter = function(name) {
         // accessors
 
         Object.defineProperty(this, 'name', {
@@ -954,16 +602,16 @@ Description:    Node.js module for routing HTTP requests
             'configurable': false });
     };
 
-    /* RouteWildcardParameterPart {prototype}                       - route wildcard parameter part
-     *      inherits {RouteParameterPart}
+    /* RouteWildcardParameter {prototype}                       - route wildcard parameter part
+     *      inherits {RouteParameter}
      *
-     * RouteWildcardParameterPart.prototype.constructor {function}
-     *      @name {string}                                          - name
+     * RouteWildcardParameter.prototype.constructor {function}
+     *      @name {string}                                      - name
      */
-    var RouteWildcardParameterPart = function(name) {
-        RouteParameterPart.call(this, name);
+    var RouteWildcardParameter = function(name) {
+        RouteParameter.call(this, name);
     };
-    util.inherits(RouteWildcardParameterPart, RouteParameterPart);
+    util.inherits(RouteWildcardParameter, RouteParameter);
 
     /*
      * parse {object}
@@ -974,7 +622,7 @@ Description:    Node.js module for routing HTTP requests
      * parse.route {function}                                   - parse an expression into subroutes
      *      @expression {string}                                - route expression
      *      [@decode] {boolean|undefined}                       - url decode expression subroutes
-     *      return {array<RoutePathPart|RouteParameterPart>}    - parts of the route
+     *      return {array<RouteSubpath|RouteParameter>}         - parts of the route
      */
     parse.route = function(expression, decode) {
         var last, // last character
@@ -1002,11 +650,11 @@ Description:    Node.js module for routing HTTP requests
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
-                if (wildcard && index == subroutes.length - 1)  { part = new RouteWildcardParameterPart(name); }
-                else                                            { part = new RouteParameterPart(name); }
+                if (wildcard && index == subroutes.length - 1)  { part = new RouteWildcardParameter(name); }
+                else                                            { part = new RouteParameter(name); }
             } else { // path part
-                if (decode) { part = new RoutePathPart(decodeURIComponent(subroute), subroute); }
-                else        { part = new RoutePathPart(subroute); }
+                if (decode) { part = new RouteSubpath(decodeURIComponent(subroute), subroute); }
+                else        { part = new RouteSubpath(subroute); }
             }
 
             subroutes[index] = part;
@@ -1040,7 +688,7 @@ Description:    Node.js module for routing HTTP requests
 
     /*
      * match {function}                                             - match subroutes and subpaths
-     *      @subroutes {array<RoutePathPart|RouteParameterPart>}    - parts of the route
+     *      @subroutes {array<RouteSubpath|RouteParameter>}         - parts of the route
      *      @subpaths {array<string>}                               - url decoded parts of the path
      *      [@ignoreCase {boolean|undefined}]                       - case insensitive matching
      *      return {object<string|array<string>>}                   - route arguments as name value pairs
@@ -1056,7 +704,7 @@ Description:    Node.js module for routing HTTP requests
                 subpath     = subpaths[index];
 
             if (subroute == undefined) { return; } // match unsuccessful
-            else if (subroute instanceof RoutePathPart) { // path part
+            else if (subroute instanceof RouteSubpath) { // path part
                 if (ignoreCase) { // case insensitive match
                     if (subroute.raw.toLowerCase() === subpath.toLowerCase())   { continue; }   // continue matching
                     else                                                        { return; }     // match unsuccessful
@@ -1064,8 +712,8 @@ Description:    Node.js module for routing HTTP requests
                     if (subroute.raw === subpath)   { continue; }   // continue matching
                     else                            { return; }     // match unsuccessful
                 }
-            } else if (subroute instanceof RouteParameterPart) { // parameter
-                if (subroute instanceof RouteWildcardParameterPart) { // wildcard parameter
+            } else if (subroute instanceof RouteParameter) { // parameter
+                if (subroute instanceof RouteWildcardParameter) { // wildcard parameter
                     wildcard = subroute.name; // wildcard parameter name
                     break; // end matching
                 } else { // paramter
@@ -1084,7 +732,7 @@ Description:    Node.js module for routing HTTP requests
 
     /*
     * compose {function}                                            - compose path from subroutes
-    *       @subroutes {array<RoutePathPart|RouteParameterPart>}    - parts of the route
+    *       @subroutes {array<RouteSubpath|RouteParameter>}         - parts of the route
     *       [@arguments] {object<string|array<string>>}             - route arguments as name value pairs
     *       return {string}                                         - url encoded path                                                                  character
     */
@@ -1093,13 +741,13 @@ Description:    Node.js module for routing HTTP requests
 
         var subpaths = [];
         subroutes.forEach(function(subroute) {
-            if (subroute instanceof RoutePathPart) { // path part
+            if (subroute instanceof RouteSubpath) { // path part
                 subpaths.push(subroute.encoded);
-            } else if (subroute instanceof RouteParameterPart) { // parameter
+            } else if (subroute instanceof RouteParameter) { // parameter
                 var argument = args[subroute.name];
                 if (argument == undefined) { argument = ''; }
 
-                if (subroute instanceof RouteWildcardParameterPart) { // wildcard parameter
+                if (subroute instanceof RouteWildcardParameter) { // wildcard parameter
                     if (util.isArray(argument)) { // array argument
                         argument.forEach(function(subargument) { subpaths.push(encodeURIComponent(subargument)); });
                     } else { subpaths.push(encodeURIComponent(String(argument))); } // string argument
@@ -1117,18 +765,18 @@ Description:    Node.js module for routing HTTP requests
 
     /*
     * compose.sourceCode {function}                                 - compose source code to generate path
-    *       @subroutes {array<RoutePathPart|RouteParameterPart>}    - parts of the route
+    *       @subroutes {array<RouteSubpath|RouteParameter>}         - parts of the route
     *       return {string}                                         - source code of function to generate path
     */
     compose.sourceCode = function(subroutes) {
         var sourceCode = compose.sourceCode.START;
 
         subroutes.forEach(function(subroute) {
-            if (subroute instanceof RoutePathPart) { // path part
+            if (subroute instanceof RouteSubpath) { // path part
                 sourceCode +=       'subpath(' + JSON.stringify(subroute.encoded) + '); ';
-            } else if (subroute instanceof RouteParameterPart) { // parameter
+            } else if (subroute instanceof RouteParameter) { // parameter
                 var stringifiedSubrouteName = JSON.stringify(subroute.name);
-                if (subroute instanceof RouteWildcardParameterPart) { // wildcard parameter
+                if (subroute instanceof RouteWildcardParameter) { // wildcard parameter
                     sourceCode +=   'parameter.wildcard(' + stringifiedSubrouteName + '); ';
                 } else { // parameter
                     sourceCode +=   'parameter(' + stringifiedSubrouteName + '); ';

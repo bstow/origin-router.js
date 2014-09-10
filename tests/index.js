@@ -393,5 +393,5 @@ var run = function(orouter) { 'use strict'; // run tests
 module.exports.run = run;
 
 // run the tests on the original source
-var orouter = require('../src/index.js');
+var orouter = require('../src/origin-router.js');
 run(orouter);

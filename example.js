@@ -4,7 +4,7 @@
  *************************/                            console.log("Setting Up the Router\n---------------------");
 
 // require the router module
-var orouter = require('./index.js');
+var orouter = require('./origin-router.js');
 
 // instantiate a new router
 var router = new orouter.Router();
@@ -18,11 +18,11 @@ var router = new orouter.Router();
 router.add('/dog', function() { console.log('I have a dog'); });
 router.add('/cat', function() { console.log('I have a cat'); });
 
-// route some URL paths ...
+// route a couple of URL paths ...
 router.route('/cat'); // outputs 'I have a cat'
 router.route('/dog'); // outputs 'I have a dog'
 
-// attempt to route URL paths that don't match either route ...
+// attempt to route URL paths that don't match either of the routes ...
 router.route('/bulldog'); // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
 
@@ -31,7 +31,7 @@ router.route('/dog/bulldog'); // outputs nothing
  * Routes with Parameters *
  **************************/                           console.log("\nRoutes with Parameters\n----------------------");
 
-// add some more routes that use ':' to denote parameters ...
+// add a few routes that use ':' to denote parameters ...
 router.add('/dog/:color', function(event) {
     console.log('I have a ' + event.arguments.color + ' dog'); });
 router.add('/cat/:color', function(event) {
@@ -39,14 +39,14 @@ router.add('/cat/:color', function(event) {
 router.add('/:pet/homework', function(event) {
     console.log('My ' + event.arguments.pet + ' ate my homework'); })
 
-// route some more URL paths that match the added routes ...
+// route some URL paths that match the added routes with parameters ...
 router.route('/dog/brown'); // outputs 'I have a brown dog'
 router.route('cat/white'); // outputs 'I have a white cat'
 router.route('/fish/homework'); // outputs 'My fish at my homework'
 router.route('/dog/homework');  // outputs 'I have a homework dog'
-                                // this is routed by the dog color route and not
-                                // the homework route only because the dog color
-                                // route was added before the homework route
+                                // this is routed by the 'dog color' route and not
+                                // the 'homework' route because the 'dog color'
+                                // route was added before the 'homework' route
 
 
 /***********************************
@@ -69,8 +69,8 @@ router.route('/calico/cat/white/orange/gray'); // outputs
  * Applying Constraints to Route Parameters *
  ********************************************/         console.log("\nApplying Constraints to Route Parameters\n----------------------------------------");
 
-// add a route with parameter constraints ...
-router.add('/dogs/:count/:breed', // count must be more than 0
+// add a route with a parameter and corresponding parameter constraints ...
+router.add('/dogs/:count/:breed', // count must be more than 0 to match
     {'constraints': function(args) { return parseInt(args.count) > 0; }},
     function(event) {
         console.log('I have ' +
@@ -78,6 +78,7 @@ router.add('/dogs/:count/:breed', // count must be more than 0
     });
 
 router.route('/dogs/0/poodle'); // outputs nothing because the count is invalid
+                                // according to the route's parameter constraints
 router.route('/dogs/2/poodle'); // outputs 'I have 2 poodles'
 
 // a route's parameter constraints may be defined per parameter
@@ -98,7 +99,7 @@ router.route('/cats/two/persian'); // outputs 'I have two persian cats'
  * HTTP Method-Specific Routing *
  ********************************/                     console.log("\nHTTP Method-Specific Routing\n----------------------------");
 
-// add routes that apply to only certain HTTP methods ...
+// add a couple of routes that apply to only certain HTTP methods ...
 router.add('/fish', {'method': 'GET'},
     function() { console.log('I have a fish'); });
 router.add('/bird', {'method': ['GET', 'POST']},
@@ -234,14 +235,14 @@ router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mou
  * About URL Encoding *
  **********************/                               console.log("\nAbout URL Encoding\n------------------");
 
-// by default, routes should be defined without any URL encoding...
+// by default, routes should be defined without any URL encodings ...
 router.add('/pet name/:name', {'constraints': {'name': ['Pete', 'Mary Jo', 'Al']}},
     function(event) { console.log("My pet's name is " + event.arguments.name); });
 
 // when routing a URL path, the path should be in its original URL encoded form ...
 router.route('/pet%20name/Pete'); // outputs "My pet's name is Pete"
 
-// route arguments are URL decoded ...
+// route parameter arguments are URL decoded upon matching ...
 router.route('/pet%20name/Mary%20Jo'); // outputs "My pet's name is Mary Jo"
 
 // in some cases, a route may need to be defined with URL encoding ...
@@ -274,8 +275,8 @@ var router = new orouter.Router();
 
 // create the server on port 3000 ...
 var server = http.createServer(function(request, response) {
-    // pass HTTP requests to the router, and upon each request, pass
-    // the HTTP request and response objects for use within the
+    // pass HTTP all requests to the router, and upon each request,
+    // pass the HTTP request and response objects for use within the
     // corresponding route callbacks ...
     router.route(request, {'data': {'request': request, 'response': response}});
 }).listen(3000);
@@ -290,7 +291,7 @@ router.add('all users', '/users/all', function(event) {
 
     response.writeHead(200, {'Content-Type': 'text/html'});
 
-    // list users with links to each user's information
+    // list users with links to each user's information on an HTML page ...
     response.write(['<html><head></head><body>',
             '<h3>Users:</h3>',
             '<a href="' + router.path('user', entry1) + '">',
@@ -312,6 +313,7 @@ router.add('user', '/user/:username/:pet/:color', function(event) {
 
     response.writeHead(200, {'Content-Type': 'text/html'});
 
+    // show a user's information on an HTML page ...
     response.write(['<html><head></head><body>',
             '<h4>User: ' + event.arguments.username + '</h4>',
             event.arguments.username + ' has a ' +
@@ -335,6 +337,7 @@ router.on('fail', function(event) {
 
     response.writeHead(404, {'Content-Type': 'text/html'});
 
+    // show a not found message on an HTML page ...
     response.write(['<html><head></head><body>',
             '<h4 style="color: red">',
                 'Sorry, a page for ' + request.url + " wasn't found",

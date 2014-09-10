@@ -9,7 +9,7 @@ var package = require('./package.json'); // package
 // unit tests
 var tests = require(path.join(__dirname, 'tests'));
 
-// include original source (./src/index.js) to ensure it compiles
+// include original source (./src/origin-router.js) to ensure it compiles
 orouter = require(path.join(__dirname, 'src', package.main));
 tests.run(orouter); // run tests against the compiled source
 
@@ -41,7 +41,7 @@ var licenseSource = '/' + Array(sourceLineLength).join('*') + '\n' +
     licenseText.trim() + '\n' +
     Array(sourceLineLength).join('*') + '/\n';
 
-// ./src/index.js source code
+// ./src/origin-router.js source code
 var originalSource = fs.readFileSync(path.join(__dirname, 'src', package.main), 'utf8');
 
 // clean up original source and embed info
@@ -172,13 +172,13 @@ originalSource = originalSource.replace('@![examples]', sourceExampleSource); //
 
 var source = [licenseSource, originalSource].join('\n'); // assemble source code for build
 
-// ./index.js source code
+// ./origin-router.js source code
 fs.writeFileSync(path.join(__dirname, package.main), source, 'utf8'); // write
 orouter = require(path.join(__dirname, package.main)); // ensure compilation
 tests.run(orouter); // run tests against the compiled source
 
 // ./builds/v.{version number}.js source code
-if (parseInt(package.version.split('.')[2]) === 0) {
+if (parseInt(package.version.split('.')[2]) === 0) { // only write X.X.0 versioned builds
     fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), source, 'utf8'); // write
     orouter = require(path.join(__dirname, './builds/v.' + package.version + '.js')); // ensure compilation
     tests.run(orouter); // run tests against the compiled source
