@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.0.2
+Version:        1.0.4
 Description:    Node.js module for routing HTTP requests
 *******************************************************************************/
 
@@ -362,6 +362,11 @@ Description:    Node.js module for routing HTTP requests
         http    = require('http'),
         url     = require('url'),
         util    = require('util');
+
+    var EXPRESSION_SYMBOLS = { // expression symbolds
+        'PARAMETER': ':',
+        'WILDCARD_PARAMETER': '*'
+    };
 
     var HTTP = { // http methods
         'METHODS': [
@@ -994,10 +999,10 @@ Description:    Node.js module for routing HTTP requests
         var subroutes = expression.split('/');
         subroutes.forEach(function(subroute, index, subroutes) { // parameters
             var part;
-            if (subroute.charAt(0) === ':') { // parameter
+            if (subroute.charAt(0) === EXPRESSION_SYMBOLS.PARAMETER) { // parameter
                 last = subroute.length - 1;
 
-                var wildcard    = subroute.charAt(last) === '*';
+                var wildcard    = subroute.charAt(last) === EXPRESSION_SYMBOLS.WILDCARD_PARAMETER;
                 var name        = wildcard ? subroute.substring(1, last) : subroute.substring(1);
 
                 if (name in names) { // parameter name collision

@@ -437,16 +437,16 @@ console.log('Browse to http://localhost:3000');
 
 
 
-To use the router one must `require('./orgin-router.js')`.
+To use the router one must `require('./origin-router.js')`.
 ```javascript
-var orouter = require('./orgin-router.js');
+var orouter = require('./origin-router.js');
 ```
 
 <br>
 <br>
 
 ###<a name='Router'></a>Class: orouter.Router
-The `Router` class can be instantiated to create a router instance that allows for routes to be defined. The defined routes then serve to allow the router to predictably route URL paths to specified `Function` handlers.
+The `Router` class can be instantiated to create a router instance that allows for routes to be defined. The defined routes then serve to allow the router to route URL paths to specified `Function` handlers.
 
 <br>
 <br>
@@ -471,13 +471,13 @@ A route expression can match variable subpaths by specifying a route parameter d
 
 * <a name='router_add__options_name'></a>`name`: `String` the unique name to assign to the route (this is the same as specifying the name as the 1st argument)
 
-* <a name='router_add__options_method'></a>`method`: `String | Array` the HTTP method that the added route should apply to, ex. `'GET'`.  To specify multiple HTTP methods, assign an `Array` of HTTP methods, ex. `['GET', 'POST']`.  By default, the added route will apply to all HTTP methods. (See [Example: HTTP Method-Specific Routing](#example_http_methods))
+* <a name='router_add__options_method'></a>`method`: `String | Array` the HTTP method that the added route should apply to, ex. `'GET'`.  To specify multiple HTTP methods, specify an `Array` of HTTP methods, ex. `['GET', 'POST']`.  By default, the added route will apply to all HTTP methods. (See [Example: HTTP Method-Specific Routing](#example_http_methods))
 
 * <a name='router_add__options_constraints'></a>`constraints`: `Function | Object` the constraints to apply to any of the route's parameters during URL path matching.
   
   This option allows for rules to be set to restrict what one or more of the route parameters will match.  The most flexible way to set route parameter constraints is by setting the constraint option to a `Function`.  Upon the route initially matching a URL path, the constraints `Function` will be called and passed the route parameter arguments as an `Object` of URL decoded name value pairs for evaluation.  The constraints `Function` should return either `true`, indicating that the route parameter arguments are compliant, or `false`, indicating that the route parameters do **not** match the URL path and that the router should continue matching with other subsequent routes.  An example of a constraints `Function` is `function(args) { return args.foo === 'bar' || args.foo === 'qux'; }` where the route will only match a URL path when the `foo` route parameter argument value is either `'bar'` or `'qux'`.
   
-  Alternatively, route parameter constraints can be set as an `Object` where the constraint for a route parameter is assigned to a property corresponding to the parameter's name.  Each constraint may be either a `RegExp`, an `Array` of matching `Strings`, or a `Function` that accepts the route parameter argument value as the 1st argument and returns `true` or `false` to indicate compliance.  An example of a constraints `Object` is `{'foo': /^[0-9]/, 'bar': ['asdf', 'qwerty'], 'qux': function(arg) { return arg.length > 10; }}`.  In this case, the route will only match a URL path when the `foo` route parameter argument value starts with a number, the `bar` route parameter argument value is either `'asdf'` or `'qwerty'`, and the `qux` route parameter argument value is longer than 10 characters. Moreover, when a `RegExp` or `Array` of `String`s route parameter constraint is applied to a parameter wildcard argument, each URL subpath of the argument value will be tested for compliance.
+  Alternatively, route parameter constraints can be set as an `Object` of key value pairs where the key is the route parameter name and the value is the constraint for the route parameter.  Each constraint value may be either a `RegExp`, an `Array` of matching `Strings`, or a `Function` that accepts the route parameter argument value as the 1st argument and returns `true` or `false` to indicate compliance.  An example of a constraints `Object` is `{'foo': /^[0-9]/, 'bar': ['asdf', 'qwerty'], 'qux': function(arg) { return arg.length > 10; }}`.  In this case, the route will only match a URL path when the `foo` route parameter argument value starts with a number, the `bar` route parameter argument value is either `'asdf'` or `'qwerty'`, and the `qux` route parameter argument value is longer than 10 characters. Moreover, when a route parameter constraint value is either a `RegExp` or an `Array` of `String`s and the corresponding route parameter is a wildcard parameter, each URL subpath of the route parameter argument value will be tested for compliance.
   
   (See [Example: Applying Constraints to Route Parameters](#example_parameter_constraints))
 
@@ -525,7 +525,7 @@ Aliases for [router.add](#router_add) that specify the HTTP method option (corre
 
 Route a URL path using the routes added to the router.
 
-<a name='router_route__pathname'></a>The `pathname` `String | http.IncomingMessage | url.URL` should be passed as the 1st argument and be either a URL encoded path, an HTTP request (See [http.IncomingMessage](http://nodejs.org/api/http.html#http_http_incomingmessage)) or a URL (See [url.URL](http://nodejs.org/api/url.html#url_url)).
+<a name='router_route__pathname'></a>The `pathname` `String | http.IncomingMessage | url.URL` should be passed as the 1st argument and can be either a URL encoded path, an HTTP request (See [http.IncomingMessage](http://nodejs.org/api/http.html#http_http_incomingmessage)) or a URL (See [url.URL](http://nodejs.org/api/url.html#url_url)).
 
 <a name='router_route__options'></a>The optional `options` `Object` can specify the following properties:
 
@@ -586,7 +586,7 @@ Returns the source code `String` for a `Function` that will generate a URL path 
 
 ####<a name='router_events'></a>Events
 
-This is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_eventemitter) with the following events:
+A `Router` class instance is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_eventemitter) with the following events:
 
 <br>
 
@@ -708,7 +708,7 @@ Returns the the URL encoded pathname generated using the route. (See [url.URL](h
 
 ####<a name='route_events'></a>Events
 
-This is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_eventemitter) with the following events:
+A `Route` class instance is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_eventemitter) with the following events:
 
 <br>
 
