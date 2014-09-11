@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.0.4
+Version:        1.0.5
 Description:    Node.js module for routing HTTP requests
 *******************************************************************************/
 
@@ -363,9 +363,14 @@ Description:    Node.js module for routing HTTP requests
         url     = require('url'),
         util    = require('util');
 
-    var EXPRESSION_SYMBOLS = { // expression symbolds
+    var EXPRESSION_SYMBOLS = { // expression symbols
         'PARAMETER': ':',
-        'WILDCARD_PARAMETER': '*'
+        'WILDCARD_PARAMETER': '*',
+        'DELINEATOR': '/'
+    };
+
+    var PATH_SYMBOLS = {
+        'DELINEATOR': '/'
     };
 
     var HTTP = { // http methods
@@ -993,10 +998,10 @@ Description:    Node.js module for routing HTTP requests
         expression = expression.trim();
 
         last = expression.length - 1;
-        if (expression.charAt(last) === '/')    { expression = expression.substring(0, last); }
-        if (expression.charAt(0)    === '/')    { expression = expression.substring(1); }
+        if (expression.charAt(last) === EXPRESSION_SYMBOLS.DELINEATOR) { expression = expression.substring(0, last); }
+        if (expression.charAt(0)    === EXPRESSION_SYMBOLS.DELINEATOR) { expression = expression.substring(1); }
 
-        var subroutes = expression.split('/');
+        var subroutes = expression.split(EXPRESSION_SYMBOLS.DELINEATOR);
         subroutes.forEach(function(subroute, index, subroutes) { // parameters
             var part;
             if (subroute.charAt(0) === EXPRESSION_SYMBOLS.PARAMETER) { // parameter
@@ -1037,11 +1042,13 @@ Description:    Node.js module for routing HTTP requests
         pathname = pathname.trim();
 
         var last = pathname.length - 1;
-        if (pathname.charAt(last) === '/')  { pathname = pathname.substring(0, last); }
-        if (pathname.charAt(0)    === '/')  { pathname = pathname.substring(1); }
+        if (pathname.charAt(last) === PATH_SYMBOLS.DELINEATOR) { pathname = pathname.substring(0, last); }
+        if (pathname.charAt(0)    === PATH_SYMBOLS.DELINEATOR) { pathname = pathname.substring(1); }
 
         var subpaths = [];
-        pathname.split('/').forEach(function(subpath) { subpaths.push(decodeURIComponent(subpath)); });
+        pathname.split(PATH_SYMBOLS.DELINEATOR).forEach(function(subpath) {
+            subpaths.push(decodeURIComponent(subpath));
+        });
 
         return subpaths;
     };
@@ -1117,8 +1124,8 @@ Description:    Node.js module for routing HTTP requests
             }
         });
 
-        var pathname = subpaths.join('/');
-        if (pathname.charAt(0) !== '/') { pathname = '/' + pathname; }
+        var pathname = subpaths.join(PATH_SYMBOLS.DELINEATOR);
+        if (pathname.charAt(0) !== PATH_SYMBOLS.DELINEATOR) { pathname = PATH_SYMBOLS.DELINEATOR + pathname; }
 
         return pathname;
     };
@@ -1174,8 +1181,10 @@ Description:    Node.js module for routing HTTP requests
                                         '} ' +
                                     '}; ';
                                     // ...
-    compose.sourceCode.END =        "var pathname = subpaths.join('/'); " +
-                                    "if (pathname.charAt(0) !== '/') { pathname = '/' + pathname; } " +
+    compose.sourceCode.END =        "var pathname = subpaths.join('" + PATH_SYMBOLS.DELINEATOR + "'); " +
+                                    "if (pathname.charAt(0) !== '" + PATH_SYMBOLS.DELINEATOR + "') { " +
+                                        "pathname = '" + PATH_SYMBOLS.DELINEATOR + "' + pathname; " +
+                                    "} " +
                                     'return pathname; ' +
                                 '}';
 
