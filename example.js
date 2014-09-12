@@ -162,14 +162,14 @@ router.add('/:pet/age/:years', {'name': "my pet's age"}, function(event) {
 // the route named "my pet's age" ...
 var pathSourceCode = router.pathSourceCode("my pet's age");
 
-// compile the source code into a function using eval, although typically
-// the source code would be included and compiled within a script sent to and
-// processed by the client ...
+// compile the source code into a function using eval for the sake of example,
+// typically the source code would not be eval'd but rather included into a
+// script or <script> tag that is then sent to and compiled by the client ...
 var pathFunction;
 eval('pathFunction = ' + pathSourceCode);
 
 // generate a URL by running the compiled function and passing any
-// route parameter arguments
+// route parameter arguments ...
 console.log(pathFunction({'pet': 'cat', 'years': 2})); // outputs /cat/age/2
 
 
@@ -187,7 +187,7 @@ var pathname = route.path({'pet': 'dog', 'tricks': ['sit', 'roll']});
 
 console.log(pathname); // outputs '/dog/trick/sit/roll'
 
-// the route can also be added to any router(s)
+// the route can also be added to any router(s) ...
 router.add(route, function(event) {
         console.log('My ' + event.arguments.pet + "'s best " + event.route.name +
             ' are ' + event.arguments.tricks.join(' and '));
@@ -283,7 +283,9 @@ var server = http.createServer(function(request, response) {
 
 // add a route to show all users ...
 router.add('all users', '/users/all', function(event) {
-    var response = event.data.response;
+    var response = event.data.response; // passed HTTP response object
+
+    // build the HTTP response ...
 
     var entry1 = {'username': 'John Doe', 'pet': 'cat', 'color': 'brown'};
     var entry2 = {'username': 'Jane Doe', 'pet': 'dog', 'color': 'white'};
@@ -294,12 +296,18 @@ router.add('all users', '/users/all', function(event) {
     // list users with links to each user's information on an HTML page ...
     response.write(['<html><head></head><body>',
             '<h3>Users:</h3>',
+
+            // generate URL path to link to the 'user' route for entry1 ...
             '<a href="' + router.path('user', entry1) + '">',
                 entry1.username,
             '</a><br />',
+
+            // generate URL path to link to the 'user' route for entry2 ...
             '<a href="' + router.path('user', entry2) + '">',
                 entry2.username,
             '</a><br />',
+
+            // no matching route for the following link ...
             '<a href="/user/inactive">',
                 '<strike>' + entry3.username + '<strike>',
             '</a><br />',
@@ -309,12 +317,15 @@ router.add('all users', '/users/all', function(event) {
 
 // add another route to show information about a user's pet ...
 router.add('user', '/user/:username/:pet/:color', function(event) {
-    var response = event.data.response;
+    var response = event.data.response; // passed HTTP response object
+
+    // create the response ...
 
     response.writeHead(200, {'Content-Type': 'text/html'});
 
     // show a user's information on an HTML page ...
     response.write(['<html><head></head><body>',
+            // use a few of the route parameter arguments to show as info ...
             '<h4>User: ' + event.arguments.username + '</h4>',
             event.arguments.username + ' has a ' +
                 event.arguments.color + ' ' + event.arguments.pet,
@@ -324,16 +335,21 @@ router.add('user', '/user/:username/:pet/:color', function(event) {
 
 // add a homepage route that will redirect to the show all users page ...
 router.add('/', function(event) {
-    var response = event.data.response;
+    var response = event.data.response; // passed HTTP response object
 
+    // create the response ...
+
+    // generate URL path to redirect to the 'all users' route ...
     response.writeHead(302, {'Location': router.path('all users')});
     response.end();
 });
 
 // catch any requests that do not match a route and show a 404 message ...
 router.on('fail', function(event) {
-    var request = event.data.request,
-        response = event.data.response;
+    var request = event.data.request,   // passed HTTP request object
+        response = event.data.response; // passed HTTP response object
+
+    // create the response ...
 
     response.writeHead(404, {'Content-Type': 'text/html'});
 

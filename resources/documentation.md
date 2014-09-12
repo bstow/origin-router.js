@@ -334,6 +334,6 @@ A utility `Function` to safely join multiple subpaths into a filepath.  Upon rou
 
 <a name='basejoin__basepath'></a>The `basepath` `String` should be specified as the 1st argument and is the base filepath which the joined `subpaths` are relative to in forming the filepath.  The returned filepath is restricted to being within the `basepath` on the file system.
 
-<a name='basejoin__subpaths'></a>The `subpaths` should be specified as the arguments after the `pasepath` argument and are joined sequentially starting at the `basepath` to form the returned filepath.  Each subpath argument can either be a `string` subpath or an `Array` of `string` subpaths.
+<a name='basejoin__subpaths'></a>The `subpaths` should be specified as the arguments after the `pasepath` argument and are joined sequentially starting at the `basepath` to form the returned filepath.  Each subpath argument can either be a `string` subpath or an `Array` of `string` subpaths. (Route parameter arguments as well as route wildcard parameter arguments can be passed directly as subpath arguments.)
 
 Returns the filepath formed from the `basepath` and `subpaths`.  The returned filepath is contained within the `basepath` on the file system.
