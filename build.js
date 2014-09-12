@@ -247,14 +247,18 @@ for (var readmeMarkdownLinkAnchor in readmeMarkdownLinks) {
 }
 
 // add build status to the ./readme markdown
+var readmeMarkdownBadgeReferenceMarkdownLines = [];
 readmeMarkdown = readmeMarkdownBadges.map(function(badge, index) {
         var count = index + 1;
-        return [
-            '[![Badge][badgeSource' + count + ']][badgeLink' + count + ']',
+        readmeMarkdownBadgeReferenceMarkdownLines = readmeMarkdownBadgeReferenceMarkdownLines.concat([
             '[badgeSource' + count + ']: ' + badge.src,
             '[badgeLink' + count + ']: ' + badge.href
-        ].join('\n');
-    }).join('\n&nbsp;') + '\n\n<br>\n<br>\n\n' + readmeMarkdown;
+        ]);
+        return '[![Badge][badgeSource' + count + ']][badgeLink' + count + ']';
+    }).join('&nbsp;\n') +
+    '\n\n' +
+    readmeMarkdownBadgeReferenceMarkdownLines.join('\n') +
+    '\n\n<br>\n<br>\n\n' + readmeMarkdown;
 
 // ./readme markdown
 fs.writeFileSync(path.join(__dirname, './README.md'), readmeMarkdown, 'utf8'); // write
