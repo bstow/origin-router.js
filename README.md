@@ -1,16 +1,13 @@
 [![Badge][badgeSource1]][badgeLink1]
 [badgeSource1]: http://img.shields.io/travis/bstow/origin-router.js.svg?style=flat-square
 [badgeLink1]: https://travis-ci.org/bstow/origin-router.js
-
-[![Badge][badgeSource2]][badgeLink2]
+&nbsp;[![Badge][badgeSource2]][badgeLink2]
 [badgeSource2]: http://img.shields.io/npm/v/origin-router.svg?style=flat-square
 [badgeLink2]: https://www.npmjs.org/package/origin-router
-
-[![Badge][badgeSource3]][badgeLink3]
+&nbsp;[![Badge][badgeSource3]][badgeLink3]
 [badgeSource3]: http://img.shields.io/npm/l/origin-router.svg?style=flat-square
 [badgeLink3]: LICENSE
-
-[![Badge][badgeSource4]][badgeLink4]
+&nbsp;[![Badge][badgeSource4]][badgeLink4]
 [badgeSource4]: http://img.shields.io/npm/dm/origin-router.svg?style=flat-square
 [badgeLink4]: https://www.npmjs.org/package/origin-router
 

@@ -254,7 +254,7 @@ readmeMarkdown = readmeMarkdownBadges.map(function(badge, index) {
             '[badgeSource' + count + ']: ' + badge.src,
             '[badgeLink' + count + ']: ' + badge.href
         ].join('\n');
-    }).join('\n\n') + '\n\n<br>\n<br>\n\n' + readmeMarkdown;
+    }).join('\n&nbsp;') + '\n\n<br>\n<br>\n\n' + readmeMarkdown;
 
 // ./readme markdown
 fs.writeFileSync(path.join(__dirname, './README.md'), readmeMarkdown, 'utf8'); // write
