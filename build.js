@@ -21,6 +21,13 @@ var readmeTOCMarkdown = '';
 var readmeMarkdownLinks = {};
 // array of example sections in markdown
 var readmeExampleSectionMarkdowns = [];
+// readme badges
+var readmeMarkdownBadgeURLs = [
+    'http://img.shields.io/travis/bstow/' + package.name + '.js.svg?style=flat-square',
+    'http://img.shields.io/npm/v/' + package.name + '.svg?style=flat-square',
+    'http://img.shields.io/npm/l/' + package.name + '.svg?style=flat-square',
+    'http://img.shields.io/npm/dm/' + package.name + '.svg?style=flat-square'
+];
 
 // generated source code for ./example.js
 var exampleSource = '';
@@ -233,10 +240,9 @@ for (var readmeMarkdownLinkAnchor in readmeMarkdownLinks) {
 }
 
 // add build status to the ./readme markdown
-readmeMarkdown = '[![Build Status](https://travis-ci.org/bstow/origin-router.js.svg?branch=master)]' +
-    '(https://travis-ci.org/bstow/origin-router.js)\n' +
-    '\n<br>\n<br>\n\n' +
-     readmeMarkdown;
+readmeMarkdown = readmeMarkdownBadgeURLs.map(function(url) {
+        return '![badge](' + url + ')';
+    }).join('\n') + '\n\n<br>\n<br>\n\n' + readmeMarkdown;
 
 // ./readme markdown
 fs.writeFileSync(path.join(__dirname, './README.md'), readmeMarkdown, 'utf8'); // write
