@@ -1,7 +1,7 @@
-![badge](http://img.shields.io/travis/bstow/origin-router.js.svg?style=flat-square)&nbsp;
-![badge](http://img.shields.io/npm/v/origin-router.svg?style=flat-square)&nbsp;
-![badge](http://img.shields.io/npm/l/origin-router.svg?style=flat-square)&nbsp;
-![badge](http://img.shields.io/npm/dm/origin-router.svg?style=flat-square)
+[ ![Image](http://img.shields.io/travis/bstow/origin-router.js.svg?style=flat-square) ][https://travis-ci.org/bstow/origin-router.js]&nbsp;
+[ ![Image](http://img.shields.io/npm/v/origin-router.svg?style=flat-square) ][https://www.npmjs.org/package/origin-router]&nbsp;
+[ ![Image](http://img.shields.io/npm/l/origin-router.svg?style=flat-square) ][LICENSE]&nbsp;
+[ ![Image](http://img.shields.io/npm/dm/origin-router.svg?style=flat-square) ][https://www.npmjs.org/package/origin-router]
 
 <br>
 <br>

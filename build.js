@@ -22,12 +22,19 @@ var readmeMarkdownLinks = {};
 // array of example sections in markdown
 var readmeExampleSectionMarkdowns = [];
 // readme badges
-var readmeMarkdownBadgeURLs = [
-    'http://img.shields.io/travis/bstow/' + package.name + '.js.svg?style=flat-square',
-    'http://img.shields.io/npm/v/' + package.name + '.svg?style=flat-square',
-    'http://img.shields.io/npm/l/' + package.name + '.svg?style=flat-square',
-    'http://img.shields.io/npm/dm/' + package.name + '.svg?style=flat-square'
-];
+var readmeMarkdownBadges = [{
+        'src':    'http://img.shields.io/travis/bstow/' + package.name + '.js.svg?style=flat-square',
+        'href':   'https://travis-ci.org/bstow/'        + package.name + '.js'
+    }, {
+        'src':    'http://img.shields.io/npm/v/'        + package.name + '.svg?style=flat-square',
+        'href':   'https://www.npmjs.org/package/'      + package.name
+    }, {
+        'src':    'http://img.shields.io/npm/l/'        + package.name + '.svg?style=flat-square',
+        'href':   'LICENSE'
+    }, {
+        'src':    'http://img.shields.io/npm/dm/'       + package.name + '.svg?style=flat-square',
+        'href':   'https://www.npmjs.org/package/'      + package.name
+    }];
 
 // generated source code for ./example.js
 var exampleSource = '';
@@ -240,8 +247,8 @@ for (var readmeMarkdownLinkAnchor in readmeMarkdownLinks) {
 }
 
 // add build status to the ./readme markdown
-readmeMarkdown = readmeMarkdownBadgeURLs.map(function(url) {
-        return '![badge](' + url + ')';
+readmeMarkdown = readmeMarkdownBadges.map(function(badgeObject) {
+        return '[ ![Image](' + badgeObject.src + ') ][' + badgeObject.href + ']';
     }).join('&nbsp;\n') + '\n\n<br>\n<br>\n\n' + readmeMarkdown;
 
 // ./readme markdown
