@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.0.5
+Version:        1.0.6
 Description:    Node.js module for routing HTTP requests
 *******************************************************************************/
 
@@ -281,7 +281,7 @@ Description:    Node.js module for routing HTTP requests
  * 
  * // create the server on port 3000 ...
  * var server = http.createServer(function(request, response) {
- *     // pass HTTP all requests to the router, and upon each request,
+ *     // pass all HTTP requests to the router, and upon each request,
  *     // pass the HTTP request and response objects for use within the
  *     // corresponding route callbacks ...
  *     router.route(request, {'data': {'request': request, 'response': response}});
@@ -360,6 +360,7 @@ Description:    Node.js module for routing HTTP requests
 (function() { 'use strict';
     var events  = require('events'),
         http    = require('http'),
+        path    = require('path'),
         url     = require('url'),
         util    = require('util');
 
@@ -923,6 +924,30 @@ Description:    Node.js module for routing HTTP requests
             throw new Error("Couldn't get source code to generate path with route '" + name + "'" +
                 " because no route named '" + name + "' exists");
         }
+    };
+
+    /*
+     * basejoin {function}                          - safe join utility for joining subpaths into a filepath
+     *      module.exports.basejoin
+     *      @basepath {string}                      - base filepath that the resulting filepath will be contained to
+     *      [@subpaths, ...] {string|array<string>} - subpaths to sequentially join starting at the basepath to form \
+     *                                                  the resulting filepath
+     *      return {string}                         - filepath
+     */
+    var basejoin = module.exports.basejoin = function(basepath) {
+        if (arguments.length === 0 || basepath == undefined) { return undefined; }
+
+        // collect unsafe subpaths into a flattened array
+        var subpaths    = [];
+        var args        = Array.prototype.slice.call(arguments);
+        args.shift(); // discard basepath
+        args.forEach(function(arg) { subpaths = subpaths.concat(arg); });
+        subpaths = subpaths.filter(function(s) { return s != undefined; }).map(function(s) { return String(s); });
+
+        var relative = path.join.apply(undefined, subpaths); // join subpaths into a relative path
+        relative     = path.resolve('/', relative); // resolve '.' and '..' subpaths
+
+        return path.join(basepath, relative); // join basepath and relative path
     };
 
     /* RouteSubpath {prototype}                         - route subpath part

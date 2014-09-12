@@ -238,7 +238,7 @@ var router = new orouter.Router();
 
 // create the server on port 3000 ...
 var server = http.createServer(function(request, response) {
-    // pass HTTP all requests to the router, and upon each request,
+    // pass all HTTP requests to the router, and upon each request,
     // pass the HTTP request and response objects for use within the
     // corresponding route callbacks ...
     router.route(request, {'data': {'request': request, 'response': response}});

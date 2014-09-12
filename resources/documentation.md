@@ -1,5 +1,5 @@
 @![toc <<]
-* [Class: Router](#Router)
+* [Class: orouter.Router](#Router)
     * [new Router()](#new_Router)
     * [router.add([name], expression, [options], [callback])](#router_add)
     * [router.add(route, [callback])](#router_add_alt)
@@ -25,7 +25,7 @@
     * [Event: 'add'](#router_add_event)
     * [Event: 'success'](#router_success_event)
     * [Event: 'fail'](#router_fail_event)
-* [Class: Route](#Route)
+* [Class: orouter.Route](#Route)
     * [new Route(expression, [options])](#new_Route)
     * [route.name](#route_name)
     * [route.method](#route_method)
@@ -35,6 +35,7 @@
     * [route.path([arguments])](#route_path)
     * [route.pathSourceCode](#route_pathSourceCode)
     * [Event: 'route'](#route_route_event)
+* [orouter.basejoin(basepath, [subpaths, ...])](#basejoin)
 @![>> toc]
 
 To use the router one must `require('./origin-router.js')`.
@@ -166,7 +167,7 @@ Generate a URL path using one of the routes that has been added to the router. (
 
 <a name='router_path__arguments'></a>If the route being used to generate the URL path has parameters, specify the route parameter `arguments` `Object` as URL decoded name value pairs.  The route parameter arguments will be mapped to the route parameters and be embedded within the URL path.  (Note that the route parameter arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
 
-Returns the the URL encoded pathname generated using the route specified. (See [url.URL](http://nodejs.org/api/url.html#url_url))
+Returns the URL encoded pathname generated using the route specified. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 
 <br>
 <br>
@@ -292,7 +293,7 @@ Generate a URL path using the route. (See @![link example_route_objects])
 
 <a name='route_path__arguments'></a>If the route has parameters, specify the route parameter `arguments` `Object` as URL decoded name value pairs.  The route parameter arguments will be mapped to the route parameters and be embedded within the URL path. (Note that the route parameter arguments passed must comply with the corresponding route constraints or otherwise an error will be thrown.)
 
-Returns the the URL encoded pathname generated using the route. (See [url.URL](http://nodejs.org/api/url.html#url_url))
+Returns the URL encoded pathname generated using the route. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 
 <br>
 <br>
@@ -324,4 +325,15 @@ A `Route` class instance is an [EventEmitter](http://nodejs.org/api/events.html#
 
 Emitted each time the route successfully routes a path. (See @![link example_events])
 
+<br>
+<br>
 
+####<a name='basejoin'></a>orouter.basejoin(basepath, [subpaths, ...])
+
+A utility `Function` to safely join multiple subpaths into a filepath.  Upon routing a URL path, a common operation is to utilize route parameter arguments to form a filepath that refers to a file on the file system.  An example of this would be using all or part of a URL path to form a filepath referring to a static file on the file system which would then in turn be served through the HTTP response.  A potential security vulnerability in this scenario of deriving the filepath from the URL path is that more of the filesystem than intended can become accessible when a URL path contain components such as `..`  The `basejoin` `Function` mitigates this security vulnerability by ensuring that the joined subpaths form a filepath restricted to be within a base filepath on the file system.
+
+<a name='basejoin__basepath'></a>The `basepath` `String` should be specified as the 1st argument and is the base filepath which the joined `subpaths` are relative to in forming the filepath.  The returned filepath is restricted to being within the `basepath` on the file system.
+
+<a name='basejoin__subpaths'></a>The `subpaths` should be specified as the arguments after the `pasepath` argument and are joined sequentially starting at the `basepath` to form the returned filepath.  Each subpath argument can either be a `string` subpath or an `Array` of `string` subpaths.
+
+Returns the filepath formed from the `basepath` and `subpaths`.  The returned filepath is contained within the `basepath` on the file system.

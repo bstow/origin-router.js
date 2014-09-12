@@ -389,6 +389,20 @@ var run = function(orouter) { 'use strict'; // run tests
     });
     router.route('/%27%20path%20%27/arg1/arg2/arg3', {'method': 'PoST', 'data': {'info': 'pass-to-listener'}});
     assert.strictEqual(result, 'success', "The router 'success' event did not occur as expected");
+
+    // basejoin
+    // 1.
+    result = orouter.basejoin('../base/path/a/b/c/d/e/f/..',
+        '..', ['..', undefined, '.', 'X', '..', 'rel'], 0, undefined, '.', 1, 2, 3, '..', 'pa/th');
+    assert.strictEqual(result, '../base/path/a/b/c/d/e/rel/0/1/2/pa/th',
+        "The basejoin function did not return the expected result");
+    // 2.
+    result = orouter.basejoin();
+    assert.strictEqual(result, undefined, "The basejoin function did not return the expected result");
+    // 3.
+    result = orouter.basejoin(undefined, 'a', 'b', 'c');
+    assert.strictEqual(result, undefined, "The basejoin function did not return the expected result");
+
 };
 module.exports.run = run;
 
