@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.0.9
+Version:        1.0.11
 Description:    Node.js module for routing HTTP requests
 *******************************************************************************/
 
@@ -270,6 +270,32 @@ Description:    Node.js module for routing HTTP requests
  *     {'pet': 'bengal cat', 'toys': ['ball of yarn', 'catnip']});
  * // the generated URL path is URL encoded ...
  * console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
+ * 
+ * 
+ * //// Example: Mapping URL Paths to Filepaths ////////////////////////////////
+ * 
+ * var basejoin = orouter.basejoin; // 'basejoin' utility function
+ * 
+ * // add a route that will map a portion of the URL path into a filepath referring
+ * // to a file on the filesystem ...
+ * router.add('/pics/:pet/:breed/:dir*', function(event) {
+ *         // join the route parameter arguments with a base filepath using the
+ *         // 'basejoin' utility function to safely form a filepath restricted to
+ *         // be within the base filepath on the file system ...
+ *         var filepath = basejoin('../images', // base filepath
+ *             event.arguments.pet,
+ *                 'breeds/small',
+ *                     event.arguments.breed,
+ *                         event.arguments.dir);
+ * 
+ *         console.log(filepath);
+ *     });
+ * 
+ * router.route('pics/dog/pug/brown/image.gif');
+ * // outputs '../images/dog/breeds/small/pug/brown/image.gif'
+ * 
+ * router.route('/pics/dog/malicious/../../../../../../../../../etc/private.conf');
+ * // outputs '../images/etc/private.conf'
  * 
  * 
  * //// Example: Using with an HTTP Server /////////////////////////////////////
@@ -633,6 +659,20 @@ Description:    Node.js module for routing HTTP requests
         );
     };
     util.inherits(Router, events.EventEmitter);
+
+    /*
+     * Router.prototype.getRoute {function}             - get an added route by name
+     *      @name {string}                              - route name
+     *      return {Route|undefined}                    - route
+     */
+    Router.prototype.getRoute = function(name) {
+        var routes = this.__routes__;
+
+        if (name in routes.by.name) { // named route
+            var route = routes.by.name[name];
+            return route;
+        } else { return undefined; } // named route doesn't exist
+    };
 
     /*
      * Router.prototype.add {function}                              - add a route

@@ -27,6 +27,7 @@
     * [Example: Working with Route Objects](#example_route_objects)
     * [Example: Router and Route Events and Data](#example_events)
     * [Example: About URL Encoding](#example_url_encoding)
+    * [Example: Mapping URL Paths to Filepaths](#example_filepaths)
     * [Example: Using with an HTTP Server](#example_http_server)
 
 <br>
@@ -55,6 +56,7 @@
         * [router.routeConnect(pathname, [options], [callback])](#router_routeConnect)
         * [router.path(name, [arguments])](#router_path)
         * [router.pathSourceCode(name)](#router_pathSourceCode)
+        * [router.getRoute(name)](#router_getRoute)
         * [Event: 'add'](#router_add_event)
         * [Event: 'success'](#router_success_event)
         * [Event: 'fail'](#router_fail_event)
@@ -356,6 +358,35 @@ console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catn
 <br>
 <br>
 
+####<a name='example_filepaths'>Example: Mapping URL Paths to Filepaths
+```javascript
+var basejoin = orouter.basejoin; // 'basejoin' utility function
+
+// add a route that will map a portion of the URL path into a filepath referring
+// to a file on the filesystem ...
+router.add('/pics/:pet/:breed/:dir*', function(event) {
+        // join the route parameter arguments with a base filepath using the
+        // 'basejoin' utility function to safely form a filepath restricted to
+        // be within the base filepath on the file system ...
+        var filepath = basejoin('../images', // base filepath
+            event.arguments.pet,
+                'breeds/small',
+                    event.arguments.breed,
+                        event.arguments.dir);
+
+        console.log(filepath);
+    });
+
+router.route('pics/dog/pug/brown/image.gif');
+// outputs '../images/dog/breeds/small/pug/brown/image.gif'
+
+router.route('/pics/dog/malicious/../../../../../../../../../etc/private.conf');
+// outputs '../images/etc/private.conf'
+```
+
+<br>
+<br>
+
 ####<a name='example_http_server'>Example: Using with an HTTP Server
 ```javascript
 var http = require('http');
@@ -613,6 +644,15 @@ Returns the source code `String` for a `Function` that will generate a URL path 
 <br>
 <br>
 
+####<a name='router_getRoute'></a>router.getRoute(name)
+
+Get a [Route](#Route) instance added to the router by route `name` `String`.
+
+Returns the named [Route](#Route) instance or `undefined` if no route with the given name exists.
+
+<br>
+<br>
+
 ####<a name='router_events'></a>Events
 
 A `Router` class instance is an [EventEmitter](http://nodejs.org/api/events.html#events_class_events_eventemitter) with the following events:
@@ -758,7 +798,7 @@ Emitted each time the route successfully routes a path. (See [Example: Router an
 
 ####<a name='basejoin'></a>orouter.basejoin(basepath, [subpaths, ...])
 
-A utility `Function` to safely join multiple subpaths into a filepath.  Upon routing a URL path, a common operation is to utilize route parameter arguments to form a filepath that refers to a file on the file system.  An example of this would be using all or part of a URL path to form a filepath referring to a static file on the file system; the file would then in turn be served through the HTTP response.  A potential security vulnerability in this scenario of deriving the filepath from the URL path is that more of the filesystem than intended can become accessible when a URL path contains components such as `..`  The `basejoin` `Function` mitigates this security vulnerability by ensuring that the joined subpaths form a filepath restricted to be within a base filepath on the file system.
+A utility `Function` to safely join multiple subpaths into a filepath.  Upon routing a URL path, a common operation is to utilize route parameter arguments to form a filepath that refers to a file on the file system.  An example of this would be using all or part of a URL path to form a filepath referring to a static file on the file system; the file would then in turn be served through the HTTP response.  A potential security vulnerability in this scenario of deriving the filepath from the URL path is that more of the filesystem than intended can become accessible when a URL path contains components such as `..`  The `basejoin` `Function` mitigates this security vulnerability by ensuring that the joined subpaths form a filepath restricted to be within a base filepath on the file system. (See [Example: Mapping URL Paths to Filepaths](#example_filepaths))
 
 <a name='basejoin__basepath'></a>The `basepath` `String` should be specified as the 1st argument and is the base filepath which the joined `subpaths` are relative to in forming the filepath.  The returned filepath is restricted to being within the `basepath` on the file system.
 

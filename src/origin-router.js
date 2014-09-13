@@ -264,6 +264,20 @@
     util.inherits(Router, events.EventEmitter);
 
     /*
+     * Router.prototype.getRoute {function}             - get an added route by name
+     *      @name {string}                              - route name
+     *      return {Route|undefined}                    - route
+     */
+    Router.prototype.getRoute = function(name) {
+        var routes = this.__routes__;
+
+        if (name in routes.by.name) { // named route
+            var route = routes.by.name[name];
+            return route;
+        } else { return undefined; } // named route doesn't exist
+    };
+
+    /*
      * Router.prototype.add {function}                              - add a route
      * Router.prototype.addGet {function}                           - add a route applicable to the HTTP GET method
      * Router.prototype.addPost {function}                          - add a route applicable to the HTTP POST method

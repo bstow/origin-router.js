@@ -264,6 +264,34 @@ pathname = router.path('toys',
 console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catnip'
 
 
+/**********************************
+ * Mapping URL Paths to Filepaths *
+ **********************************/                   console.log("\nMapping URL Paths to Filepaths\n------------------------------");
+
+var basejoin = orouter.basejoin; // 'basejoin' utility function
+
+// add a route that will map a portion of the URL path into a filepath referring
+// to a file on the filesystem ...
+router.add('/pics/:pet/:breed/:dir*', function(event) {
+        // join the route parameter arguments with a base filepath using the
+        // 'basejoin' utility function to safely form a filepath restricted to
+        // be within the base filepath on the file system ...
+        var filepath = basejoin('../images', // base filepath
+            event.arguments.pet,
+                'breeds/small',
+                    event.arguments.breed,
+                        event.arguments.dir);
+
+        console.log(filepath);
+    });
+
+router.route('pics/dog/pug/brown/image.gif');
+// outputs '../images/dog/breeds/small/pug/brown/image.gif'
+
+router.route('/pics/dog/malicious/../../../../../../../../../etc/private.conf');
+// outputs '../images/etc/private.conf'
+
+
 /*****************************
  * Using with an HTTP Server *
  *****************************/                        console.log("\nUsing with an HTTP Server\n-------------------------");

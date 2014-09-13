@@ -60,6 +60,11 @@ My pet's name is Mary Jo
 Dogs and cats run and jump
 /pet%20toys/bengal%20cat/ball%20of%20yarn/catnip
 
+Mapping URL Paths to Filepaths
+------------------------------
+../images/dog/breeds/small/pug/brown/image.gif
+../images/etc/private.conf
+
 Using with an HTTP Server
 -------------------------
 Browse to http://localhost:3000

@@ -2,7 +2,7 @@
     "name": "origin-router",
     "description": "Node.js module for routing HTTP requests",
     "author": "Brandon Stow",
-    "version": "1.0.9",
+    "version": "1.0.11",
     "license" : "MIT",
     "keywords": [
         "router", "routing", "route",
