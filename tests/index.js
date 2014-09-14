@@ -407,6 +407,49 @@ var run = function(orouter) { 'use strict'; // run tests
     result = orouter.basejoin(undefined, 'a', 'b', 'c');
     assert.strictEqual(result, undefined, "The basejoin function did not return the expected result");
 
+    // caching
+    var cacheRouter = new orouter.Router();
+
+    cacheRouter.add('odd', '/odd/:1/:2/:3/:4', onRoute);
+    cacheRouter.add('even', '/even/:1/:2/:3/:4', onRoute);
+
+    var constraintFive = 0;
+    cacheRouter.add('notcached', '/notcached/:1/:2/:3/:4/:5', {
+            'constraints': {'5': function(arg) { return arg == constraintFive++; }}}, onRoute);
+    cacheRouter.route('notcached/1/2/3/4/0');
+    assert.strictEqual(result.name, 'notcached', "Caching is causing unexpected behavior");
+    assert.strictEqual(result.args['5'], '0', "Caching is causing unexpected behavior");
+    cacheRouter.route('notcached/1/2/3/4/1');
+    assert.strictEqual(result.name, 'notcached', "Caching is causing unexpected behavior");
+    assert.strictEqual(result.args['5'], '1', "Caching is causing unexpected behavior");
+    cacheRouter.route('notcached/1/2/3/4/2');
+    assert.strictEqual(result.name, 'notcached', "Caching is causing unexpected behavior");
+    assert.strictEqual(result.args['5'], '2', "Caching is causing unexpected behavior");
+
+    var repititions = 25000
+    for (var i = 0; i < repititions; i++) { // ensure caches are flushing correctly
+        var subpath     = i % 2              ? 'odd' : 'even';
+        var subpath1    = Math.random() > .5 ? 'one' : 'two';
+        var subpath2    = Math.random() > .5 ? 'one' : 'two';
+        var subpath3    = Math.random() > .5 ? 'one' : 'two';
+        var subpath4    = Math.random() > .5 ? 'one' : 'two';
+
+        var path = (
+                (Math.random() > .5 ? '/' : '') +
+                [subpath, subpath1, subpath2, subpath3, subpath4].join('/') +
+                (Math.random() > .5 ? '/' : '')
+            );
+
+        cacheRouter.route(path);
+        assert.strictEqual(result.name, subpath, "Caching is causing unexpected behavior");
+        assert.strictEqual(result.args['3'], subpath3, "Caching is causing unexpected behavior");
+    }
+
+
+
+
+
+
 };
 module.exports.run = run;
 

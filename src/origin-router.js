@@ -15,7 +15,7 @@
         'DELINEATOR': '/'
     };
 
-    var PATH_SYMBOLS = {
+    var PATH_SYMBOLS = { // path symbols
         'DELINEATOR': '/'
     };
 
@@ -90,6 +90,8 @@
             method  = options.method;
         }
 
+        var cacheable; // caching allowed indicator
+
         // accessors
 
         Object.defineProperty(this, 'expression', {
@@ -117,17 +119,18 @@
 
         Object.defineProperty(this, 'ignoreCase', {
             'get':          function() { return ignoreCase; }, // ignore case getter
-            'set':          function(value) { ignoreCase = value; }, // ignore case setter
             'enumerable':   true,
             'configurable': false });
         if ('ignoreCase' in options)    { ignoreCase = options.ignoreCase; } // set ignore case
         else                            { ignoreCase = false; } // default ignore case
 
+        cacheable = true; // allow caching by default
         if ('constraints' in options) {
             constraints = options.constraints;
 
             if (constraints === undefined || constraints === null) { constraints = undefined; }
-            else if (constraints instanceof Function) { // constraint function
+            else if (constraints instanceof Function) { // constraints function
+                cacheable = false; // disallow caching, constraints function result may vary at run-time
                 constraints = (function(constraints) {
                     return function() { return constraints.apply(self, arguments); }; })(constraints);
             } else if (constraints === Object(constraints)) { // constraints map
@@ -136,6 +139,7 @@
 
                     var valid;
                     if (constraint instanceof Function) {
+                        cacheable = false; // disallow caching, constraint function result may vary at run-time
                         constraints[key] = (function(constraint) {
                             return function() { return constraint.apply(self, arguments); }; })(constraint);
                         valid = true;
@@ -177,6 +181,13 @@
         Object.defineProperty(this, 'pathSourceCode', {
             'get':          function() { return pathSourceCode; }, // path source code getter
             'enumerable':   true,
+            'configurable': false });
+
+        var cache;
+        if (cacheable) { cache = new PathDataCache(); }
+        Object.defineProperty(this, '__cache__', { // private
+            'get':          function() { return cache; }, // cache getter
+            'enumerable':   false,
             'configurable': false });
     };
     util.inherits(Route, events.EventEmitter);
@@ -502,10 +513,26 @@
         var length = stores.by.order.length;
         for (var index = 0; index < length; index++) {
             var route       = stores.by.order[index],
+                routeCache  = route.__cache__,
                 subroutes   = route.__subroutes__,
                 ignoreCase  = route.ignoreCase;
 
-            var args = match(subroutes, subpaths, ignoreCase); // arguments
+            var args; // route match arguments
+
+            // match route and cache arguments or no match in the route cache
+            var routeCacheData;
+            if (routeCache      != undefined)   { routeCacheData = routeCache.getData(pathname); } // route has cache
+            if (routeCacheData  != undefined)   { // cached
+                if (routeCacheData == false)        { args = undefined; }               // cached no match
+                else                                { args = routeCacheData; }          // cached match
+            } else                              { // not cached
+                args = match(subroutes, subpaths, ignoreCase);                          // match arguments
+                if (routeCache  != undefined) { // route has cache
+                    if (args == undefined)  { routeCache.setData(pathname, false); }    // cache no match
+                    else                    { routeCache.setData(pathname, args); }     // cache match
+                }
+            }
+
             if (args != undefined) { // match
                 var constraints = route.constraints; // validate constraints
                 if (constraints !== undefined && validate(args, constraints) !== true) { continue; }
@@ -723,6 +750,13 @@
      *      return {array<string>}  - parts of the path
      */
     parse.path = function(pathname) {
+        var cachePath = pathname;
+        var cacheData;
+
+        // hit parsed path cache
+        cacheData = parse.path.cache.getData(cachePath);
+        if (cacheData != undefined) { return cacheData; }
+
         pathname = pathname.trim();
 
         var last = pathname.length - 1;
@@ -734,8 +768,13 @@
             subpaths.push(decodeURIComponent(subpath));
         });
 
+        // cache parsed path
+        cacheData = subpaths;
+        parse.path.cache.setData(cachePath, cacheData);
+
         return subpaths;
     };
+    parse.path.cache = undefined; // parsed path cache
 
     /*
      * match {function}                                             - match subroutes and subpaths
@@ -943,4 +982,156 @@
             }
         } else { return true; } // valid
     };
+
+    /*
+     * PathKeyCache {prototype}         - cache for keyed paths
+     */
+    var PathKeyCache = function() {
+        // singleton
+        if (PathKeyCache.prototype.__singletonInstance__) {
+            return PathKeyCache.prototype.__singletonInstance__;
+        } else { PathKeyCache.prototype.__singletonInstance__ = this; }
+
+        var entryCount      = 0, // count for number of entries
+            flushCount      = 0; // count for number of flushes
+
+        var keysByPath      = {}, // { '{pathname}': '{key}', ... }
+            pathsByKey      = {}; // { '{key}': '{pathname}', ... }
+
+        Object.defineProperty(this, '__entryCount__', { // private
+            'get':          function()      { return entryCount; }, // entry count getter
+            'set':          function(val)   { entryCount = val; },  // entry count setter
+            'enumerable':   false,
+            'configurable': false });
+
+        Object.defineProperty(this, '__flushCount__', { // private
+            'get':          function()      { return flushCount; }, // flush count getter
+            'set':          function(val)   { flushCount = val; },  // flush count setter
+            'enumerable':   false,
+            'configurable': false });
+
+        Object.defineProperty(this, '__keysByPath__', { // private
+            'get':          function()      { return keysByPath; }, // keys by path getter
+            'set':          function(val)   { keysByPath = val; },  // keys by path setter
+            'enumerable':   false,
+            'configurable': false });
+
+        Object.defineProperty(this, '__pathsByKey__', { // private
+            'get':          function()      { return pathsByKey; }, // paths by key getter
+            'set':          function(val)   { pathsByKey = val; },  // paths by key setter
+            'enumerable':   false,
+            'configurable': false });
+    };
+
+    PathKeyCache.MAX_STORED_ENTRIES = 4096;     // maximum entries stored in the cache
+    PathKeyCache.MAX_STORED_PATH_LENGTH = 256;  // maximum accepted path length
+
+    /*
+     * PathKeyCache.prototype.flush {function}          - flush the cache
+     */
+    PathKeyCache.prototype.flush = function() {
+        this.__entryCount__ = 0;
+
+        this.__keysByPath__ = {};
+        this.__pathsByKey__ = {};
+
+        this.__flushCount__++; // increment the flush count
+    };
+
+    /*
+     * PathKeyCache.prototype.getKey {function}         - get/create the key for the path
+     *      @pathname {string}                          - url encoded path
+     *      return {string|undefined}                   - key for path, undefined if not cacheable
+     */
+    PathKeyCache.prototype.getKey = function(pathname) {
+        if (pathname in this.__keysByPath__) { return this.__keysByPath__[pathname]; }
+        else {
+            // don't cache excessively long paths
+            if (pathname.length > PathKeyCache.MAX_STORED_PATH_LENGTH) { return undefined; }
+
+            // flush cache upon surpassing maximum paths allowed for storage
+            if (this.__entryCount__ >= PathKeyCache.MAX_STORED_ENTRIES) { this.flush(); }
+
+            var key = String(++this.__entryCount__);
+
+            this.__keysByPath__[pathname]   = key;
+            this.__pathsByKey__[key]        = pathname;
+
+            return key;
+        }
+    };
+
+    /*
+     * PathKeyCache.prototype.getPath {function}        - get the path for the key
+     *      @key {string}                               - key
+     *      return {string|undefined}                   - path, undefined if not found
+     */
+    PathKeyCache.prototype.getPath = function(key) {
+        return this.__pathsByKey__[key];
+    };
+
+    /*
+     * PathDataCache {prototype}            - cache for path data
+     */
+    var PathDataCache = function() {
+        var keyCache = new PathKeyCache(); // key cache, singleton
+        Object.defineProperty(this, '__keyCache__', { // private
+            'get':          function()      { return keyCache; }, // key cache getter
+            'enumerable':   false,
+            'configurable': false });
+
+        var flushCount = keyCache.__flushCount__; // current flush count from key cache
+        Object.defineProperty(this, '__flushCount__', { // private
+            'get':          function()      { return flushCount; }, // flush count getter
+            'set':          function(val)   { flushCount = val; },  // flush count setter
+            'enumerable':   false,
+            'configurable': false });
+
+        var data = {};
+        Object.defineProperty(this, '__data__', { // private
+            'get':          function()      { return data; }, // data getter
+            'set':          function(val)   { data = val; },  // data setter
+            'enumerable':   false,
+            'configurable': false });
+    };
+
+    /*
+     * PathDataCache.prototype.flush {function}             - flush the cache
+     */
+    PathDataCache.prototype.flush = function() {
+        this.__data__ = {};
+
+        this.__flushCount__ = this.__keyCache__.__flushCount__; // update flush count
+    };
+
+    /*
+     * PathDataCache.prototype.getData {function}       - get the cached data for the path
+     *      @pathname {string}                          - url encoded path
+     *      return {*|undefined}                        - cached data, undefined if not found
+     */
+    PathDataCache.prototype.getData = function(pathname) {
+        if (this.__flushCount__ !== this.__keyCache__.__flushCount__) { // key cache was flushed, keys invalid
+            this.flush();
+        }
+
+        var key = this.__keyCache__.getKey(pathname);
+        return key != undefined ? this.__data__[key] : undefined;
+    };
+
+    /*
+     * PathDataCache.prototype.setData {function}       - set the cached data for the path
+     *      @pathname {string}                          - url encoded path
+     *      @data {*}                                   - cache data
+     */
+    PathDataCache.prototype.setData = function(pathname, data) {
+        if (this.__flushCount__ !== this.__keyCache__.__flushCount__) { // key cache was flushed, keys invalid
+            this.flush();
+        }
+
+        var key = this.__keyCache__.getKey(pathname);
+        if (key != undefined) { this.__data__[key] = data; }
+    };
+
+    // instantiate data caches
+    parse.path.cache = new PathDataCache();
 })();
