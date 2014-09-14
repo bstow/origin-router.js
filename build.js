@@ -15,6 +15,8 @@ tests.run(orouter); // run tests against the compiled source
 
 // generated text for ./readme.md
 var readmeMarkdown = '';
+// readme text for the introduction
+var readmeIntroductionMarkdown = '';
 // readme text for the table of contents
 var readmeTOCMarkdown = '';
 // links to generate and embed in markdown
@@ -31,9 +33,6 @@ var readmeMarkdownBadges = [{
     }, {
         'src':    'http://img.shields.io/npm/l/'        + package.name + '.svg?style=flat-square',
         'href':   'LICENSE'
-    }, {
-        'src':    'http://img.shields.io/npm/dm/'       + package.name + '.svg?style=flat-square',
-        'href':   'https://www.npmjs.org/package/'      + package.name
     }];
 
 // generated source code for ./example.js
@@ -73,11 +72,28 @@ originalSource = originalSource.replace('@![info]', infoSource); // embed info
 var exampleCodeText     = fs.readFileSync(path.join(__dirname, 'resources', 'example-code.txt'), 'utf8');
 exampleCodeText         = exampleCodeText.replace('@![main]', package.main); // embed name
 
+var DOCUMENTATION_INTRODUCTION_MARKDOWN_START_SECTION    = '@![intro <<]';
+var DOCUMENTATION_INTRODUCTION_MARKDOWN_END_SECTION      = '@![>> intro]';
+
 var DOCUMENTATION_TOC_MARKDOWN_START_SECTION    = '@![toc <<]';
 var DOCUMENTATION_TOC_MARKDOWN_END_SECTION      = '@![>> toc]';
 
 // ./resources/documentation.md
 var documentationMarkdown = fs.readFileSync(path.join(__dirname, 'resources', 'documentation.md'), 'utf8');
+
+// extract documentation introduction
+var documentationStartIntroductionMarkdownIndex = documentationMarkdown.indexOf(
+                                                        DOCUMENTATION_INTRODUCTION_MARKDOWN_START_SECTION);
+var documentationEndIntroductionMarkdownIndex   = documentationMarkdown.indexOf(
+                                                        DOCUMENTATION_INTRODUCTION_MARKDOWN_END_SECTION);
+
+var documentationIntroductionMarkdown = documentationMarkdown.slice(
+    documentationStartIntroductionMarkdownIndex + DOCUMENTATION_INTRODUCTION_MARKDOWN_START_SECTION.length,
+    documentationEndIntroductionMarkdownIndex);
+
+documentationMarkdown = documentationMarkdown.substring(0, documentationStartIntroductionMarkdownIndex) +
+    documentationMarkdown.substring(
+        documentationEndIntroductionMarkdownIndex + DOCUMENTATION_INTRODUCTION_MARKDOWN_END_SECTION.length);
 
 // extract documentation TOC
 var documentationStartTOCMarkdownIndex  = documentationMarkdown.indexOf(DOCUMENTATION_TOC_MARKDOWN_START_SECTION);
@@ -233,11 +249,19 @@ exampleOut.join('\n').split('\n').forEach(function(exampleOutputLine, lineNumber
     };
 });
 
-// add the documentation TOC to the ./readme markdown
+// add the documentation introduction and TOC to the ./readme markdown
+
+readmeIntroductionMarkdown = documentationIntroductionMarkdown;
+
 documentationTOCMarkdown = '\n<br>\n\n' + '* [Router Documentation](#documentation)' +
     documentationTOCMarkdown.split('\n').join('\n    ');
-readmeTOCMarkdown += documentationTOCMarkdown
-readmeMarkdown = readmeTOCMarkdown + '\n\n<br>\n<br\n<br>\n\n' + readmeMarkdown;
+readmeTOCMarkdown += documentationTOCMarkdown;
+
+readmeMarkdown = (
+        readmeIntroductionMarkdown + '\n\n<br>\n<br>\n\n' +
+        readmeTOCMarkdown + '\n\n<br>\n<br>\n\n' +
+        readmeMarkdown
+    );
 
 // embed markdown links
 for (var readmeMarkdownLinkAnchor in readmeMarkdownLinks) {

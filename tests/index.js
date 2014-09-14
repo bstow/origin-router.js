@@ -399,13 +399,13 @@ var run = function(orouter) { 'use strict'; // run tests
     result = orouter.basejoin('../base/path/a/b/c/d/e/f/..',
         '..', ['..', undefined, '.', 'X', '..', 'rel'], 0, undefined, '.', 1, 2, 3, '..', 'pa/th');
     assert.strictEqual(result, '../base/path/a/b/c/d/e/rel/0/1/2/pa/th',
-        "The basejoin function did not return the expected result");
+        'The basejoin function did not return the expected result');
     // 2.
     result = orouter.basejoin();
-    assert.strictEqual(result, undefined, "The basejoin function did not return the expected result");
+    assert.strictEqual(result, undefined, 'The basejoin function did not return the expected result');
     // 3.
     result = orouter.basejoin(undefined, 'a', 'b', 'c');
-    assert.strictEqual(result, undefined, "The basejoin function did not return the expected result");
+    assert.strictEqual(result, undefined, 'The basejoin function did not return the expected result');
 
     // caching
     var cacheRouter = new orouter.Router();
@@ -417,14 +417,14 @@ var run = function(orouter) { 'use strict'; // run tests
     cacheRouter.add('notcached', '/notcached/:1/:2/:3/:4/:5', {
             'constraints': {'5': function(arg) { return arg == constraintFive++; }}}, onRoute);
     cacheRouter.route('notcached/1/2/3/4/0');
-    assert.strictEqual(result.name, 'notcached', "Caching is causing unexpected behavior");
-    assert.strictEqual(result.args['5'], '0', "Caching is causing unexpected behavior");
+    assert.strictEqual(result.name, 'notcached', 'Caching is causing unexpected behavior');
+    assert.strictEqual(result.args['5'], '0', 'Caching is causing unexpected behavior');
     cacheRouter.route('notcached/1/2/3/4/1');
-    assert.strictEqual(result.name, 'notcached', "Caching is causing unexpected behavior");
-    assert.strictEqual(result.args['5'], '1', "Caching is causing unexpected behavior");
+    assert.strictEqual(result.name, 'notcached', 'Caching is causing unexpected behavior');
+    assert.strictEqual(result.args['5'], '1', 'Caching is causing unexpected behavior');
     cacheRouter.route('notcached/1/2/3/4/2');
-    assert.strictEqual(result.name, 'notcached', "Caching is causing unexpected behavior");
-    assert.strictEqual(result.args['5'], '2', "Caching is causing unexpected behavior");
+    assert.strictEqual(result.name, 'notcached', 'Caching is causing unexpected behavior');
+    assert.strictEqual(result.args['5'], '2', 'Caching is causing unexpected behavior');
 
     var repititions = 25000
     for (var i = 0; i < repititions; i++) { // ensure caches are flushing correctly
@@ -441,15 +441,9 @@ var run = function(orouter) { 'use strict'; // run tests
             );
 
         cacheRouter.route(path);
-        assert.strictEqual(result.name, subpath, "Caching is causing unexpected behavior");
-        assert.strictEqual(result.args['3'], subpath3, "Caching is causing unexpected behavior");
+        assert.strictEqual(result.name, subpath, 'Caching is causing unexpected behavior');
+        assert.strictEqual(result.args['3'], subpath3, 'Caching is causing unexpected behavior');
     }
-
-
-
-
-
-
 };
 module.exports.run = run;
 

@@ -1,3 +1,8 @@
+@![intro <<]
+##Origin Router
+An HTTP Router for Node.js
+@![>> intro]
+
 @![toc <<]
 * [Class: orouter.Router](#Router)
     * [new Router()](#new_Router)
