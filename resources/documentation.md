@@ -16,15 +16,15 @@ An HTTP Router for Node.js
         * [router.addOptions([name], expression, [options], [callback])](#router_addOptions)
         * [router.addTrace([name], expression, [options], [callback])](#router_addTrace)
         * [router.addConnect([name], expression, [options], [callback])](#router_addConnect)
-    * [router.route(pathname, [options], [callback])](#router_route)
-        * [router.routeGet(pathname, [options], [callback])](#router_routeGet)
-        * [router.routePost(pathname, [options], [callback])](#router_routePost)
-        * [router.routePut(pathname, [options], [callback])](#router_routePut)
-        * [router.routeDelete(pathname, [options], [callback])](#router_routeDelete)
-        * [router.routeHead(pathname, [options], [callback])](#router_routeHead)
-        * [router.routeOptions(pathname, [options], [callback])](#router_routeOptions)
-        * [router.routeTrace(pathname, [options], [callback])](#router_routeTrace)
-        * [router.routeConnect(pathname, [options], [callback])](#router_routeConnect)
+    * [router.route(request, [response], [options], [callback])](#router_route)
+        * [router.routeGet(request, [response], [options], [callback])](#router_routeGet)
+        * [router.routePost(request, [response], [options], [callback])](#router_routePost)
+        * [router.routePut(request, [response], [options], [callback])](#router_routePut)
+        * [router.routeDelete(request, [response], [options], [callback])](#router_routeDelete)
+        * [router.routeHead(request, [response], [options], [callback])](#router_routeHead)
+        * [router.routeOptions(request, [response], [options], [callback])](#router_routeOptions)
+        * [router.routeTrace(request, [response], [options], [callback])](#router_routeTrace)
+        * [router.routeConnect(request, [response], [options], [callback])](#router_routeConnect)
     * [router.path(name, [arguments])](#router_path)
     * [router.pathSourceCode(name)](#router_pathSourceCode)
     * [router.getRoute(name)](#router_getRoute)
@@ -97,6 +97,8 @@ A route expression can match variable subpaths by specifying a route parameter d
 * <a name='router_add__callback_method'></a>`method`: `String | undefined` the HTTP method used. (See @![link example_http_methods])
 * <a name='router_add__callback_route'></a>`route`: `Route` the [Route](#Route) instance that routed the URL path
 * <a name='router_add__callback_arguments'></a>`arguments`: `Object` the route parameter arguments as URL decoded name value pairs. (See @![link example_parameters])
+* <a name='router_add__callback_request'></a>`request`: `http.IncomingMessage` the request if specified upon routing. (See @![link example_http_server])
+* <a name='router_add__callback_response'></a>`response`: `http.ServerResponse` the response if specified upon routing. (See @![link example_http_server])
 * <a name='router_add__callback_data'></a>`data`: `* | undefined` any data passed upon routing. (See @![link example_events])
 
 Returns the created [Route](#Route) instance that has been newly added to the router. 
@@ -128,15 +130,21 @@ Aliases for [router.add](#router_add) that specify the HTTP method option (corre
 <br>
 <br>
 
-####<a name='router_route'></a>router.route(pathname, [options], [callback])
+####<a name='router_route'></a>router.route(request, [response], [options], [callback])
 
 Route a URL path using the routes added to the router.
 
-<a name='router_route__pathname'></a>The `pathname` `String | http.IncomingMessage | url.URL` should be passed as the 1st argument and can be either a URL encoded path, an HTTP request (See [http.IncomingMessage](http://nodejs.org/api/http.html#http_http_incomingmessage)) or a URL (See [url.URL](http://nodejs.org/api/url.html#url_url)).
+<a name='router_route__request'></a>The `request` `String | http.IncomingMessage | url.URL` should be passed as the 1st argument and can be either a URL encoded path, an HTTP request (See [http.IncomingMessage](http://nodejs.org/api/http.html#http_http_incomingmessage)) or a URL (See [url.URL](http://nodejs.org/api/url.html#url_url)).  If the `request` argument is an `http.IncomingMessage` it will be passed to any callbacks or listeners triggered during the routing process as the `request` property.
+
+<a name='router_route__response'></a>The optional `response` `http.ServerResponse` may be passed as the 2nd argument and will be passed to any callbacks or listeners triggered during the routing process as the `response` property.
 
 <a name='router_route__options'></a>The optional `options` `Object` can specify the following properties:
 
 * <a name='router_route__options_method'></a>`method`: `String` the HTTP method to be used in routing the URL path. (See @![link example_http_methods])
+
+* <a name='router_route__options_request'></a>`request`: `http.IncomingMessage` the request to be passed to any callbacks or listeners triggered during the routing process. (See @![link example_http_server])
+
+* <a name='router_route__options_response'></a>`response`: `http.ServerResponse` the response to be passed to any callbacks or listeners triggered during the routing process. (See @![link example_http_server])
 
 * <a name='router_route__options_data'></a>`data`: `*` arbitrary data to be passed to any callbacks or listeners triggered during the routing process. (See @![link example_events])
 
@@ -145,20 +153,22 @@ Route a URL path using the routes added to the router.
 * <a name='router_route__callback_method'></a>`method`: `String | undefined` the HTTP method used. (See @![link example_http_methods])
 * <a name='router_route__callback_route'></a>`route`: `Route` the [Route](#Route) instance that routed the URL path
 * <a name='router_route__callback_arguments'></a>`arguments`: `Object` the route parameter arguments as URL decoded name value pairs. (See @![link example_parameters])
+* <a name='router_route__callback_request'></a>`request`: `http.IncomingMessage` the request if specified upon routing. (See @![link example_http_server])
+* <a name='router_route__callback_response'></a>`response`: `http.ServerResponse` the response if specified upon routing. (See @![link example_http_server])
 * <a name='router_route__callback_data'></a>`data`: `* | undefined` any data passed upon routing. (See @![link example_events])
 
 Returns the [Route](#Route) instance that routed the URL path or `undefined` if the URL path couldn't be routed.
 
 <br>
 
-####<a name='router_routeGet'></a>router.routeGet(pathname, [options], [callback])
-####<a name='router_routePost'></a>router.routePost(pathname, [options], [callback])
-####<a name='router_routePut'></a>router.routePut(pathname, [options], [callback])
-####<a name='router_routeDelete'></a>router.routeDelete(pathname, [options], [callback])
-####<a name='router_routeHead'></a>router.routeHead(pathname, [options], [callback])
-####<a name='router_routeOptions'></a>router.routeOptions(pathname, [options], [callback])
-####<a name='router_routeTrace'></a>router.routeTrace(pathname, [options], [callback])
-####<a name='router_routeConnect'></a>router.routeConnect(pathname, [options], [callback])
+####<a name='router_routeGet'></a>router.routeGet(request, [response], [options], [callback])
+####<a name='router_routePost'></a>router.routePost(request, [response], [options], [callback])
+####<a name='router_routePut'></a>router.routePut(request, [response], [options], [callback])
+####<a name='router_routeDelete'></a>router.routeDelete(request, [response], [options], [callback])
+####<a name='router_routeHead'></a>router.routeHead(request, [response], [options], [callback])
+####<a name='router_routeOptions'></a>router.routeOptions(request, [response], [options], [callback])
+####<a name='router_routeTrace'></a>router.routeTrace(request, [response], [options], [callback])
+####<a name='router_routeConnect'></a>router.routeConnect(request, [response], [options], [callback])
 
 Aliases for [router.route](#router_route) that specify the HTTP method option (corresponding to the function name) that should be used in routing the URL path. (See @![link example_http_methods])
 
@@ -224,6 +234,8 @@ Emitted each time a new route is added to the router. (See @![link example_event
     * <a name='router_success_event__event_method'></a>`method`: `String | undefined` the HTTP method used
     * <a name='router_success_event__event_route'></a>`route`: `Route` the [Route](#Route) instance that routed the URL path
     * <a name='router_success_event__event_arguments'></a>`arguments`: `Object` the route parameter arguments as URL decoded name value pairs
+    * <a name='router_success_event__event_request'></a>`request`: `http.IncomingMessage` the request if specified upon routing. (See @![link example_http_server])
+    * <a name='router_success_event__event_response'></a>`response`: `http.ServerResponse` the response if specified upon routing. (See @![link example_http_server])
     * <a name='router_success_event__event_data'></a>`data`: `* | undefined` any data passed upon routing
 
 Emitted each time the router successfully routes a path. (See @![link example_events])
@@ -236,6 +248,8 @@ Emitted each time the router successfully routes a path. (See @![link example_ev
 * <a name='router_fail_event__event'></a>`event`: `Object`
     * <a name='router_fail_event__event_pathname'></a>`pathname`: `String` the URL encoded pathname used. (See [url.URL](http://nodejs.org/api/url.html#url_url))
     * <a name='router_fail_event__event_method'></a>`method`: `String | undefined` the HTTP method used
+    * <a name='router_fail_event__event_request'></a>`request`: `http.IncomingMessage` the request if specified upon routing. (See @![link example_http_server])
+    * <a name='router_fail_event__event_response'></a>`response`: `http.ServerResponse` the response if specified upon routing. (See @![link example_http_server])
     * <a name='router_fail_event__event_data'></a>`data`: `* | undefined` any data passed upon routing
 
 Emitted each time the router can't find any matching route to route a path. (See @![link example_events])
@@ -336,6 +350,8 @@ A `Route` class instance is an [EventEmitter](http://nodejs.org/api/events.html#
     * <a name='route_route_event__event_method'></a>`method`: `String | undefined` the HTTP method used
     * <a name='route_route_event__event_route'></a>`route`: `Route` the [Route](#Route) instance that routed the URL path
     * <a name='route_route_event__event_arguments'></a>`arguments`: `Object` the route parameter arguments as URL decoded name value pairs
+    * <a name='route_route_event__event_request'></a>`request`: `http.IncomingMessage` the request if specified upon routing. (See @![link example_http_server])
+    * <a name='route_route_event__event_response'></a>`response`: `http.ServerResponse` the response if specified upon routing. (See @![link example_http_server])
     * <a name='route_route_event__event_data'></a>`data`: `* | undefined` any data passed upon routing
 
 Emitted each time the route successfully routes a path. (See @![link example_events])

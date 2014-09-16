@@ -76,6 +76,8 @@
      *                  .method {string|undefined}                  - http method
      *                  .route {Route}                              - route
      *                  .arguments {object<string|array<string>>}   - route arguments as name value pairs
+     *                  .request {http.IncomingMessage|undefined}   - request
+     *                  .response {http.ServerResponse|undefined}   - response
      *                  .data {*|undefined}                         - data
      *              this {Route}                                    - route
      */
@@ -243,6 +245,8 @@
      *                  .method <string|undefined>                  - http method
      *                  .route {Route}                              - matching route
      *                  .arguments {object<string|array<string>>}   - route arguments as name value pairs
+     *                  .request {http.IncomingMessage|undefined}   - request
+     *                  .response {http.ServerResponse|undefined}   - response
      *                  .data {*|undefined}                         - data
      *              this {Router}                                   - router
      *      emits fail {event}                                      - occurs upon routing when no matching route found
@@ -250,6 +254,8 @@
      *              @event {object}                                 - event object
      *                  .pathname <string>                          - url encoded pathname
      *                  .method <string|undefined>                  - http method
+     *                  .request {http.IncomingMessage|undefined}   - request
+     *                  .response {http.ServerResponse|undefined}   - response
      *                  .data {*|undefined}                         - data
      *              this {Router}                                   - router
      */
@@ -315,6 +321,8 @@
      *              .method {string|undefined}                      - http method
      *              .route {Route}                                  - route
      *              .arguments {object<string|array<string>>}       - route arguments as name value pairs
+     *              .request {http.IncomingMessage|undefined}       - request
+     *              .response {http.ServerResponse|undefined}       - response
      *              .data {*|undefined}                             - data
      *          this {Route}                                        - route
      *      return {Route}                                          - route
@@ -327,6 +335,8 @@
      *              .method {string|undefined}                      - http method
      *              .route {Route}                                  - route
      *              .arguments {object<string|array<string>>}       - route arguments as name value pairs
+     *              .request {http.IncomingMessage|undefined}       - request
+     *              .response {http.ServerResponse|undefined}       - response
      *              .data {*|undefined}                             - data
      *          this {Route}                                        - route
      *      return {Route}                                          - route
@@ -454,9 +464,12 @@
      * Router.prototype.routeOptions {function}             - route a path using the HTTP OPTIONS method
      * Router.prototype.routeTrace {function}               - route a path using the HTTP TRACE method
      * Router.prototype.routeConnect {function}             - route a path using the HTTP CONNECT method
-     *      @pathname {string|http.IncomingMessage|url.URL} - url encoded path, request or url object
+     *      @request {string|http.IncomingMessage|url.URL}  - url encoded path, request or url object
+     *      [@response] {http.ServerResponse|undefined}     - response
      *      [@options] {object|undefined}                   - options
      *          .method {string|undefined}                  - http method
+     *          .request {http.IncomingMessage|undefined}   - request
+     *          .response {http.ServerResponse|undefined}   - response
      *          .data {*|undefined}                         - data
      *      [@callback] {function|undefined}                - called upon routing
      *          @event {object}                             - event object
@@ -464,34 +477,48 @@
      *              .method {string|undefined}              - http method
      *              .route {Route}                          - matching route
      *              .arguments {object<string|array<string>>} - matching route arguments as name value pairs
+     *              .request {http.IncomingMessage|undefined} - request
+     *              .response {http.ServerResponse|undefined} - response
      *              .data {*|undefined}                     - data
      *          this {Route}                                - matching route
      *          return {Route|undefined}                    - matching route or undefined if no matching route found
      */
     Router.prototype.route = function() {
         var args        = argumentMaps.route.apply(this, arguments); // associate arguments to parameters
-        var pathname    = args.pathname,
+        var request     = args.request,
+            response    = args.response,
+
             options     = args.options,
             callback    = args.callback;
 
-        var method, data; // options
+        var method, req, res, data; // options
         if (options != undefined) {
             method      = options.method;
+            req         = options.request;
+            res         = options.response;
             data        = options.data;
         }
 
-        // resolve pathname argument to pathname string
-        var obj = pathname;
-        if (typeof obj === 'string' || obj instanceof String) { pathname = obj; } // pathname is string
-        else if (obj instanceof http.IncomingMessage) { // pathname is http incoming message
-            var message         = obj,
-                messageURL      = url.parse(message.url),
-                messageMethod   = message.method;
+        // resolve request argument to pathname string
+        var pathname;
+        if (typeof request === 'string' || request instanceof String) { pathname = request; } // request is string
+        else if (request instanceof http.IncomingMessage) { // request is http incoming message
+            var requestURL      = url.parse(request.url),
+                requestMethod   = request.method;
 
-            pathname = messageURL.pathname;
-            if (method == undefined) { method = messageMethod; }
-        } else if (obj != undefined && (typeof obj.pathname === 'string' || obj.pathname instanceof String)) { // url
-            pathname = obj.pathname;
+            pathname = requestURL.pathname;
+            // infer options from request
+            if (req == undefined)       { req       = request; }
+            if (method  == undefined)   { method    = requestMethod; }
+        } else if ( // url
+            request != undefined && (typeof request.pathname === 'string' || request.pathname instanceof String)) {
+                var requestURL  = request;
+                pathname        = requestURL.pathname;
+        }
+
+        // resolve response argument
+        if (response != undefined && response instanceof http.ServerResponse) { // response is http server response
+            if (res == undefined) { res = response; }
         }
 
         var routes      = this.__routes__,
@@ -539,41 +566,60 @@
 
                 if (callback != undefined) { route.once('route', callback); } // queue callback
 
-                route.emit('route', // emit route event from matching route upon matching route
-                    {'pathname': pathname, 'method': method, 'route': route, 'arguments': args, 'data': data});
-                this.emit('success', // emit success event upon mathing route
-                    {'pathname': pathname, 'method': method, 'route': route, 'arguments': args, 'data': data});
+                route.emit('route', { // emit route event from matching route upon matching route
+                        'pathname':     pathname,
+                        'method':       method,
+                        'route':        route,
+                        'arguments':    args,
+                        'request':      req,
+                        'response':     res,
+                        'data':         data
+                    });
+                this.emit('success', { // emit success event upon mathing route
+                        'pathname':     pathname,
+                        'method':       method,
+                        'route':        route,
+                        'arguments':    args,
+                        'request':      req,
+                        'response':     res,
+                        'data':         data
+                    });
 
                 return route; // return matching route
             }
         }
 
-        this.emit('fail', // emit fail event upon not matching any route
-            {'pathname': pathname, 'method': method, 'data': data});
+        this.emit('fail', { // emit fail event upon not matching any route
+                'pathname':     pathname,
+                'method':       method,
+                'request':      req,
+                'response':     res,
+                'data':         data
+            });
         return undefined;
     }
     argumentMaps.route = function() { // associate arguments to parameters
-        var pathname    = arguments[0],
-            options,
-            callback;
-        if (arguments.length === 2) {
-            if (arguments[1] instanceof Function)   { callback  = arguments[1]; }
-            else                                    { options   = arguments[1]; }
-        } else if (arguments.length >= 3)           { options   = arguments[1], callback = arguments[2]; }
-        return {'pathname': pathname, 'options': options, 'callback': callback};
+        var args        = Array.prototype.slice.call(arguments);
+
+        var request     = args.length                                           ?   args.shift() : undefined,
+            response    = args.length && args[0] instanceof http.ServerResponse ?   args.shift() : undefined,
+            options     = args.length && !(args[0] instanceof Function)         ?   args.shift() : undefined,
+            callback    = args.length && (args[0] instanceof Function)          ?   args.shift() : undefined;
+
+        return {'request': request, 'response': response, 'options': options, 'callback': callback};
     };
     HTTP.METHODS.forEach(function(httpMethod) { // http method-specific route methods
         var methodName = 'route' + httpMethod.charAt(0).toUpperCase() + httpMethod.slice(1).toLowerCase();
         Router.prototype[methodName] = function() {
             var args        = argumentMaps.route.apply(this, arguments); // associate arguments to parameters
-            var pathname    = args.pathname,
+            var request     = args.request,
                 options     = args.options,
                 callback    = args.callback;
 
             options         = options || {},
             options.method  = httpMethod; // add method to arguments
 
-            return this.route(pathname, options, callback);
+            return this.route(request, options, callback);
         };
     });
 
@@ -984,7 +1030,7 @@
     };
 
     /*
-     * PathKeyCache {prototype}         - cache for keyed paths
+     * PathKeyCache {prototype}         - weak reference cache for keyed paths
      */
     var PathKeyCache = function() {
         // singleton
@@ -1071,7 +1117,7 @@
     };
 
     /*
-     * PathDataCache {prototype}            - cache for path data
+     * PathDataCache {prototype}            - weak reference cache for path data
      */
     var PathDataCache = function() {
         var keyCache = new PathKeyCache(); // key cache, singleton
@@ -1110,11 +1156,13 @@
      *      return {*|undefined}                        - cached data, undefined if not found
      */
     PathDataCache.prototype.getData = function(pathname) {
-        if (this.__flushCount__ !== this.__keyCache__.__flushCount__) { // key cache was flushed, keys invalid
+        var key = this.__keyCache__.getKey(pathname);
+
+        if (this.__flushCount__ !== this.__keyCache__.__flushCount__) { // key cache flush, keys invalid
             this.flush();
+            key = this.__keyCache__.getKey(pathname);
         }
 
-        var key = this.__keyCache__.getKey(pathname);
         return key != undefined ? this.__data__[key] : undefined;
     };
 
@@ -1124,11 +1172,13 @@
      *      @data {*}                                   - cache data
      */
     PathDataCache.prototype.setData = function(pathname, data) {
-        if (this.__flushCount__ !== this.__keyCache__.__flushCount__) { // key cache was flushed, keys invalid
+        var key = this.__keyCache__.getKey(pathname);
+
+        if (this.__flushCount__ !== this.__keyCache__.__flushCount__) { // key cache flushed, keys invalid
             this.flush();
+            key = this.__keyCache__.getKey(pathname);
         }
 
-        var key = this.__keyCache__.getKey(pathname);
         if (key != undefined) { this.__data__[key] = data; }
     };
 

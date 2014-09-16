@@ -263,15 +263,13 @@ var router = new orouter.Router();
 
 // create the server on port 3000 ...
 var server = http.createServer(function(request, response) {
-    // pass all HTTP requests to the router, and upon each request,
-    // pass the HTTP request and response objects for use within the
-    // corresponding route callbacks ...
-    router.route(request, {'data': {'request': request, 'response': response}});
+    // pass all HTTP requests and corresponding response objects to the router ...
+    router.route(request, response);
 }).listen(3000);
 
 // add a route to show all users ...
 router.add('all users', '/users/all', function(event) {
-    var response = event.data.response; // passed HTTP response object
+    var response = event.response; // passed HTTP response object
 
     // build the HTTP response ...
 
@@ -305,7 +303,7 @@ router.add('all users', '/users/all', function(event) {
 
 // add another route to show information about a user's pet ...
 router.add('user', '/user/:username/:pet/:color', function(event) {
-    var response = event.data.response; // passed HTTP response object
+    var response = event.response; // passed HTTP response object
 
     // create the response ...
 
@@ -323,7 +321,7 @@ router.add('user', '/user/:username/:pet/:color', function(event) {
 
 // add a homepage route that will redirect to the show all users page ...
 router.add('/', function(event) {
-    var response = event.data.response; // passed HTTP response object
+    var response = event.response; // passed HTTP response object
 
     // create the response ...
 
@@ -334,8 +332,8 @@ router.add('/', function(event) {
 
 // catch any requests that do not match a route and show a 404 message ...
 router.on('fail', function(event) {
-    var request = event.data.request,   // passed HTTP request object
-        response = event.data.response; // passed HTTP response object
+    var request = event.request,   // passed HTTP request object
+        response = event.response; // passed HTTP response object
 
     // create the response ...
 

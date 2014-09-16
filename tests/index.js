@@ -12,10 +12,19 @@ var run = function(orouter) { 'use strict'; // run tests
     var router = new orouter.Router(); // test router
 
     var result,
-        request;
+        request,
+        response;
 
     result      = {};
-    var onRoute = function(event) { result = {'name': this.name, 'args': event.arguments, 'data': event.data}; };
+    var onRoute = function(event) {
+        result = {
+                'name':     this.name,
+                'args':     event.arguments,
+                'request':  event.request,
+                'response': event.response,
+                'data':     event.data
+            };
+    };
 
     // add routes
     // 1.                   //  "' path '" ...
@@ -152,7 +161,8 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result, firstRoute, 'The returned route did not match the 1st route');
 
     // route path with 1st route
-    router.route("/'%20path%20%27/%20arg 1/%27arg2%27/ /./../a/r/g%20/3/", {'method': 'POST', 'data': '1st data'});
+    router.route("/'%20path%20%27/%20arg 1/%27arg2%27/ /./../a/r/g%20/3/",
+        {'method': 'POST', 'request': 'route 1 request', 'response': 'route 1 response', 'data': 'route 1 data'});
     assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
     assert.strictEqual(result.args.param1, ' arg 1',
         "The path's 1st argument to the 1st route did not match the expected value");
@@ -160,7 +170,11 @@ var run = function(orouter) { 'use strict'; // run tests
         "The path's 2nd argument to the 1st route did not match the expected value");
     assert.deepEqual(result.args.param3, [' ', '.', '..', 'a', 'r', 'g ', '3'],
         "The path's 3rd argument to the 1st route did not match the expected value");
-    assert.strictEqual(result.data, '1st data', 'The route data received did not match the route data submitted');
+    assert.strictEqual(result.request, 'route 1 request',
+        'The route request received did not match the route request submitted');
+    assert.strictEqual(result.response, 'route 1 response',
+        'The route response received did not match the route response submitted');
+    assert.strictEqual(result.data, 'route 1 data', 'The route data received did not match the route data submitted');
 
     // route paths with 2nd route
     var callback = {'result': {}};
@@ -193,8 +207,9 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
     request = new http.IncomingMessage();
     request.url = 'http://host.domain:3000/arg1/arg2/path/';
-    router.route(request);
+    router.route(request, response);
     assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
+    assert.strictEqual(result.request, request, 'The request was not properly passed');
 
     // route path with 4th route
     router.route('/%2f%20path/file.EXT/', {'method': 'Delete'});
@@ -426,8 +441,8 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result.name, 'notcached', 'Caching is causing unexpected behavior');
     assert.strictEqual(result.args['5'], '2', 'Caching is causing unexpected behavior');
 
-    var repititions = 25000
-    for (var i = 0; i < repititions; i++) { // ensure caches are flushing correctly
+    var REPITITIONS = 10000;
+    for (var i = 0; i < REPITITIONS; i++) { // ensure caches are hit
         var subpath     = i % 2              ? 'odd' : 'even';
         var subpath1    = Math.random() > .5 ? 'one' : 'two';
         var subpath2    = Math.random() > .5 ? 'one' : 'two';
@@ -443,6 +458,23 @@ var run = function(orouter) { 'use strict'; // run tests
         cacheRouter.route(path);
         assert.strictEqual(result.name, subpath, 'Caching is causing unexpected behavior');
         assert.strictEqual(result.args['3'], subpath3, 'Caching is causing unexpected behavior');
+    }
+    for (var i = 0; i < REPITITIONS; i++) { // ensure caches are flushing correctly
+        var subpath     = i % 2 ? 'odd' : 'even';
+        var subpath1    = String(Math.floor(Math.random() * 10));
+        var subpath2    = String(Math.floor(Math.random() * 10));
+        var subpath3    = String(Math.floor(Math.random() * 10));
+        var subpath4    = String(Math.floor(Math.random() * 10));
+
+        var path = (
+                (Math.random() > .5 ? '/' : '') +
+                [subpath, subpath1, subpath2, subpath3, subpath4].join('/') +
+                (Math.random() > .5 ? '/' : '')
+            );
+
+        cacheRouter.route(path);
+        assert.strictEqual(result.name, subpath, 'Caching is causing unexpected behavior');
+        assert.strictEqual(result.args['2'], subpath2, 'Caching is causing unexpected behavior');
     }
 };
 module.exports.run = run;
