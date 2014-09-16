@@ -98,6 +98,7 @@ A route expression can match variable subpaths by specifying a route parameter d
 <a name='router_add__callback'></a>A `callback` `Function` can be passed as the last argument.  If specified, the callback will be called every time a URL path is routed by the added route.  (This is the same as setting a ['route' event](#route_route_event) listener on the returned and newly added [Route](#Route) instance.) Upon the added route routing a URL path, the callback will be called and passed an `Object` with the following properties:
 * <a name='router_add__callback_pathname'></a>`pathname`: `String` the URL encoded pathname used. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 * <a name='router_add__callback_method'></a>`method`: `String | undefined` the HTTP method used. (See @![link example_http_methods])
+* <a name='router_add__callback_router'></a>`router`: `Router` the [Router](#Router) instance
 * <a name='router_add__callback_route'></a>`route`: `Route` the [Route](#Route) instance that routed the URL path
 * <a name='router_add__callback_arguments'></a>`arguments`: `Object` the route parameter arguments as URL decoded name value pairs. (See @![link example_parameters])
 * <a name='router_add__callback_request'></a>`request`: `http.IncomingMessage` the request if specified upon routing. (See @![link example_http_server])
@@ -174,6 +175,7 @@ Route a URL path using the routes added to the router.
 <a name='router_route__callback'></a>A `callback` `Function` can be passed as the last argument.  If specified, the callback will be called and passed an `Object` with the following properties upon the URL path being successfully routed:
 * <a name='router_route__callback_pathname'></a>`pathname`: `String` the URL encoded pathname used. (See [url.URL](http://nodejs.org/api/url.html#url_url))
 * <a name='router_route__callback_method'></a>`method`: `String | undefined` the HTTP method used. (See @![link example_http_methods])
+* <a name='router_route__callback_router'></a>`router`: `Router` the [Router](#Router) instance
 * <a name='router_route__callback_route'></a>`route`: `Route` the [Route](#Route) instance that routed the URL path
 * <a name='router_route__callback_arguments'></a>`arguments`: `Object` the route parameter arguments as URL decoded name value pairs. (See @![link example_parameters])
 * <a name='router_route__callback_request'></a>`request`: `http.IncomingMessage` the request if specified upon routing. (See @![link example_http_server])
@@ -381,6 +383,7 @@ A `Route` class instance is an [EventEmitter](http://nodejs.org/api/events.html#
 * <a name='route_route_event__event'></a>`event`: `Object`
     * <a name='route_route_event__event_pathname'></a>`pathname`: `String` the URL encoded pathname used. (See [url.URL](http://nodejs.org/api/url.html#url_url))
     * <a name='route_route_event__event_method'></a>`method`: `String | undefined` the HTTP method used
+    * <a name='route_route_event__event_router'></a>`router`: `Router` the [Router](#Router) instance that routed the URL path
     * <a name='route_route_event__event_route'></a>`route`: `Route` the [Route](#Route) instance that routed the URL path
     * <a name='route_route_event__event_arguments'></a>`arguments`: `Object` the route parameter arguments as URL decoded name value pairs
     * <a name='route_route_event__event_request'></a>`request`: `http.IncomingMessage` the request if specified upon routing. (See @![link example_http_server])

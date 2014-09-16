@@ -74,6 +74,7 @@
      *              @event {object}                                 - event object
      *                  .pathname {string}                          - url encoded pathname
      *                  .method {string|undefined}                  - http method
+     *                  .router {Router}                            - router
      *                  .route {Route}                              - route
      *                  .arguments {object<string|array<string>>}   - route arguments as name value pairs
      *                  .request {http.IncomingMessage|undefined}   - request
@@ -324,6 +325,7 @@
      *          @event {object}                                     - event object
      *              .pathname {string}                              - url encoded pathname
      *              .method {string|undefined}                      - http method
+     *              .router {Router}                                - router
      *              .route {Route}                                  - route
      *              .arguments {object<string|array<string>>}       - route arguments as name value pairs
      *              .request {http.IncomingMessage|undefined}       - request
@@ -338,6 +340,7 @@
      *          @event {object}                                     - event object
      *              .pathname {string}                              - url encoded pathname
      *              .method {string|undefined}                      - http method
+     *              .router {Router}                                - router
      *              .route {Route}                                  - route
      *              .arguments {object<string|array<string>>}       - route arguments as name value pairs
      *              .request {http.IncomingMessage|undefined}       - request
@@ -525,13 +528,14 @@
      *          @event {object}                             - event object
      *              .pathname {string}                      - url encoded pathname
      *              .method {string|undefined}              - http method
-     *              .route {Route}                          - matching route
-     *              .arguments {object<string|array<string>>} - matching route arguments as name value pairs
+     *              .router {Router}                        - router
+     *              .route {Route}                          - route
+     *              .arguments {object<string|array<string>>} - route arguments as name value pairs
      *              .request {http.IncomingMessage|undefined} - request
      *              .response {http.ServerResponse|undefined} - response
      *              .data {*|undefined}                     - data
-     *          this {Route}                                - matching route
-     *          return {Route|undefined}                    - matching route or undefined if no matching route found
+     *          this {Route}                                - route
+     *          return {Route|undefined}                    - route or undefined if no matching route found
      */
     Router.prototype.route = function() {
         var args        = argumentMaps.route.apply(this, arguments); // associate arguments to parameters
@@ -619,6 +623,7 @@
                 route.emit('route', { // emit route event from matching route upon matching route
                         'pathname':     pathname,
                         'method':       method,
+                        'router':       this,
                         'route':        route,
                         'arguments':    args,
                         'request':      req,
