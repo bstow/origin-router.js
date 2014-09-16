@@ -409,6 +409,23 @@ var run = function(orouter) { 'use strict'; // run tests
     router.route('/%27%20path%20%27/arg1/arg2/arg3', {'method': 'PoST', 'data': {'info': 'pass-to-listener'}});
     assert.strictEqual(result, 'success', "The router 'success' event did not occur as expected");
 
+    // remove routes
+    // 1.
+    router.remove(firstRoute);  // 1st route
+    result = undefined;
+    router.route("/'%20path%20%27/%20arg 1/%27arg2%27/ /./../a/r/g%20/3/");
+    assert.strictEqual(result, undefined, 'The 1st route was not removed from the router');
+    // 2.
+    router.remove('route 2');   // 2nd route
+    result = undefined;
+    router.route("%27 path%20'/arg1/arg2");
+    assert.strictEqual(result, undefined, 'The 2nd route was not removed from the router');
+    // 4.
+    router.remove(fourthRoute); // 4th route
+    result = undefined;
+    router.route('/%2f%20path/file.EXT/', {'method': 'Delete'});
+    assert.strictEqual(result, undefined, 'The 4th route was not removed from the router');
+
     // basejoin
     // 1.
     result = orouter.basejoin('../base/path/a/b/c/d/e/f/..',

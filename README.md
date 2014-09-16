@@ -50,6 +50,8 @@ An HTTP Router for Node.js
             * [router.addOptions([name], expression, [options], [callback])](#router_addOptions)
             * [router.addTrace([name], expression, [options], [callback])](#router_addTrace)
             * [router.addConnect([name], expression, [options], [callback])](#router_addConnect)
+        * [router.remove(name)](#router_remove)
+        * [router.remove(route)](#router_remove_alt)
         * [router.route(request, [response], [options], [callback])](#router_route)
             * [router.routeGet(request, [response], [options], [callback])](#router_routeGet)
             * [router.routePost(request, [response], [options], [callback])](#router_routePost)
@@ -63,6 +65,7 @@ An HTTP Router for Node.js
         * [router.pathSourceCode(name)](#router_pathSourceCode)
         * [router.getRoute(name)](#router_getRoute)
         * [Event: 'add'](#router_add_event)
+        * [Event: 'remove'](#router_remove_event)
         * [Event: 'success'](#router_success_event)
         * [Event: 'fail'](#router_fail_event)
     * [Class: orouter.Route](#Route)
@@ -587,6 +590,26 @@ Aliases for [router.add](#router_add) that specify the HTTP method option (corre
 <br>
 <br>
 
+####<a name='router_remove'></a>router.remove(name)
+Remove a route from the router.
+
+<a name='router_remove__name'></a>The `name` `String` of the route to remove.
+
+Returns the [Route](#Route) instance removed from the router.
+
+<br>
+<br>
+
+####<a name='router_remove_alt'></a>router.remove(route)
+Remove a route from the router.
+
+<a name='router_remove_alt__name'></a>The `route` `Route` is the [Route](#Route) instance to be removed from the router
+
+Returns the [Route](#Route) instance removed from the router.
+
+<br>
+<br>
+
 ####<a name='router_route'></a>router.route(request, [response], [options], [callback])
 
 Route a URL path using the routes added to the router.
@@ -680,6 +703,16 @@ A `Router` class instance is an [EventEmitter](http://nodejs.org/api/events.html
     * <a name='router_add_event__event_route'></a>`route`: `Route` the newly added [Route](#Route) instance
 
 Emitted each time a new route is added to the router. (See [Example: Router and Route Events and Data](#example_events))
+
+<br>
+
+####<a name='router_remove_event'></a>Event: 'remove'
+
+`function(event) {}`
+* <a name='router_remove_event__event'></a>`event`: `Object`
+    * <a name='router_remove_event__event_route'></a>`route`: `Route` the removed [Route](#Route) instance
+
+Emitted each time a route is removed from the router. (See [Example: Router and Route Events and Data](#example_events))
 
 <br>
 

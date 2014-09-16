@@ -633,6 +633,11 @@ Description:    Node.js module for routing HTTP requests
      *              @event {object}                                 - event object
      *                  .route {Route}                              - added route
      *              this {Router}                                   - router
+     *      emits remove {event}                                    - occurs upon removing a route
+     *          listener {function}
+     *              @event {object}                                 - event object
+     *                  .route {Route}                              - removed route
+     *              this {Router}                                   - router
      *      emits success {event}                                   - occurs upon routing
      *          listener {function}
      *              @event {object}                                 - event object
@@ -720,7 +725,7 @@ Description:    Node.js module for routing HTTP requests
      *              .response {http.ServerResponse|undefined}       - response
      *              .data {*|undefined}                             - data
      *          this {Route}                                        - route
-     *      return {Route}                                          - route
+     *      return {Route}                                          - added route
      *
      * Router.prototype.add {function}                              - add a route
      *      [@route] {Route}                                        - route
@@ -734,7 +739,7 @@ Description:    Node.js module for routing HTTP requests
      *              .response {http.ServerResponse|undefined}       - response
      *              .data {*|undefined}                             - data
      *          this {Route}                                        - route
-     *      return {Route}                                          - route
+     *      return {Route}                                          - edded route
      */
     Router.prototype.add = function() {
         var args        = argumentMaps.add.apply(this, arguments); // associate arguments to parameters
@@ -848,6 +853,51 @@ Description:    Node.js module for routing HTTP requests
             return this.add(name, expression, options, callback);
         };
     });
+
+    /*
+     * Router.prototype.remove {function}                           - remove a route
+     *      @route {Route|string}                                   - route or route name
+     *      return {Route}                                          - removed route
+     */
+    Router.prototype.remove = function() {
+        var args        = argumentMaps.remove.apply(this, arguments); // associate arguments to parameters
+        var route       = args.route,
+            name        = args.name;
+
+        var routes      = this.__routes__,
+            methods     = routes.methods;
+
+        if (name != undefined) { route = routes.by.name[name]; }
+
+        if (route == undefined) { return; } // route was unspecified or not found
+
+        var stores = [routes]; // potential stores containing the route
+        stores = stores.concat( // collect all method stores
+            Object.keys(methods).map(function(key) { return methods[key]; }));
+
+        // remove route references
+        stores.forEach(function(store) {
+            store.by.order = store.by.order.filter(function(storedRoute) { return route !== storedRoute; });
+            Object.keys(store.by.name).map(function(storedRouteName) {
+                if (route === store.by.name[storedRouteName]) { delete store.by.name[storedRouteName]; }
+            });
+        });
+
+        // emit add event upon adding route
+        this.emit('remove', {'route': route});
+
+        return route;
+    };
+    argumentMaps.remove = function() { // associate arguments to parameters for add methods
+        var route, name;
+
+        var args = Array.prototype.slice.call(arguments);
+        if (args.length >= 1) {
+            if (args[0] instanceof Route)                                       { route = args[0]; }
+            else if (typeof args[0] === 'string' || args[0] instanceof String)  { name  = args[0]; }
+        }
+        return {'route': route, 'name': name};
+    };
 
     /*
      * Router.prototype.route {function}                    - route a path
