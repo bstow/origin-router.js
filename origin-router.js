@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.2.2
+Version:        1.2.3
 Description:    Node.js module for routing HTTP requests
 *******************************************************************************/
 
@@ -464,6 +464,14 @@ Description:    Node.js module for routing HTTP requests
      * Route.prototype.pathSourceCode {string}                      - get source code for function to generate a path
      *
      * Route.prototype
+     *      emits added {event}                                     - occurs upon route being added to router
+     *          listener {function}
+     *              @event {object}                                 - event object
+     *                  .router {Router}                            - router added to
+     *      emits removed {event}                                   - occurs upon route being removed from router
+     *          listener {function}
+     *              @event {object}                                 - event object
+     *                  .router {Router}                            - router removed from
      *      emits route {event}                                     - occurs upon routing
      *          listener {function}
      *              @event {object}                                 - event object
@@ -811,8 +819,9 @@ Description:    Node.js module for routing HTTP requests
 
         if (callback != undefined) { route.on('route', callback); }
 
-        // emit add event upon adding route
-        this.emit('add', {'route': route});
+        // emit add events upon adding route
+        this.emit(  'add',      {'route': route});
+        route.emit( 'added',    {'router': this});
 
         return route;
     };
@@ -886,8 +895,9 @@ Description:    Node.js module for routing HTTP requests
             });
         });
 
-        // emit add event upon adding route
-        this.emit('remove', {'route': route});
+        // emit remove events upon removing route
+        this.emit(  'remove',   {'route': route});
+        route.emit( 'removed',  {'router': this});
 
         return route;
     };

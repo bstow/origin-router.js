@@ -78,6 +78,8 @@ An HTTP Router for Node.js
         * [route.path([arguments])](#route_path)
         * [route.pathSourceCode](#route_pathSourceCode)
         * [Event: 'route'](#route_route_event)
+        * [Event: 'added'](#route_added_event)
+        * [Event: 'removed'](#route_removed_event)
     * [orouter.basejoin(basepath, [subpaths, ...])](#basejoin)
     
 
@@ -847,7 +849,27 @@ A `Route` class instance is an [EventEmitter](http://nodejs.org/api/events.html#
     * <a name='route_route_event__event_response'></a>`response`: `http.ServerResponse` the response if specified upon routing. (See [Example: Using with an HTTP Server](#example_http_server))
     * <a name='route_route_event__event_data'></a>`data`: `* | undefined` any data passed upon routing
 
-Emitted each time the route successfully routes a path. (See [Example: Router and Route Events and Data](#example_events))
+<br>
+
+####<a name='route_added_event'></a>Event: 'added'
+
+`function(event) {}`
+* <a name='route_added_event__event'></a>`event`: `Object`
+    * <a name='route_added_event__event_router'></a>`router`: `Router` the [Router](#Router) instance the route was added to
+
+
+Emitted upon the route being added to a [Route](#Route) instance.
+
+<br>
+
+####<a name='route_removed_event'></a>Event: 'removed'
+
+`function(event) {}`
+* <a name='route_removed_event__event'></a>`event`: `Object`
+    * <a name='route_removed_event__event_router'></a>`router`: `Router` the [Router](#Router) instance that the route was removed from
+
+
+Emitted upon the route being removed from a [Route](#Route) instance.
 
 <br>
 <br>
