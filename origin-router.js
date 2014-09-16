@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.1.1
+Version:        1.1.2
 Description:    Node.js module for routing HTTP requests
 *******************************************************************************/
 
@@ -1425,7 +1425,7 @@ Description:    Node.js module for routing HTTP requests
     };
 
     /*
-     * PathKeyCache {prototype}         - cache for keyed paths
+     * PathKeyCache {prototype}         - weak reference cache for keyed paths
      */
     var PathKeyCache = function() {
         // singleton
@@ -1512,7 +1512,7 @@ Description:    Node.js module for routing HTTP requests
     };
 
     /*
-     * PathDataCache {prototype}            - cache for path data
+     * PathDataCache {prototype}            - weak reference cache for path data
      */
     var PathDataCache = function() {
         var keyCache = new PathKeyCache(); // key cache, singleton
