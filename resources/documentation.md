@@ -1,6 +1,16 @@
 @![intro <<]
 ##Origin Router
-An HTTP Router for Node.js
+A Node.js module for routing HTTP requests by URL path
+
+###Features
+* Route URL paths to callbacks by HTTP method
+* Flexibly match and capture variable URL subpaths as parameter arguments
+* Dynamically generate URL paths from routes on the server-side and client-side
+* Handle URL path decoding and encoding effortlessly
+* Map URL paths to filepaths on the filesystem safely
+* Build advanced routing behaviors with a fully evented routing model
+* Route faster with built-in caching
+* Learn and reference with comprehensive documentation and examples
 @![>> intro]
 
 @![toc <<]

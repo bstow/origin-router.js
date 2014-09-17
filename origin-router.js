@@ -24,8 +24,8 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.2.3
-Description:    Node.js module for routing HTTP requests
+Version:        1.2.4
+Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
 /*******************************************************************************
