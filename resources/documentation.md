@@ -28,6 +28,7 @@ A Node.js module for routing HTTP requests by URL path
         * [router.addConnect([name], expression, [options], [callback])](#router_addConnect)
     * [router.remove(name)](#router_remove)
     * [router.remove(route)](#router_remove_alt)
+    * [router.get(name)](#router_get)
     * [router.route(request, [response], [options], [callback])](#router_route)
         * [router.routeGet(request, [response], [options], [callback])](#router_routeGet)
         * [router.routePost(request, [response], [options], [callback])](#router_routePost)
@@ -39,7 +40,6 @@ A Node.js module for routing HTTP requests by URL path
         * [router.routeConnect(request, [response], [options], [callback])](#router_routeConnect)
     * [router.path(name, [arguments])](#router_path)
     * [router.pathSourceCode(name)](#router_pathSourceCode)
-    * [router.getRoute(name)](#router_getRoute)
     * [Event: 'add'](#router_add_event)
     * [Event: 'remove'](#router_remove_event)
     * [Event: 'success'](#router_success_event)
@@ -166,6 +166,15 @@ Returns the [Route](#Route) instance removed from the router.
 <br>
 <br>
 
+####<a name='router_get'></a>router.get(name)
+
+Get a [Route](#Route) instance added to the router by route `name` `String`.
+
+Returns the named [Route](#Route) instance or `undefined` if no route with the given name exists.
+
+<br>
+<br>
+
 ####<a name='router_route'></a>router.route(request, [response], [options], [callback])
 
 Route a URL path using the routes added to the router.
@@ -235,15 +244,6 @@ Get the source code `String` for a `Function` that will generate a URL path usin
 
 Returns the source code `String` for a `Function` that will generate a URL path using the route specified.
   
-<br>
-<br>
-
-####<a name='router_getRoute'></a>router.getRoute(name)
-
-Get a [Route](#Route) instance added to the router by route `name` `String`.
-
-Returns the named [Route](#Route) instance or `undefined` if no route with the given name exists.
-
 <br>
 <br>
 

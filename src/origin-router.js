@@ -295,11 +295,11 @@
     util.inherits(Router, events.EventEmitter);
 
     /*
-     * Router.prototype.getRoute {function}             - get an added route by name
+     * Router.prototype.get {function}                  - get an added route by name
      *      @name {string}                              - route name
      *      return {Route|undefined}                    - route
      */
-    Router.prototype.getRoute = function(name) {
+    Router.prototype.get = function(name) {
         var routes = this.__routes__;
 
         if (name in routes.by.name) { // named route

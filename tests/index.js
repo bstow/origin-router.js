@@ -157,7 +157,7 @@ var run = function(orouter) { 'use strict'; // run tests
         'Defining a route with a duplicate name did not fail as expected');
 
     // get routes
-    var result = router.getRoute('route 1');
+    var result = router.get('route 1');
     assert.strictEqual(result, firstRoute, 'The returned route did not match the 1st route');
 
     // route path with 1st route
