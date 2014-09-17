@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.3.0
+Version:        1.3.1
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -66,7 +66,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
  * // route some URL paths that match the added routes with parameters ...
  * router.route('/dog/brown'); // outputs 'I have a brown dog'
  * router.route('cat/white'); // outputs 'I have a white cat'
- * router.route('/fish/homework'); // outputs 'My fish at my homework'
+ * router.route('/fish/homework'); // outputs 'My fish ate my homework'
  * router.route('/dog/homework');  // outputs 'I have a homework dog'
  *                                 // this is routed by the 'dog color' route and not
  *                                 // the 'homework' route because the 'dog color'
@@ -1448,8 +1448,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
                         }
                     } if (constraint instanceof RegExp) { // regular expression
                         if (util.isArray(argument)) { // array of strings wildcard parameter argument
-                            var argumentLength = argument.length;
-                            for (var i = 0; i < argumentLength; i++) {
+                            for (var i = 0, length = argument.length; i < length; i++) {
                                 var subargument = argument[i];
                                 if (!constraint.test(subargument)) { // invalid
                                     var invalid     = {};
@@ -1466,8 +1465,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
                         }
                     } else if (util.isArray(constraint)) { // array of strings
                         if (util.isArray(argument)) { // array of strings wildcard parameter argument
-                            var argumentLength = argument.length;
-                            for (var i = 0; i < argumentLength; i++) {
+                            for (var i = 0, length = argument.length; i < length; i++) {
                                 var subargument = argument[i];
                                 if (constraint.indexOf(subargument) === -1) { // invalid
                                     var invalid     = {};

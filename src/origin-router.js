@@ -1053,8 +1053,7 @@
                         }
                     } if (constraint instanceof RegExp) { // regular expression
                         if (util.isArray(argument)) { // array of strings wildcard parameter argument
-                            var argumentLength = argument.length;
-                            for (var i = 0; i < argumentLength; i++) {
+                            for (var i = 0, length = argument.length; i < length; i++) {
                                 var subargument = argument[i];
                                 if (!constraint.test(subargument)) { // invalid
                                     var invalid     = {};
@@ -1071,8 +1070,7 @@
                         }
                     } else if (util.isArray(constraint)) { // array of strings
                         if (util.isArray(argument)) { // array of strings wildcard parameter argument
-                            var argumentLength = argument.length;
-                            for (var i = 0; i < argumentLength; i++) {
+                            for (var i = 0, length = argument.length; i < length; i++) {
                                 var subargument = argument[i];
                                 if (constraint.indexOf(subargument) === -1) { // invalid
                                     var invalid     = {};

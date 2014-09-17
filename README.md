@@ -144,7 +144,7 @@ router.add('/:pet/homework', function(event) {
 // route some URL paths that match the added routes with parameters ...
 router.route('/dog/brown'); // outputs 'I have a brown dog'
 router.route('cat/white'); // outputs 'I have a white cat'
-router.route('/fish/homework'); // outputs 'My fish at my homework'
+router.route('/fish/homework'); // outputs 'My fish ate my homework'
 router.route('/dog/homework');  // outputs 'I have a homework dog'
                                 // this is routed by the 'dog color' route and not
                                 // the 'homework' route because the 'dog color'
