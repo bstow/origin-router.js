@@ -868,7 +868,7 @@ A `Route` class instance is an [EventEmitter](http://nodejs.org/api/events.html#
     * <a name='route_added_event__event_router'></a>`router`: `Router` the [Router](#Router) instance the route was added to
 
 
-Emitted upon the route being added to a [Route](#Route) instance.
+Emitted upon the route being added to a [Router](#Router) instance.
 
 <br>
 
@@ -879,7 +879,7 @@ Emitted upon the route being added to a [Route](#Route) instance.
     * <a name='route_removed_event__event_router'></a>`router`: `Router` the [Router](#Router) instance that the route was removed from
 
 
-Emitted upon the route being removed from a [Route](#Route) instance.
+Emitted upon the route being removed from a [Router](#Router) instance.
 
 <br>
 <br>
