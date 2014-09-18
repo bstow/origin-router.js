@@ -44,6 +44,7 @@ A Node.js module for routing HTTP requests by URL path
     * [Event: 'remove'](#router_remove_event)
     * [Event: 'success'](#router_success_event)
     * [Event: 'fail'](#router_fail_event)
+<br>
 * [Class: orouter.Route](#Route)
     * [new Route(expression, [options])](#new_Route)
     * [route.name](#route_name)
@@ -56,6 +57,7 @@ A Node.js module for routing HTTP requests by URL path
     * [Event: 'route'](#route_route_event)
     * [Event: 'added'](#route_added_event)
     * [Event: 'removed'](#route_removed_event)
+<br>
 * [orouter.basejoin(basepath, [subpaths, ...])](#basejoin)
 @![>> toc]
 

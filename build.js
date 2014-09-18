@@ -121,7 +121,7 @@ var EXAMPLE_END_CLEAN     = '@![>> example clean]';
 // example source code to embed in source
 var sourceExampleSource = '';
 
-readmeTOCMarkdown += '* [Examples of Using the Router](#examples)\n';
+readmeTOCMarkdown += '###[Examples of Using the Router](#examples)\n';
 
 var exampleStartSectionIndex    = 0,
     exampleEndSectionIndex      = 0,
@@ -166,7 +166,7 @@ while (true) { // iterate over each example section
         '```javascript\n' + exampleSectionSource + '\n```';
     readmeExampleSectionMarkdowns.push(readmeExampleSectionMarkdown);
 
-    readmeTOCMarkdown += '    * [' + 'Example: ' + exampleSectionTitle + ']' +
+    readmeTOCMarkdown += '* [' + 'Example: ' + exampleSectionTitle + ']' +
         '(#' + 'example_' + exampleSectionIdentifier + ')' + '\n';
 
     // add the example section source code to the source code for reference
@@ -192,7 +192,7 @@ sourceExampleSource += '\n ' + Array(sourceLineLength - 2).join('*');
 
 // prepend example sections to the readme
 var readmeExamplesMarkdown = '';
-readmeExamplesMarkdown += "##<a name='examples'>Examples of Using the Router\n\n";
+readmeExamplesMarkdown += "###<a name='examples'>Examples of Using the Router\n\n";
 readmeExamplesMarkdown += '<br>\n<br>\n\n';
 readmeExamplesMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n<br>\n\n') + '\n\n';
 readmeExamplesMarkdown += '<br>\n<br>\n<br>\n\n';
@@ -253,8 +253,8 @@ exampleOut.join('\n').split('\n').forEach(function(exampleOutputLine, lineNumber
 
 readmeIntroductionMarkdown = documentationIntroductionMarkdown;
 
-documentationTOCMarkdown = '\n<br>\n\n' + '* [Router Documentation](#documentation)' +
-    documentationTOCMarkdown.split('\n').join('\n    ');
+documentationTOCMarkdown = '\n<br>\n\n' + '###[Router Documentation](#documentation)\n' +
+    documentationTOCMarkdown;
 readmeTOCMarkdown += documentationTOCMarkdown;
 
 readmeMarkdown = (
