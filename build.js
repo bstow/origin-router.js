@@ -193,9 +193,9 @@ sourceExampleSource += '\n ' + Array(sourceLineLength - 2).join('*');
 // prepend example sections to the readme
 var readmeExamplesMarkdown = '';
 readmeExamplesMarkdown += "###<a name='examples'>Examples of Using the Router\n\n";
+readmeExamplesMarkdown += '<br>\n\n';
+readmeExamplesMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n\n') + '\n\n';
 readmeExamplesMarkdown += '<br>\n<br>\n\n';
-readmeExamplesMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n<br>\n\n') + '\n\n';
-readmeExamplesMarkdown += '<br>\n<br>\n<br>\n\n';
 readmeMarkdown = readmeExamplesMarkdown + readmeMarkdown;
 
 originalSource = originalSource.replace('@![examples]', sourceExampleSource); // embed examples
@@ -275,8 +275,8 @@ var readmeMarkdownBadgeReferenceMarkdownLines = [];
 readmeMarkdown = readmeMarkdownBadges.map(function(badge, index) {
         var count = index + 1;
         readmeMarkdownBadgeReferenceMarkdownLines = readmeMarkdownBadgeReferenceMarkdownLines.concat([
-            '[badgeSource' + count + ']: ' + badge.src,
-            '[badgeLink' + count + ']: ' + badge.href
+            '[badgeSource' + count + ']: '  + badge.src,
+            '[badgeLink' + count + ']: '    + badge.href
         ]);
         return '[![Badge][badgeSource' + count + ']][badgeLink' + count + ']';
     }).join('&nbsp;\n') +

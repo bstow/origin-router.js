@@ -106,7 +106,6 @@ A Node.js module for routing HTTP requests by URL path
 ###<a name='examples'>Examples of Using the Router
 
 <br>
-<br>
 
 ####<a name='example_setup'>Example: Setting Up the Router
 ```javascript
@@ -117,7 +116,6 @@ var orouter = require('./origin-router.js');
 var router = new orouter.Router();
 ```
 
-<br>
 <br>
 
 ####<a name='example_routing'>Example: Routing URL Paths
@@ -135,7 +133,6 @@ router.route('/bulldog'); // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
 ```
 
-<br>
 <br>
 
 ####<a name='example_parameters'>Example: Routes with Parameters
@@ -159,7 +156,6 @@ router.route('/dog/homework');  // outputs 'I have a homework dog'
 ```
 
 <br>
-<br>
 
 ####<a name='example_wildcard_parameters'>Example: Routes with Wildcard Parameters
 ```javascript
@@ -175,7 +171,6 @@ router.route('/calico/cat/white/orange/gray'); // outputs
                                                // 'I have a white,orange,gray cat'
 ```
 
-<br>
 <br>
 
 ####<a name='example_parameter_constraints'>Example: Applying Constraints to Route Parameters
@@ -207,7 +202,6 @@ router.route('/cats/two/persian'); // outputs 'I have two persian cats'
 ```
 
 <br>
-<br>
 
 ####<a name='example_http_methods'>Example: HTTP Method-Specific Routing
 ```javascript
@@ -238,7 +232,6 @@ router.route('/bird'); // outputs 'I have a bird'
 ```
 
 <br>
-<br>
 
 ####<a name='example_reverse_routing'>Example: Generating URL Paths using Routes
 ```javascript
@@ -261,7 +254,6 @@ var pathname = router.path('my mix breed', // use the route named 'my mix breed'
 console.log(pathname); // outputs '/dog/mixed/beagle/pug/terrier'
 ```
 
-<br>
 <br>
 
 ####<a name='example_client_side_reverse_routing'>Example: Generating URL Paths on the Client-Side
@@ -288,7 +280,6 @@ console.log(pathFunction({'pet': 'cat', 'years': 2})); // outputs /cat/age/2
 ```
 
 <br>
-<br>
 
 ####<a name='example_route_objects'>Example: Working with Route Objects
 ```javascript
@@ -311,7 +302,6 @@ router.add(route, function(event) {
 router.routeGet(pathname); // outputs "My dog's best tricks are sit and roll"
 ```
 
-<br>
 <br>
 
 ####<a name='example_events'>Example: Router and Route Events and Data
@@ -348,7 +338,6 @@ router.route('/mouse/white', {'data': 'John'}); // outputs 'John has a white mou
 ```
 
 <br>
-<br>
 
 ####<a name='example_url_encoding'>Example: About URL Encoding
 ```javascript
@@ -382,7 +371,6 @@ console.log(pathname); // ouputs '/pet%20toys/bengal%20cat/ball%20of%20yarn/catn
 ```
 
 <br>
-<br>
 
 ####<a name='example_filepaths'>Example: Mapping URL Paths to Filepaths
 ```javascript
@@ -410,7 +398,6 @@ router.route('/pics/dog/malicious/../../../../../../../../../etc/private.conf');
 // outputs '../images/etc/private.conf'
 ```
 
-<br>
 <br>
 
 ####<a name='example_http_server'>Example: Using with an HTTP Server
@@ -510,7 +497,6 @@ router.on('fail', function(event) {
 console.log('Browse to http://localhost:3000');
 ```
 
-<br>
 <br>
 <br>
 
