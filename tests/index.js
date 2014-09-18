@@ -60,7 +60,7 @@ var run = function(orouter) { 'use strict'; // run tests
     // 4.
     constraints = {
         'param1': function(arg) { return arg === 'arg 1' && this.name === 'constrained route 4'; },
-        'param2': ['arg 2'],
+        'param2': ['arg 2', 2],
         'param3': ['arg 3', 'arg 4', 'arg 5']};
     router.addPost('constraint/:param1/:param2/:param3*',               // 4th constrainted route
         {'name': 'constrained route 4', 'constraints': constraints}).on('route', onRoute);
@@ -103,7 +103,7 @@ var run = function(orouter) { 'use strict'; // run tests
         function() { router.add('/invalid/constraints/:p1', {'name': 'bad constraints', 'constraints': 'invalid'}); },
         function(err) {
             return (err instanceof Error &&
-                /bad\sconstraints/.test(err.message) && /contraints\sare\sinvalid/.test(err.message));
+                /bad\sconstraints/.test(err.message) && /constraints\sare\sinvalid/.test(err.message));
         },
         'Defining a route with invalid constraints did not fail as expected');
     // 5.
@@ -121,7 +121,7 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.throws(
         function() {
             router.add('/invalid/constraint/:param1',
-                {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': ['value1', 1, '1']}});
+                {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': ['value1', true, '1']}});
         },
         function(err) {
             return (err instanceof Error && /bad\sconstraint/.test(err.message) &&
@@ -233,6 +233,8 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result.name, 'constrained route 3', 'The path did not match the 3rd constrained route');
     // 4.
     router.routePost('/constraint/arg%201/arg 2/arg 3/arg 5');
+    assert.strictEqual(result.name, 'constrained route 4', 'The path did not match the 4th constrained route');
+    router.routePost('/constraint/arg%201/2/arg 3/arg 5');
     assert.strictEqual(result.name, 'constrained route 4', 'The path did not match the 4th constrained route');
     // 5.
     router.routePost('/constraint/arg%201/arg 2/arg 3/arg 5/arg 6');

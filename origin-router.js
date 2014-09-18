@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.3.2
+Version:        1.3.3
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -532,42 +532,44 @@ Description:    A Node.js module for routing HTTP requests by URL path
 
         cacheable = true; // allow caching by default
         if ('constraints' in options) {
-            constraints = options.constraints;
-
-            if (constraints === undefined || constraints === null) { constraints = undefined; }
-            else if (constraints instanceof Function) { // constraints function
+            if (options.constraints === undefined || options.constraints === null) { constraints = undefined; }
+            else if (options.constraints instanceof Function) { // constraints function
                 cacheable = false; // disallow caching, constraints function result may vary at run-time
-                constraints = (function(constraints) {
-                    return function() { return constraints.apply(self, arguments); }; })(constraints);
-            } else if (constraints === Object(constraints)) { // constraints map
-                for (var key in constraints) {
-                    var constraint = constraints[key];
+                constraints = (function(_constraints) {
+                        return function() { return _constraints.apply(self, arguments); };
+                    })(options.constraints);
+            } else if (options.constraints === Object(options.constraints)) { // constraints map
+                constraints = {};
 
-                    var valid;
+                var invalidate = function(key) {
+                    throw new Error("Couldn't set constraints for route " +
+                        (self.name != undefined ? "'" + self.name + "'" + ' ' : '') +
+                        "because the constraint '" + key + "' was not a " +
+                        'function, regular expression or an array of strings');
+                };
+
+                for (var key in options.constraints) {
+                    var constraint = options.constraints[key];
+
                     if (constraint instanceof Function) {
                         cacheable = false; // disallow caching, constraint function result may vary at run-time
-                        constraints[key] = (function(constraint) {
-                            return function() { return constraint.apply(self, arguments); }; })(constraint);
-                        valid = true;
-                    } else if (constraint instanceof RegExp) { valid = true; }
-                    else if (util.isArray(constraint)) {
-                        valid = constraint.length !== 0 && constraint.every(
-                            function(str) { return typeof str === 'string' || str instanceof String; });
-                    } else { valid = false; }
-
-                    if (!valid) {
-                        throw new Error("Couldn't set constraints for route " +
-                            (this.name != undefined ? "'" + this.name + "'" + ' ' : '') +
-                            "because the contraint '" + key + "' was not a " +
-                            'function, regular expression or an array of strings');
-                    }
-
-                    try { Object.freeze(constraint); } catch (err) {}
+                        constraints[key] = (function(_constraint) {
+                                return function() { return _constraint.apply(self, arguments); };
+                            })(constraint);
+                    } else if (constraint instanceof RegExp) {
+                        constraints[key] = new RegExp(constraint);
+                    } else if (util.isArray(constraint)) {
+                        constraints[key] = constraint.map(function(val) {
+                            if (typeof val === 'string' || val instanceof String)   { return String(val); }
+                            if (typeof val === 'number')                            { return String(val); }
+                            else                                                    { invalidate(key); }
+                        });
+                    } else { invalidate(key); }
                 }
             } else {
                 throw new Error("Couldn't set constraints for route " +
                     (this.name != undefined ? "'" + this.name + "'" + ' ' : '') +
-                    'because the contraints are invalid');
+                    'because the constraints are invalid');
             }
 
             try { Object.freeze(constraints); } catch (err) {}
