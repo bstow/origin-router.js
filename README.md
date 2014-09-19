@@ -21,7 +21,7 @@ A Node.js module for routing HTTP requests by URL path
 * Match and capture variable URL subpaths as parameter arguments
 * Dynamically generate URL paths from routes on the server-side and client-side
 * Handle URL path decoding and encoding
-* Safely map URL paths to filepaths on the filesystem safely
+* Safely map URL paths to filepaths on the filesystem
 * Build advanced routing behaviors with a fully evented routing model
 * Route faster with built-in caching
 
