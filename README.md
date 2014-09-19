@@ -18,13 +18,12 @@ A Node.js module for routing HTTP requests by URL path
 
 ###Features
 * Route URL paths to callbacks by HTTP method
-* Flexibly match and capture variable URL subpaths as parameter arguments
+* Match and capture variable URL subpaths as parameter arguments
 * Dynamically generate URL paths from routes on the server-side and client-side
-* Handle URL path decoding and encoding effortlessly
-* Map URL paths to filepaths on the filesystem safely
+* Handle URL path decoding and encoding
+* Safely map URL paths to filepaths on the filesystem safely
 * Build advanced routing behaviors with a fully evented routing model
 * Route faster with built-in caching
-* Learn and reference with comprehensive documentation and examples
 
 
 <br>
@@ -826,7 +825,7 @@ Returns the URL encoded pathname generated using the route. (See [url.URL](http:
 
 ####<a name='route_pathSourceCode'></a>route.pathSourceCode
 
-* `String` get the source code for a `Function` that will generate a URL path using the route.  Upon compiling the source code, the `Function` may be called and optionally passed a route parameter arguments `Object` of URL decoded name value pairs as the 1st parameter to be mapped and embedded within the generated URL path.  (Note that the route parameter arguments are **not** validated for compliance against the corresponding route constraints.)  
+* `String` get the source code for a `Function` that will generate a URL path using the route.  Upon compiling the source code, the `Function` may be called and optionally passed a route parameter arguments `Object` of URL decoded name value pairs as the 1st parameter to be mapped and embedded within the generated URL path.  (Note that the route parameter arguments are **not** validated for compliance against the corresponding route constraints.)
   
   This is primarily useful in allowing for a URL path to be dynamically generated on the client-side. (See [Example: Generating URL Paths on the Client-Side](#example_client_side_reverse_routing))
 
