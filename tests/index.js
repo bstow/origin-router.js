@@ -18,6 +18,8 @@ var run = function(orouter) { 'use strict'; // run tests
     result      = {};
     var onRoute = function(event) {
         result = {
+                'success':  true,
+                'fail':     false,
                 'name':     this.name,
                 'args':     event.arguments,
                 'request':  event.request,
@@ -25,6 +27,14 @@ var run = function(orouter) { 'use strict'; // run tests
                 'data':     event.data
             };
     };
+    var onRouterFail = function(event) {
+        result = {
+                'success':  false,
+                'fail':     true,
+            };
+    };
+
+    router.on('fail', onRouterFail);
 
     // add routes
     // 1.                   //  "' path '" ...
@@ -47,29 +57,42 @@ var run = function(orouter) { 'use strict'; // run tests
     constraints = function(args) {
         return args.param1 != 'not 1' && args.param2 != 'not 1' && this.expression.indexOf('constrain') != -1;
     };
-    router.add('/constraint/:param1/:param2',                           // 1st constrained route
+    router.add('/constraint/:param1/:param2',                               // 1st constrained route
         {'name': 'constrained route 1', 'method': ['connect'], 'constraints': constraints}).on('route', onRoute);
     // 2.
     constraints = {'param1': /^(?!(?:not\s2)).*$/, 'param2': /^(?!(?:not\s2)).*$/, 'param3': /^(?!(?:not\s2)).*$/};
-    var routeConstraint2 = router.add('/constraint/:param1/:param2',    // 2nd constrained route
+    var routeConstraint2 = router.add('/constraint/:param1/:param2',        // 2nd constrained route
         {'name': 'constrained route 2', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
     // 3.
     constraints = {'param1': ['not 1', 'not 2'], 'param2': /^not\s[1-2]$/};
-    router.add('/constraint/:param1/:param2',                           // 3rd constrained route
+    router.add('/constraint/:param1/:param2',                               // 3rd constrained route
         {'name': 'constrained route 3', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
     // 4.
     constraints = {
         'param1': function(arg) { return arg === 'arg 1' && this.name === 'constrained route 4'; },
         'param2': ['arg 2', 2],
         'param3': ['arg 3', 'arg 4', 'arg 5']};
-    router.addPost('constraint/:param1/:param2/:param3*',               // 4th constrainted route
+    router.addPost('constraint/:param1/:param2/:param3*',                   // 4th constrainted route
         {'name': 'constrained route 4', 'constraints': constraints}).on('route', onRoute);
     // 5.
     constraints = {
         'param1': /arg\s1/,
         'param3': /arg\s[3-6]/};
-    router.addPost('constraint/:param1/:param2/:param3*',               // 5th constrainted route
+    router.addPost('constraint/:param1/:param2/:param3*',                   // 5th constrainted route
         {'name': 'constrained route 5', 'constraints': constraints}).on('route', onRoute);
+    // 6.
+    var sixthConstrainedRouteConstraints =              {'param1': /[1-5]/, 'param2': /[a-m]/};
+    var sixthConstrainedRouteAlternativeConstraints =   {'param1': /[6-9]/, 'param2': /[n-z]/};
+    var sixthConstrainedRouteAlternativeUncacheableConstraintCount = 0;
+    var sixthConstrainedRouteAlternativeUncacheableConstraints =
+        function(args) {
+            sixthConstrainedRouteAlternativeUncacheableConstraintCount++;
+            if (parseInt(args.param1) !== sixthConstrainedRouteAlternativeUncacheableConstraintCount) { return false; }
+            if (parseInt(args.param2) !== sixthConstrainedRouteAlternativeUncacheableConstraintCount) { return false; }
+            return true;
+        };
+    var sixthConstrainedRoute = router.add('/modconstraint/:param1/:param2',    // 6th constrained route
+        {'name': 'constrained route 6', 'constraints': sixthConstrainedRouteConstraints}, onRoute);
 
     // add method-specific routes
     // GET.
@@ -177,13 +200,15 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result.data, 'route 1 data', 'The route data received did not match the route data submitted');
 
     // route paths with 2nd route
-    var callback = {'result': {}};
+    var callback;
+    callback = {'result': {}};
     router.route("%27 path%20'/arg1/arg2",
         function(e) { callback.result = {'name': this.name, 'args': e.arguments}; });
     assert.strictEqual(callback.result.name, 'route 2', 'The path did not match the 2nd route');
     assert.strictEqual(callback.result.args.param1, 'arg1',
         "The path's 1st argument to the 2nd route did not match the expected value");
-    router.route('path/arg1/arg2', {'method': 'get'},
+    callback = {'result': {}};
+    router.route("' path '/arg1/arg2", {'method': 'get'},
         function(event) { callback.result = {'name': this.name, 'args': event.arguments}; });
     assert.strictEqual(result.name, 'route 2', 'The path did not match the 2nd route');
     assert.strictEqual(callback.result.name, 'route 2', 'The path did not match the 2nd route');
@@ -239,6 +264,31 @@ var run = function(orouter) { 'use strict'; // run tests
     // 5.
     router.routePost('/constraint/arg%201/arg 2/arg 3/arg 5/arg 6');
     assert.strictEqual(result.name, 'constrained route 5', 'The path did not match the 5th constrained route');
+    // 6.
+    router.route('/modconstraint/3/c');
+    assert.strictEqual(result.name, 'constrained route 6', 'The path did not match the 6th constrained route');
+    router.route('/modconstraint/3/c'); // cached
+    assert.strictEqual(result.name, 'constrained route 6', 'The path did not match the 6th constrained route');
+    router.route('/modconstraint/7/s');
+    assert.notEqual(result.name, 'constrained route 6', 'The path matched the 6th constrained route');
+    router.route('/modconstraint/7/s'); // cached
+    assert.notEqual(result.name, 'constrained route 6', 'The path matched the 6th constrained route');
+    sixthConstrainedRoute.constraints = sixthConstrainedRouteAlternativeConstraints;
+    router.route('/modconstraint/3/c');
+    assert.notEqual(result.name, 'constrained route 6', 'The path did matched the 6th constrained route');
+    router.route('/modconstraint/3/c'); // cached
+    assert.notEqual(result.name, 'constrained route 6', 'The path did matched the 6th constrained route');
+    router.route('/modconstraint/7/s');
+    assert.strictEqual(result.name, 'constrained route 6', 'The path did not match the 6th constrained route');
+    router.route('/modconstraint/7/s'); // cached
+    assert.strictEqual(result.name, 'constrained route 6', 'The path did not match the 6th constrained route');
+    sixthConstrainedRoute.constraints = sixthConstrainedRouteAlternativeUncacheableConstraints;
+    router.route('/modconstraint/1/1'); //
+    assert.strictEqual(result.name, 'constrained route 6', 'The path did not match the 6th constrained route');
+    router.route('/modconstraint/2/2'); //
+    assert.strictEqual(result.name, 'constrained route 6', 'The path did not match the 6th constrained route');
+    router.route('/modconstraint/2/2'); //
+    assert.notEqual(result.name, 'constrained route 6', 'The path matched the 6th constrained route');
 
     // route path with GET route
     router.route('/method/get', {'method': '  GEt '});
@@ -416,17 +466,17 @@ var run = function(orouter) { 'use strict'; // run tests
     router.remove(firstRoute);  // 1st route
     result = undefined;
     router.route("/'%20path%20%27/%20arg 1/%27arg2%27/ /./../a/r/g%20/3/");
-    assert.strictEqual(result, undefined, 'The 1st route was not removed from the router');
+    assert.strictEqual(result.fail, true, 'The 1st route was not removed from the router');
     // 2.
     router.remove('route 2');   // 2nd route
     result = undefined;
     router.route("%27 path%20'/arg1/arg2");
-    assert.strictEqual(result, undefined, 'The 2nd route was not removed from the router');
+    assert.strictEqual(result.fail, true, 'The 2nd route was not removed from the router');
     // 4.
     router.remove(fourthRoute); // 4th route
     result = undefined;
     router.route('/%2f%20path/file.EXT/', {'method': 'Delete'});
-    assert.strictEqual(result, undefined, 'The 4th route was not removed from the router');
+    assert.strictEqual(result.fail, true, 'The 4th route was not removed from the router');
 
     // basejoin
     // 1.

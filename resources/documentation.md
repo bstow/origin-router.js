@@ -349,7 +349,7 @@ Create a new `Route` instance.
 
 ####<a name='route_constraints'></a>route.constraints
 
-* `Function | Object | undefined` get the constraints that are applied to any of the route's parameters during URL path matching. (See [router.add](#router_add) [[options.constraints](#router_add__options_constraints)])
+* `Function | Object | undefined` get or set the constraints applied to any of the route's parameters during URL path matching. (See [router.add](#router_add) [[options.constraints](#router_add__options_constraints)])
 
 <br>
 <br>
@@ -363,7 +363,7 @@ Create a new `Route` instance.
 
 ####<a name='route_ignoreCase'></a>route.ignoreCase
 
-* `Boolean` get indicator of case-insensitive matching of URL paths by the route expression
+* `Boolean` get or set case-insensitive matching of URL paths by the route expression
 
 <br>
 <br>

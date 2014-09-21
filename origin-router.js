@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.3.6
+Version:        1.3.7
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -451,15 +451,15 @@ Description:    A Node.js module for routing HTTP requests by URL path
      *
      * Route.prototype.method {string|array<string>|undefined}      - get route's applicable http method(s)
      *
-     * Route.prototype.constraints {function|object<function|RegExp|<array<string>>|undefined} - route argument \
-     *                                                                                              constraints
+     * Route.prototype.constraints {function|object<function|RegExp|<array<string>>|undefined} - get/set route \
+     *                                                                                             argument constraints
      *      [@arguments] {object<string|array<string>>}             - route arguments as name value pairs
      *      this {Route}                                            - route
      *      return {boolean}                                        - true if valid, false if invalid
      *
      * Route.prototype.encoded {boolean|undefined}                  - get url encoded route expression indicator
      *
-     * Route.prototype.ignoreCase {boolean|undefined}               - case insensitive path matching
+     * Route.prototype.ignoreCase {boolean|undefined}               - get/set case insensitive path matching
      *
      * Route.prototype.pathSourceCode {string}                      - get source code for function to generate a path
      *
@@ -496,7 +496,9 @@ Description:    A Node.js module for routing HTTP requests by URL path
             method  = options.method;
         }
 
-        var cacheable; // caching allowed indicator
+        var cacheable   = true;                             // caching allowed indicator, default true
+        var cache       = new PathDataCache();              // cache
+        var flush       = function() { cache.flush(); };    // flush cache
 
         // accessors
 
@@ -524,21 +526,23 @@ Description:    A Node.js module for routing HTTP requests by URL path
         else                        { encoded = false; } // default encoded
 
         Object.defineProperty(this, 'ignoreCase', {
-            'get':          function() { return ignoreCase; }, // ignore case getter
+            'get':          function()      { return ignoreCase; },         // ignore case getter
+            'set':          function(val)   { flush(); ignoreCase = val; }, // ignore case setter
             'enumerable':   true,
             'configurable': false });
-        if ('ignoreCase' in options)    { ignoreCase = options.ignoreCase; } // set ignore case
-        else                            { ignoreCase = false; } // default ignore case
+        if ('ignoreCase' in options)    { ignoreCase = options.ignoreCase; }    // set ignore case
+        else                            { ignoreCase = false; }                 // default ignore case
 
-        cacheable = true; // allow caching by default
-        if ('constraints' in options) {
-            if (options.constraints === undefined || options.constraints === null) { constraints = undefined; }
-            else if (options.constraints instanceof Function) { // constraints function
+        var setConstraints = function(val) {
+            cacheable = true; // allow caching by default
+
+            if (val === undefined || val === null) { constraints = undefined; }
+            else if (val instanceof Function) { // constraints function
                 cacheable = false; // disallow caching, constraints function result may vary at run-time
                 constraints = (function(_constraints) {
                         return function() { return _constraints.apply(self, arguments); };
-                    })(options.constraints);
-            } else if (options.constraints === Object(options.constraints)) { // constraints map
+                    })(val);
+            } else if (val === Object(val)) { // constraints map
                 constraints = {};
 
                 var invalidate = function(key) {
@@ -548,8 +552,8 @@ Description:    A Node.js module for routing HTTP requests by URL path
                         'function, regular expression or an array of strings');
                 };
 
-                for (var key in options.constraints) {
-                    var constraint = options.constraints[key];
+                for (var key in val) {
+                    var constraint = val[key];
 
                     if (constraint instanceof Function) {
                         cacheable = false; // disallow caching, constraint function result may vary at run-time
@@ -565,19 +569,23 @@ Description:    A Node.js module for routing HTTP requests by URL path
                             else                                                    { invalidate(key); }
                         });
                     } else { invalidate(key); }
+
+                    try { Object.freeze(constraints[key]); } catch (err) {}
                 }
             } else {
                 throw new Error("Couldn't set constraints for route " +
-                    (this.name != undefined ? "'" + this.name + "'" + ' ' : '') +
+                    (self.name != undefined ? "'" + self.name + "'" + ' ' : '') +
                     'because the constraints are invalid');
             }
 
             try { Object.freeze(constraints); } catch (err) {}
-        }
+        };
         Object.defineProperty(this, 'constraints', {
-            'get':          function() { return constraints; }, // constraints getter
+            'get':          function()      { return constraints; },            // constraints getter
+            'set':          function(val)   { flush(); setConstraints(val); },  // constraints setter
             'enumerable':   true,
             'configurable': false });
+        if ('constraints' in options) { setConstraints(options.constraints); } // set constraints
 
         var subroutes = parse.route(this.expression, this.encoded);
         Object.defineProperty(this, '__subroutes__', { // private
@@ -591,10 +599,8 @@ Description:    A Node.js module for routing HTTP requests by URL path
             'enumerable':   true,
             'configurable': false });
 
-        var cache;
-        if (cacheable) { cache = new PathDataCache(); }
         Object.defineProperty(this, '__cache__', { // private
-            'get':          function() { return cache; }, // cache getter
+            'get':          function() { return (cacheable ? cache : undefined); }, // cache getter
             'enumerable':   false,
             'configurable': false });
     };
@@ -1007,24 +1013,36 @@ Description:    A Node.js module for routing HTTP requests by URL path
 
             var args; // route match arguments
 
-            // match route and cache arguments or no match in the route cache
-            var routeCacheData;
-            if (routeCache      != undefined)   { routeCacheData = routeCache.getData(pathname); } // route has cache
-            if (routeCacheData  != undefined)   { // cached
-                if (routeCacheData == false)        { args = undefined; }               // cached no match
-                else                                { args = routeCacheData; }          // cached match
-            } else                              { // not cached
-                args = match(subroutes, subpaths, ignoreCase);                          // match arguments
-                if (routeCache  != undefined) { // route has cache
+            var routeHasCache       = routeCache != undefined;  // route has cache
+            var routeCacheHasMatch  = false;                    // match is cached
+            if (routeHasCache) {
+                var routeCacheData = routeCache.getData(pathname);
+                if (routeCacheData  != undefined) { // match is cached
+                    routeCacheHasMatch = true;
+
+                    if (routeCacheData == false)    { args = undefined; }       // cached no match
+                    else                            { args = routeCacheData; }  // cached match
+                }
+            }
+
+            if (!routeHasCache || !routeCacheHasMatch) { // match not cached
+                args = match(subroutes, subpaths, ignoreCase); // match arguments
+
+                if (args != undefined) { // match
+                    var constraints = route.constraints; // constraints
+                    // validate constraints
+                    if (constraints !== undefined && validate(args, constraints) !== true) { // invalid per constraints
+                        args = undefined; // no match
+                    }
+                }
+
+                if (routeHasCache) { // cache match
                     if (args == undefined)  { routeCache.setData(pathname, false); }    // cache no match
                     else                    { routeCache.setData(pathname, args); }     // cache match
                 }
             }
 
             if (args != undefined) { // match
-                var constraints = route.constraints; // validate constraints
-                if (constraints !== undefined && validate(args, constraints) !== true) { continue; }
-
                 if (callback != undefined) { route.once('route', callback); } // queue callback
 
                 route.emit('route', { // emit route event from matching route upon matching route
@@ -1289,7 +1307,8 @@ Description:    A Node.js module for routing HTTP requests by URL path
      *      @subroutes {array<RouteSubpath|RouteParameter>}         - parts of the route
      *      @subpaths {array<string>}                               - url decoded parts of the path
      *      [@ignoreCase {boolean|undefined}]                       - case insensitive matching
-     *      return {object<string|array<string>>}                   - route arguments as name value pairs
+     *      return {object<string|array<string>>|undefined}         - route arguments as name value pairs, \
+     *                                                                  undefined if no match
      */
     var match = function(subroutes, subpaths, ignoreCase) {
         var args = {};
