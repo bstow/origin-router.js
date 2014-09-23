@@ -458,7 +458,7 @@
     };
     HTTP.METHODS.forEach(function(httpMethod) { // http method-specific add methods
         var methodName = 'add' + httpMethod.charAt(0).toUpperCase() + httpMethod.slice(1).toLowerCase();
-        Router.prototype[methodName] = function() { //
+        Router.prototype[methodName] = function() {
             var args        = argumentMaps.add.apply(this, arguments); // associate arguments to parameters
             var route       = args.route,
                 name        = args.name,
@@ -784,7 +784,7 @@
      */
     var RouteSubpath = function(raw, encoded) {
         if (encoded == undefined && raw != undefined) { encoded = encodeURIComponent(raw); }
-        if (encoded != undefined && raw == undefined) { raw = decodeURIComponent(encoded); }
+        if (encoded != undefined && raw == undefined) { raw     = decodeURIComponent(encoded); }
 
         // accessors
 
@@ -859,7 +859,7 @@
      */
     var PathSubpath = function(raw, decoded) {
         if (decoded == undefined && raw != undefined) { decoded = decodeURIComponent(raw); }
-        if (decoded != undefined && raw == undefined) { raw = encodeURIComponent(decoded); }
+        if (decoded != undefined && raw == undefined) { raw     = encodeURIComponent(decoded); }
 
         // accessors
 

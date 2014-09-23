@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.4.0
+Version:        1.4.1
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -877,7 +877,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
     };
     HTTP.METHODS.forEach(function(httpMethod) { // http method-specific add methods
         var methodName = 'add' + httpMethod.charAt(0).toUpperCase() + httpMethod.slice(1).toLowerCase();
-        Router.prototype[methodName] = function() { //
+        Router.prototype[methodName] = function() {
             var args        = argumentMaps.add.apply(this, arguments); // associate arguments to parameters
             var route       = args.route,
                 name        = args.name,
@@ -1203,7 +1203,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
      */
     var RouteSubpath = function(raw, encoded) {
         if (encoded == undefined && raw != undefined) { encoded = encodeURIComponent(raw); }
-        if (encoded != undefined && raw == undefined) { raw = decodeURIComponent(encoded); }
+        if (encoded != undefined && raw == undefined) { raw     = decodeURIComponent(encoded); }
 
         // accessors
 
@@ -1278,7 +1278,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
      */
     var PathSubpath = function(raw, decoded) {
         if (decoded == undefined && raw != undefined) { decoded = decodeURIComponent(raw); }
-        if (decoded != undefined && raw == undefined) { raw = encodeURIComponent(decoded); }
+        if (decoded != undefined && raw == undefined) { raw     = encodeURIComponent(decoded); }
 
         // accessors
 
