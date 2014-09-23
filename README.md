@@ -35,6 +35,7 @@ A Node.js module for routing HTTP requests by URL path
 * [Example: Routes with Parameters](#example_parameters)
 * [Example: Routes with Wildcard Parameters](#example_wildcard_parameters)
 * [Example: Applying Constraints to Route Parameters](#example_parameter_constraints)
+* [Example: Handling Trailing Slashes](#example_trailing_slash)
 * [Example: HTTP Method-Specific Routing](#example_http_methods)
 * [Example: Generating URL Paths using Routes](#example_reverse_routing)
 * [Example: Generating URL Paths on the Client-Side](#example_client_side_reverse_routing)
@@ -128,7 +129,7 @@ router.route('/cat'); // outputs 'I have a cat'
 router.route('/dog'); // outputs 'I have a dog'
 
 // attempt to route URL paths that don't match either of the routes ...
-router.route('/bulldog'); // outputs nothing
+router.route('/bulldog');     // outputs nothing
 router.route('/dog/bulldog'); // outputs nothing
 ```
 
@@ -146,7 +147,7 @@ router.add('/:pet/homework', function(event) {
 
 // route some URL paths that match the added routes with parameters ...
 router.route('/dog/brown'); // outputs 'I have a brown dog'
-router.route('cat/white'); // outputs 'I have a white cat'
+router.route('cat/white');  // outputs 'I have a white cat'
 router.route('/fish/homework'); // outputs 'My fish ate my homework'
 router.route('/dog/homework');  // outputs 'I have a homework dog'
                                 // this is routed by the 'dog color' route and not
@@ -196,8 +197,34 @@ router.add('cats/:count/:breed',
     });
 
 router.route('/cats/four/siamese'); // outputs nothing because the count is invalid
-router.route('/cats/two/maltese'); // outputs nothing because the breed is invalid
-router.route('/cats/two/persian'); // outputs 'I have two persian cats'
+router.route('/cats/two/maltese');  // outputs nothing because the breed is invalid
+router.route('/cats/two/persian');  // outputs 'I have two persian cats'
+```
+
+<br>
+
+####<a name='example_trailing_slash'>Example: Handling Trailing Slashes
+```javascript
+// add a route to the router that won't match URL paths with a trailing '/' ...
+router.add('/lizard/:color', function(event) {
+    console.log('I have a ' + event.arguments.color + ' lizard'); });
+
+router.route('/lizard/green');  // outputs 'I have a green lizard';
+router.route('/lizard/green/'); // outputs nothing
+
+// add a route to the router that will only match URL paths with a trailing '/' ...
+router.add('/snake/:colors*/', function(event) {
+    console.log('I have a ' + event.arguments.colors.join(', ') + ' snake'); });
+
+router.route('/snake/yellow/green');  // outputs nothing
+router.route('/snake/yellow/green/'); // outputs 'I have a yellow, green snake';
+
+// add a route that will match URL paths with or without a trailing '/' ...
+router.add('/iguana/?', function(event) {
+    console.log('I have an iguana'); });
+
+router.route('/iguana');  // outputs 'I have an iguana';
+router.route('/iguana/'); // outputs 'I have an iguana';
 ```
 
 <br>
@@ -215,14 +242,14 @@ router.addGet('/turtle', function() { console.log('I have a turtle'); });
 router.addPost('/rabbit', function() { console.log('I have a rabbit'); });
 
 // route URL paths with a corresponding HTTP method specified ...
-router.route('/fish', {'method': 'GET'}); // outputs 'I have a fish'
-router.route('/fish', {'method': 'POST'}); // outputs nothing
-router.route('/bird', {'method': 'GET'}); // outputs 'I have a bird'
-router.route('/bird', {'method': 'POST'}); // outputs 'I have a bird'
+router.route('/fish', {'method': 'GET'});    // outputs 'I have a fish'
+router.route('/fish', {'method': 'POST'});   // outputs nothing
+router.route('/bird', {'method': 'GET'});    // outputs 'I have a bird'
+router.route('/bird', {'method': 'POST'});   // outputs 'I have a bird'
 router.route('/bird', {'method': 'DELETE'}); // outputs nothing
 
 // alternatively a URL path may be routed for an HTTP method like so ...
-router.routeGet('/fish'); // outputs 'I have a fish'
+router.routeGet('/fish');  // outputs 'I have a fish'
 router.routePost('/bird'); // outputs 'I have a bird'
 
 // HTTP method-specific routes are still applicable when no method is specified ...
@@ -465,7 +492,7 @@ router.add('user', '/user/:username/:pet/:color', function(event) {
 });
 
 // add a homepage route that will redirect to the show all users page ...
-router.add('/', function(event) {
+router.add('/?', function(event) {
     var response = event.response; // passed HTTP response object
 
     // create the response ...
@@ -534,9 +561,11 @@ Add a route to the router to serve in matching and routing URL paths.
 
 <a name='router_add__name'></a>The route may optionally be assigned a unique name by passing the `name` `String` as the 1st argument.
 
-<a name='router_add__expression'></a>The `expression` `String` defines if and how the route will match a URL path.  A simple example of a route expression is `'/my/path'` which will route any similar URL path such as `'/my/path'` or `'my/path/'` (route matching disregards leading and trailing `/` characters).
+<a name='router_add__expression'></a>The `expression` `String` defines if and how the route will match a URL path.  A simple example of a route expression is `'/my/path'` which will route any similar URL path such as `'/my/path'` or `'my/path'` (route matching disregards a leading `/` character).
 
 A route expression can match variable subpaths by specifying a route parameter denoted by a `:` character.  As an example, the route expression `'/my/:foo/path'` has a parameter `foo` and will route the URL paths `'/my/bar/path'` and `'/my/qux/path'`.  In each case, the `foo` parameter will respectively have an argument value of `'bar'` and '`qux`'.  Furthermore, a route wildcard parameter can be specified which will match multiple subpaths at the end of a URL path.  A route wildcard parameter must be specified at the end of the route expression with a `*` appended to the end of the parameter name. For example, the expression `'/my/:foo/:bar*'` has a wildcard parameter `bar` at the end and will match the URL path`'my/lorem/ipsum/dolor/sit/amet'`.  In this case, the `foo` parameter will have an argument value of `'lorem'` and the `bar` wildcard parameter will have an argument value of `['ipsum', 'dolor', 'sit', 'amet']` (wildcard parameter matches are split into an `Array` of subpaths). (See [Example: Routes with Parameters](#example_parameters) and [Example: Routes with Wildcard Parameters](#example_wildcard_parameters))
+
+By default, a route expression will not match a URL path with a trailing `/` character.  For example, the route expression `/my/:path*` will **not** match `/my/trailing/slash/`.  To enable a route expression to match only URL paths with a trailing `/` character, a `/` character should be specified at the end of the route expression.  For example, the route expression `/my/:path*/` will match `/my/trailing/slash/` but not `/my/omitted/trailing/slash`.  To enable a route expression to match both URL paths with and without a trailing `/` character, `/?` should be specified at the end of the route expression.  For example, the route expression `/my/path*/?` will match both `/my/trailing/slash/` and `/my/omitted/trailing/slash`. (See [Example: Handling Trailing Slashes](#example_trailing_slash))
 
 <a name='router_add__options'></a>The optional `options` `Object` can specify the following properties:
 

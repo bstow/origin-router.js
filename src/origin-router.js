@@ -10,13 +10,16 @@
         util    = require('util');
 
     var EXPRESSION_SYMBOLS = { // expression symbols
-        'PARAMETER': ':',
-        'WILDCARD_PARAMETER': '*',
-        'DELINEATOR': '/'
+        'PARAMETER':                ':',
+        'WILDCARD_PARAMETER':       '*',
+        'DELINEATOR':               '/',
+        'TRAILING_SLASH':           '/',
+        'OPTIONAL_TRAILING_SLASH':  '/?'
     };
 
     var PATH_SYMBOLS = { // path symbols
-        'DELINEATOR': '/'
+        'DELINEATOR':       '/',
+        'TRAILING_SLASH':   '/'
     };
 
     var HTTP = { // http methods
@@ -770,20 +773,28 @@
     /* RouteSubpath {prototype}                         - route subpath part
      *
      * RouteSubpath.prototype.constructor {function}
-     *      @raw {string}                               - raw value
-     *      [@encoded] {string}                         - url encoded value
+     *      @raw {string|undefined}                     - raw value
+     *      [@encoded] {string|undefined}               - url encoded value
      *
      * RouteSubpath.prototype.raw {string}              - get raw value
      *
      * RouteSubpath.prototype.encoded {string}          - get encoded value
+     *
+     * RouteSubpath.prototype.decoded {string}          - get decoded value
      */
     var RouteSubpath = function(raw, encoded) {
-        if (encoded == undefined) { encoded = encodeURIComponent(raw); }
+        if (encoded == undefined && raw != undefined) { encoded = encodeURIComponent(raw); }
+        if (encoded != undefined && raw == undefined) { raw = decodeURIComponent(encoded); }
 
         // accessors
 
         Object.defineProperty(this, 'raw', {
             'get':          function() { return raw; }, // raw value getter
+            'enumerable':   true,
+            'configurable': false });
+
+        Object.defineProperty(this, 'decoded', {
+            'get':          function() { return raw; }, // decoded value getter
             'enumerable':   true,
             'configurable': false });
 
@@ -820,34 +831,105 @@
     };
     util.inherits(RouteWildcardParameter, RouteParameter);
 
+    /* RouteTrailingSlash {prototype}                           - route trailing slash part
+     *
+     * RouteTrailingSlash.prototype.constructor {function}
+     *      @optional {boolean}                                 - optional
+     */
+    var RouteTrailingSlash = function(optional) {
+        // accessors
+
+        Object.defineProperty(this, 'optional', {
+            'get':          function() { return optional; }, // optional getter
+            'enumerable':   true,
+            'configurable': false });
+    };
+
+    /* PathSubpath {prototype}                          - path subpath part
+     *
+     * PathSubpath.prototype.constructor {function}
+     *      @raw {string|undefined}                     - raw value
+     *      [@decoded] {string|undefined}               - url decoded value
+     *
+     * PathSubpath.prototype.raw {string}               - get raw value
+     *
+     * PathSubpath.prototype.encoded {string}           - get encoded value
+     *
+     * PathSubpath.prototype.decoded {string}           - get decoded value
+     */
+    var PathSubpath = function(raw, decoded) {
+        if (decoded == undefined && raw != undefined) { decoded = decodeURIComponent(raw); }
+        if (decoded != undefined && raw == undefined) { raw = encodeURIComponent(decoded); }
+
+        // accessors
+
+        Object.defineProperty(this, 'raw', {
+            'get':          function() { return raw; }, // raw value getter
+            'enumerable':   true,
+            'configurable': false });
+
+        Object.defineProperty(this, 'encoded', {
+            'get':          function() { return raw; }, // encoded value getter
+            'enumerable':   true,
+            'configurable': false });
+
+        Object.defineProperty(this, 'decoded', {
+            'get':          function() { return decoded; }, // decoded value getter
+            'enumerable':   true,
+            'configurable': false });
+    };
+
+    /* PathTrailingSlash {prototype}                            - path trailing slash part
+     *
+     * PathTrailingSlash.prototype.constructor {function}
+     */
+    var PathTrailingSlash = function() {};
+
     /*
      * parse {object}
      */
     var parse = {}; // parsing
 
     /*
-     * parse.route {function}                                   - parse an expression into subroutes
-     *      @expression {string}                                - route expression
-     *      [@decode] {boolean|undefined}                       - url decode expression subroutes
-     *      return {array<RouteSubpath|RouteParameter>}         - parts of the route
+     * parse.route {function}                                               - parse an expression into subroutes
+     *      @expression {string}                                            - route expression
+     *      [@decode] {boolean|undefined}                                   - url decode expression subroutes
+     *      return {array<RouteSubpath|RouteParameter|RouteTrailingSlash>}  - parts of the route
      */
     parse.route = function(expression, decode) {
-        var last, // last character
-            collision; // first parameter collision name;
-
-        var names = {}; // parameter name counts
-
         expression = expression.trim();
 
-        last = expression.length - 1;
-        if (expression.charAt(last) === EXPRESSION_SYMBOLS.DELINEATOR) { expression = expression.substring(0, last); }
-        if (expression.charAt(0)    === EXPRESSION_SYMBOLS.DELINEATOR) { expression = expression.substring(1); }
+        // inspect expression for trailing slash symbols
+        var expressionHasOptionalTrailingSlash = false;
+        var expressionHasTrailingSlash = false;
+        if ( // optional trailing slash
+                expression.substr(-EXPRESSION_SYMBOLS.OPTIONAL_TRAILING_SLASH.length) ===
+                EXPRESSION_SYMBOLS.OPTIONAL_TRAILING_SLASH
+            ) {
+                expressionHasOptionalTrailingSlash = true;
+
+                // remove optional trailing slash symbol
+                expression = expression.slice(0, -EXPRESSION_SYMBOLS.OPTIONAL_TRAILING_SLASH.length);
+        } else if ( // trailing slash
+                expression.substr(-EXPRESSION_SYMBOLS.TRAILING_SLASH.length) ===
+                EXPRESSION_SYMBOLS.TRAILING_SLASH
+            ) {
+                expressionHasTrailingSlash = true;
+
+                // remove trailing slash symbol
+                expression = expression.slice(0, -EXPRESSION_SYMBOLS.TRAILING_SLASH.length);
+        }
+
+        if (expression.charAt(0) === EXPRESSION_SYMBOLS.DELINEATOR) { expression = expression.substring(1); }
+
+        var collision,  // first parameter collision name
+            names = {}; // parameter name counts
 
         var subroutes = expression.split(EXPRESSION_SYMBOLS.DELINEATOR);
         subroutes.forEach(function(subroute, index, subroutes) { // parameters
             var part;
             if (subroute.charAt(0) === EXPRESSION_SYMBOLS.PARAMETER) { // parameter
-                last = subroute.length - 1;
+                var last = subroute.length - 1;
 
                 var wildcard    = subroute.charAt(last) === EXPRESSION_SYMBOLS.WILDCARD_PARAMETER;
                 var name        = wildcard ? subroute.substring(1, last) : subroute.substring(1);
@@ -860,7 +942,7 @@
                 if (wildcard && index == subroutes.length - 1)  { part = new RouteWildcardParameter(name); }
                 else                                            { part = new RouteParameter(name); }
             } else { // path part
-                if (decode) { part = new RouteSubpath(decodeURIComponent(subroute), subroute); }
+                if (decode) { part = new RouteSubpath(undefined /* decoded subroute */, subroute); }
                 else        { part = new RouteSubpath(subroute); }
             }
 
@@ -872,13 +954,16 @@
                 "Route '" + expression + "' contains " + names[collision] + " parts named '" + collision + "'");
         }
 
+        if      (expressionHasOptionalTrailingSlash)    { subroutes.push(new RouteTrailingSlash(true)); }
+        else if (expressionHasTrailingSlash)            { subroutes.push(new RouteTrailingSlash(false)); }
+
         return subroutes;
     };
 
     /*
-     * parse.path {function}        - parse url encoded path into subpaths
-     *      @pathname {string}      - url encoded path
-     *      return {array<string>}  - parts of the path
+     * parse.path {function}                                    - parse url encoded path into subpaths
+     *      @pathname {string}                                  - url encoded path
+     *      return {array<PathSubpath|PathTrailingSlash>}       - parts of the path
      */
     parse.path = function(pathname) {
         var cachePath = pathname;
@@ -890,14 +975,26 @@
 
         pathname = pathname.trim();
 
-        var last = pathname.length - 1;
-        if (pathname.charAt(last) === PATH_SYMBOLS.DELINEATOR) { pathname = pathname.substring(0, last); }
-        if (pathname.charAt(0)    === PATH_SYMBOLS.DELINEATOR) { pathname = pathname.substring(1); }
+        // inspect path for trailing slash symbol
+        var pathnameHasTrailingSlash = false;
+        if ( // trailing slash
+                pathname.substr(-PATH_SYMBOLS.TRAILING_SLASH.length) ===
+                PATH_SYMBOLS.TRAILING_SLASH
+            ) {
+                pathnameHasTrailingSlash = true;
+
+                // remove trailing slash symbol
+                pathname = pathname.slice(0, -PATH_SYMBOLS.TRAILING_SLASH.length);
+        }
+
+        if (pathname.charAt(0) === PATH_SYMBOLS.DELINEATOR) { pathname = pathname.substring(1); }
 
         var subpaths = [];
         pathname.split(PATH_SYMBOLS.DELINEATOR).forEach(function(subpath) {
-            subpaths.push(decodeURIComponent(subpath));
+            subpaths.push(new PathSubpath(subpath));
         });
+
+        if (pathnameHasTrailingSlash) { subpaths.push(new PathTrailingSlash()); }
 
         // cache parsed path
         cacheData = subpaths;
@@ -908,15 +1005,33 @@
     parse.path.cache = undefined; // parsed path cache
 
     /*
-     * match {function}                                             - match subroutes and subpaths
-     *      @subroutes {array<RouteSubpath|RouteParameter>}         - parts of the route
-     *      @subpaths {array<string>}                               - url decoded parts of the path
-     *      [@ignoreCase {boolean|undefined}]                       - case insensitive matching
-     *      return {object<string|array<string>>|undefined}         - route arguments as name value pairs, \
-     *                                                                  undefined if no match
+     * match {function}                                                         - match subroutes and subpaths
+     *      @subroutes {array<RouteSubpath|RouteParameter|RouteTrailingSlash>}  - parts of the route
+     *      @subpaths {array<PathSubpath|PathTrailingSlash>}                    - url decoded parts of the path
+     *      [@ignoreCase {boolean|undefined}]                                   - case insensitive matching
+     *      return {object<string|array<string>>|undefined}                     - route arguments as name value pairs,\
+     *                                                                              undefined if no match
      */
     var match = function(subroutes, subpaths, ignoreCase) {
         var args = {};
+
+        // match trailing slash
+        var lastSubroute    = subroutes[subroutes.length - 1];
+        var lastSubpath     = subpaths[subpaths.length - 1];
+        var routeHasTrailingSlash = lastSubroute instanceof RouteTrailingSlash;
+        var pathHasTrailingSlash =  lastSubpath  instanceof PathTrailingSlash;
+        if (routeHasTrailingSlash) {                                        // route trailing slash
+            var routeTrailingSlash = lastSubroute;
+            if (!routeTrailingSlash.optional && !pathHasTrailingSlash) {    // no path trailing slash
+                return;                                                     // match unsuccessful
+            }
+        } else {                        // no route trailing slash
+            if (pathHasTrailingSlash) { // path trailing slashmatch unsuccessful
+                return;                 // match unsuccessful
+            }
+        }
+        if (routeHasTrailingSlash) { subroutes = subroutes.slice(0, -1); }  // clone subroutes sans trailing
+        if (pathHasTrailingSlash)  { subpaths = subpaths.slice(0, -1); }    // clone subpaths sans trailing
 
         var wildcard;
         var index,
@@ -927,39 +1042,47 @@
 
             if (subroute == undefined) { return; } // match unsuccessful
             else if (subroute instanceof RouteSubpath) { // path part
-                if (ignoreCase) { // case insensitive match
-                    if (subroute.raw.toLowerCase() === subpath.toLowerCase())   { continue; }   // continue matching
-                    else                                                        { return; }     // match unsuccessful
-                } else { // case sensitive match
-                    if (subroute.raw === subpath)   { continue; }   // continue matching
-                    else                            { return; }     // match unsuccessful
-                }
+                if (subpath instanceof PathSubpath) {
+                    if (ignoreCase) { // case insensitive match
+                        if (subroute.decoded.toLowerCase() === subpath.decoded.toLowerCase()) { continue; } // continue
+                        else                                                                { return; } // unsuccessful
+                    } else { // case sensitive match
+                        if (subroute.decoded === subpath.decoded)   { continue; }   // continue matching
+                        else                                        { return; }     // match unsuccessful
+                    }
+                } else { return; } // match unsuccessful
             } else if (subroute instanceof RouteParameter) { // parameter
-                if (subroute instanceof RouteWildcardParameter) { // wildcard parameter
-                    wildcard = subroute.name; // wildcard parameter name
-                    break; // end matching
-                } else { // paramter
-                    args[subroute.name] = decodeURIComponent(subpath); // store argument
-                    continue; // continue matching
-                }
+                if (subpath instanceof PathSubpath) {
+                    if (subroute instanceof RouteWildcardParameter) { // wildcard parameter
+                        wildcard = subroute.name; // wildcard parameter name
+                        break; // end matching
+                    } else { // parameter
+                        args[subroute.name] = subpath.decoded; // store argument
+                        continue; // continue matching
+                    }
+                } else { return; } // match unsuccessful
             } else { break; } // end matching
         }
 
         if (wildcard != undefined) { // resolve wildcard parameter, store argument
-            args[wildcard] = subpaths.slice(index).map(function(subpath) { return decodeURIComponent(subpath); });
+            args[wildcard] = subpaths.slice(index)
+                .filter(function(subpath) { return subpath instanceof PathSubpath; })
+                .map(   function(subpath) { return subpath.decoded; });
         } else if (index != subroutes.length) { return; } // no match
 
         return args; // match
     };
 
     /*
-    * compose {function}                                            - compose path from subroutes
-    *       @subroutes {array<RouteSubpath|RouteParameter>}         - parts of the route
-    *       [@arguments] {object<string|array<string>>}             - route arguments as name value pairs
-    *       return {string}                                         - url encoded path                                                                  character
+    * compose {function}                                                        - compose path from subroutes
+    *       @subroutes {array<RouteSubpath|RouteParameter|RouteTrailingPath>}   - parts of the route
+    *       [@arguments] {object<string|array<string>>}                         - route arguments as name value pairs
+    *       return {string}                                                     - url encoded path                                                                  character
     */
     var compose = function(subroutes, args) {
         args = args || {};
+
+        var appendTrailingSlash = false;
 
         var subpaths = [];
         subroutes.forEach(function(subroute) {
@@ -976,10 +1099,14 @@
                 } else { // parameter
                     subpaths.push(encodeURIComponent(String(argument))); // string argument
                 }
+            } else if (subroute instanceof RouteTrailingSlash) { // trailing slash
+                appendTrailingSlash = !subroute.optional;
             }
         });
 
         var pathname = subpaths.join(PATH_SYMBOLS.DELINEATOR);
+        if (appendTrailingSlash) { pathname += PATH_SYMBOLS.TRAILING_SLASH; }
+
         if (pathname.charAt(0) !== PATH_SYMBOLS.DELINEATOR) { pathname = PATH_SYMBOLS.DELINEATOR + pathname; }
 
         return pathname;
@@ -1002,6 +1129,10 @@
                     sourceCode +=   'parameter.wildcard(' + stringifiedSubrouteName + '); ';
                 } else { // parameter
                     sourceCode +=   'parameter(' + stringifiedSubrouteName + '); ';
+                }
+            } else if (subroute instanceof RouteTrailingSlash) { // trailing slash
+                if (!subroute.optional) {
+                    sourceCode +=   'trailingSlash(); ';
                 }
             }
         });
@@ -1034,12 +1165,21 @@
                                         '} else { ' +
                                             "subpaths.push(encodeURIComponent(String(value || ''))); " +
                                         '} ' +
-                                    '}; ';
+                                    '}; ' +
+
+                                    'var appendTrailingSlash = false; ' +
+                                    'var trailingSlash = function() { appendTrailingSlash = true; }; ';
                                     // ...
     compose.sourceCode.END =        "var pathname = subpaths.join('" + PATH_SYMBOLS.DELINEATOR + "'); " +
+
+                                    'if (appendTrailingSlash) { ' +
+                                        "pathname += '" + PATH_SYMBOLS.TRAILING_SLASH + "'; " +
+                                    '} ' +
+
                                     "if (pathname.charAt(0) !== '" + PATH_SYMBOLS.DELINEATOR + "') { " +
                                         "pathname = '" + PATH_SYMBOLS.DELINEATOR + "' + pathname; " +
-                                    "} " +
+                                    '} ' +
+
                                     'return pathname; ' +
                                 '}';
 

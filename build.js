@@ -174,21 +174,21 @@ while (true) { // iterate over each example section
     sourceExampleSectionSource.unshift('');
 
     var sourceExampleSectionSourceTitleLine = 'Example: ' + exampleSectionTitle;
-    sourceExampleSectionSourceTitleLine = '//// ' + sourceExampleSectionSourceTitleLine + ' ' +
-         Array(Math.max(sourceLineLength - sourceExampleSectionSourceTitleLine.length - 8, 0)).join('/');
+    sourceExampleSectionSourceTitleLine = '**** ' + sourceExampleSectionSourceTitleLine + ' ' +
+         Array(Math.max(sourceLineLength - sourceExampleSectionSourceTitleLine.length - 9, 0)).join('*');
     sourceExampleSectionSource.unshift(sourceExampleSectionSourceTitleLine);
 
     sourceExampleSectionSource.unshift('');
     sourceExampleSectionSource.push('');
     sourceExampleSectionSource.push('');
-    sourceExampleSectionSource = sourceExampleSectionSource.join('\n * ');
+    sourceExampleSectionSource = sourceExampleSectionSource.join('\n // ');
 
-    if (firstExampleSection) { sourceExampleSource += Array(sourceLineLength - 1).join('*'); }
+    if (firstExampleSection) { sourceExampleSource += Array(sourceLineLength - 2).join('*') + '/'; }
     sourceExampleSource += sourceExampleSectionSource;
 
     firstExampleSection = false;
 }
-sourceExampleSource += '\n ' + Array(sourceLineLength - 2).join('*');
+sourceExampleSource += '\n //' + Array(sourceLineLength - 4).join('*');
 
 // prepend example sections to the readme
 var readmeExamplesMarkdown = '';
