@@ -1,3 +1,7 @@
+/*******************************************************************************
+Unit Tests
+*******************************************************************************/
+
 /*
  * run {function}                   - run the unit tests
  *      module.exports.run
@@ -560,5 +564,5 @@ var run = function(orouter) { 'use strict'; // run tests
 module.exports.run = run;
 
 // run the tests on the original source
-var orouter = require('../src/origin-router.js');
+var orouter = require('./src/router.js');
 run(orouter);

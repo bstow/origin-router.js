@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.4.1
+Version:        1.4.2
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -1302,7 +1302,12 @@ Description:    A Node.js module for routing HTTP requests by URL path
      *
      * PathTrailingSlash.prototype.constructor {function}
      */
-    var PathTrailingSlash = function() {};
+    var PathTrailingSlash = function() {
+        // singleton
+        if (PathTrailingSlash.prototype.__singletonInstance__) {
+            return PathTrailingSlash.prototype.__singletonInstance__;
+        } else { PathTrailingSlash.prototype.__singletonInstance__ = this; }
+    };
 
     /*
      * parse {object}
@@ -1380,9 +1385,9 @@ Description:    A Node.js module for routing HTTP requests by URL path
     };
 
     /*
-     * parse.path {function}                                    - parse url encoded path into subpaths
-     *      @pathname {string}                                  - url encoded path
-     *      return {array<PathSubpath|PathTrailingSlash>}       - parts of the path
+     * parse.path {function}                                        - parse url encoded path into subpaths
+     *      @pathname {string}                                      - url encoded path
+     *      return {array<string|PathSubpath|PathTrailingSlash>}    - parts of the path
      */
     parse.path = function(pathname) {
         var cachePath = pathname;
@@ -1410,7 +1415,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
 
         var subpaths = [];
         pathname.split(PATH_SYMBOLS.DELINEATOR).forEach(function(subpath) {
-            subpaths.push(new PathSubpath(subpath));
+            subpaths.push(decodeURIComponent(subpath)); // performance optimization for `new PathSubpath(subpath)`
         });
 
         if (pathnameHasTrailingSlash) { subpaths.push(new PathTrailingSlash()); }
@@ -1426,7 +1431,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
     /*
      * match {function}                                                         - match subroutes and subpaths
      *      @subroutes {array<RouteSubpath|RouteParameter|RouteTrailingSlash>}  - parts of the route
-     *      @subpaths {array<PathSubpath|PathTrailingSlash>}                    - url decoded parts of the path
+     *      @subpaths {array<string|PathSubpath|PathTrailingSlash>}             - url decoded parts of the path
      *      [@ignoreCase {boolean|undefined}]                                   - case insensitive matching
      *      return {object<string|array<string>>|undefined}                     - route arguments as name value pairs,\
      *                                                                              undefined if no match
@@ -1438,7 +1443,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
         var lastSubroute    = subroutes[subroutes.length - 1];
         var lastSubpath     = subpaths[subpaths.length - 1];
         var routeHasTrailingSlash = lastSubroute instanceof RouteTrailingSlash;
-        var pathHasTrailingSlash =  lastSubpath  instanceof PathTrailingSlash;
+        var pathHasTrailingSlash  = lastSubpath  instanceof PathTrailingSlash;
         if (routeHasTrailingSlash) {                                        // route trailing slash
             var routeTrailingSlash = lastSubroute;
             if (!routeTrailingSlash.optional && !pathHasTrailingSlash) {    // no path trailing slash
@@ -1449,34 +1454,37 @@ Description:    A Node.js module for routing HTTP requests by URL path
                 return;                 // match unsuccessful
             }
         }
-        if (routeHasTrailingSlash) { subroutes = subroutes.slice(0, -1); }  // clone subroutes sans trailing
-        if (pathHasTrailingSlash)  { subpaths = subpaths.slice(0, -1); }    // clone subpaths sans trailing
+        var subpathsLength  = subpaths.length - (pathHasTrailingSlash ? 1 : 0);
+        var subroutesLength = subroutes.length - (routeHasTrailingSlash ? 1 : 0);
 
-        var wildcard;
-        var index,
-            length = subpaths.length;
-        for (index = 0; index < length; index++) { // traverse subpaths and subroutes
-            var subroute    = subroutes[index],
+        var wildcard,
+            index;
+        for (index = 0; index < subpathsLength; index++) { // traverse subpaths and subroutes
+            var subroute    = index < subroutesLength ? subroutes[index] : undefined,
                 subpath     = subpaths[index];
 
             if (subroute == undefined) { return; } // match unsuccessful
             else if (subroute instanceof RouteSubpath) { // path part
-                if (subpath instanceof PathSubpath) {
-                    if (ignoreCase) { // case insensitive match
-                        if (subroute.decoded.toLowerCase() === subpath.decoded.toLowerCase()) { continue; } // continue
-                        else                                                                { return; } // unsuccessful
-                    } else { // case sensitive match
-                        if (subroute.decoded === subpath.decoded)   { continue; }   // continue matching
-                        else                                        { return; }     // match unsuccessful
+                var subpathIsString = typeof subpath === 'string' || subpath instanceof String;
+                if (subpathIsString || subpath instanceof PathSubpath) {
+                    if (ignoreCase) {   // case insensitive match
+                        if (subroute.decoded.toLowerCase() ===
+                                (subpathIsString ? subpath : subpath.decoded).toLowerCase()) { continue; } // continue
+                        else                                                               { return; } // unsuccessful
+                    } else {            // case sensitive match
+                        if (subroute.decoded ===
+                            (subpathIsString ? subpath : subpath.decoded)) { continue; } // continue matching
+                        else                                               { return; }   // match unsuccessful
                     }
                 } else { return; } // match unsuccessful
             } else if (subroute instanceof RouteParameter) { // parameter
-                if (subpath instanceof PathSubpath) {
+                var subpathIsString = typeof subpath === 'string' || subpath instanceof String;
+                if (subpathIsString || subpath instanceof PathSubpath) {
                     if (subroute instanceof RouteWildcardParameter) { // wildcard parameter
                         wildcard = subroute.name; // wildcard parameter name
                         break; // end matching
                     } else { // parameter
-                        args[subroute.name] = subpath.decoded; // store argument
+                        args[subroute.name] = subpathIsString ? subpath : subpath.decoded; // store argument
                         continue; // continue matching
                     }
                 } else { return; } // match unsuccessful
@@ -1484,10 +1492,9 @@ Description:    A Node.js module for routing HTTP requests by URL path
         }
 
         if (wildcard != undefined) { // resolve wildcard parameter, store argument
-            args[wildcard] = subpaths.slice(index)
-                .filter(function(subpath) { return subpath instanceof PathSubpath; })
-                .map(   function(subpath) { return subpath.decoded; });
-        } else if (index != subroutes.length) { return; } // no match
+            args[wildcard] = subpaths.slice(index, subpathsLength).map(function(subpath) {
+                return (typeof subpath === 'string' || subpath instanceof String) ? subpath : subpath.decoded; });
+        } else if (index != subroutesLength) { return; } // no match
 
         return args; // match
     };

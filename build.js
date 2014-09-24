@@ -7,11 +7,11 @@ var fs      = require('fs'),
 var package = require('./package.json'); // package
 
 // unit tests
-var tests = require(path.join(__dirname, 'tests'));
+var test = require(path.join(__dirname, 'test.js'));
 
-// include original source (./src/origin-router.js) to ensure it compiles
-orouter = require(path.join(__dirname, 'src', package.main));
-tests.run(orouter); // run tests against the compiled source
+// include original source (./src/router.js) to ensure it compiles
+orouter = require(path.join(__dirname, './src/router.js'));
+test.run(orouter); // run test against the compiled source
 
 // generated text for ./readme.md
 var readmeMarkdown = '';
@@ -54,8 +54,8 @@ var licenseSource = '/' + Array(sourceLineLength).join('*') + '\n' +
     licenseText.trim() + '\n' +
     Array(sourceLineLength).join('*') + '/\n';
 
-// ./src/origin-router.js source code
-var originalSource = fs.readFileSync(path.join(__dirname, 'src', package.main), 'utf8');
+// ./src/router.js source code
+var originalSource = fs.readFileSync(path.join(__dirname, './src/router.js'), 'utf8');
 
 // clean up original source and embed info
 originalSource = originalSource.trim();
@@ -205,13 +205,13 @@ var source = [licenseSource, originalSource].join('\n'); // assemble source code
 // ./origin-router.js source code
 fs.writeFileSync(path.join(__dirname, package.main), source, 'utf8'); // write
 orouter = require(path.join(__dirname, package.main)); // ensure compilation
-tests.run(orouter); // run tests against the compiled source
+test.run(orouter); // run tests against the compiled source
 
 // ./builds/v.{version number}.js source code
 if (parseInt(package.version.split('.')[2]) === 0) { // only write X.X.0 versioned builds
     fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), source, 'utf8'); // write
     orouter = require(path.join(__dirname, './builds/v.' + package.version + '.js')); // ensure compilation
-    tests.run(orouter); // run tests against the compiled source
+    test.run(orouter); // run tests against the compiled source
 }
 
 // ./example.js source code
