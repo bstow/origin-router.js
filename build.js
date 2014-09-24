@@ -3,11 +3,21 @@ var fs      = require('fs'),
     path    = require('path'),
     orouter;
 
+var log; // console.log holder
+
 // ./package.json as an object
 var package = require('./package.json'); // package
 
 // unit tests
 var test = require(path.join(__dirname, 'test.js'));
+
+// benchmarks
+// trap output of ./benchmark.js
+var log = console.log;
+var benchmarkOut = []; console.log = function() { benchmarkOut.push([].slice.call(arguments)); };
+// run ./benchmark.js
+require(path.join(__dirname, './benchmark.js'));
+console.log = log; // restore output
 
 // include original source (./src/router.js) to ensure it compiles
 orouter = require(path.join(__dirname, './src/router.js'));
@@ -218,7 +228,7 @@ if (parseInt(package.version.split('.')[2]) === 0) { // only write X.X.0 version
 fs.writeFileSync(path.join(__dirname, './example.js'), exampleSource, 'utf8'); // write
 
 // trap output of ./example.js to test for the expected output (./resources/example-output.txt)
-var log = console.log;
+log = console.log;
 var exampleOut = []; console.log = function() { exampleOut.push([].slice.call(arguments)); };
 // capture the server used in ./example.js upon creation to allow for it to be shutdown afterwards
 var httpCreateServer = http.createServer;

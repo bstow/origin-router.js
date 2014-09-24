@@ -83,8 +83,6 @@ for (var i = 0; i < TOTAL_URL_PATHS; i++) {
         });
 }
 
-console.log('Running Benchmarks ...\n');
-
 // benchmarks
 var startTime = Date.now();
 var requestsLength = requests.length;
