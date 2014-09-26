@@ -19,6 +19,9 @@ var benchmarkOut = []; console.log = function() { benchmarkOut.push([].slice.cal
 require(path.join(__dirname, './benchmark.js'));
 console.log = log; // restore output
 
+// benchmark output
+var benchmarkOutput = benchmarkOut.join('\n');
+
 // include original source (./src/router.js) to ensure it compiles
 orouter = require(path.join(__dirname, './src/router.js'));
 test.run(orouter); // run test against the compiled source

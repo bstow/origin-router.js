@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.4.3
+Version:        1.4.4
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -428,19 +428,6 @@ Description:    A Node.js module for routing HTTP requests by URL path
         url     = require('url'),
         util    = require('util');
 
-    var EXPRESSION_SYMBOLS = { // expression symbols
-        'PARAMETER':                ':',
-        'WILDCARD_PARAMETER':       '*',
-        'DELINEATOR':               '/',
-        'TRAILING_SLASH':           '/',
-        'OPTIONAL_TRAILING_SLASH':  '/?'
-    };
-
-    var PATH_SYMBOLS = { // path symbols
-        'DELINEATOR':       '/',
-        'TRAILING_SLASH':   '/'
-    };
-
     var HTTP = { // http methods
         'METHODS': [
             'GET',
@@ -452,6 +439,39 @@ Description:    A Node.js module for routing HTTP requests by URL path
             'TRACE',
             'CONNECT'
         ]};
+
+    var PATH_SYMBOLS = { // path symbols
+        'DELINEATOR':       '/',
+        'TRAILING_SLASH':   '/'
+    };
+
+    var EXPRESSION_SYMBOLS = { // expression symbols
+                'PARAMETER':                ':',
+                'WILDCARD_PARAMETER':       '*',
+                'PARAMETER_CONSTRAINT':     ['<', '>'],
+                'DELINEATOR':               '/',
+                'TRAILING_SLASH':           '/',
+                'OPTIONAL_TRAILING_SLASH':  '/?'
+            },
+        EXPRESSION_PARAMETER_REGEX = new RegExp( // expression parameter part regex
+                '^[' + EXPRESSION_SYMBOLS.PARAMETER + ']\\s*' +                         // parameter symbol
+                '([^' + [                                                               // parameter name
+                    EXPRESSION_SYMBOLS.PARAMETER,
+                    EXPRESSION_SYMBOLS.WILDCARD_PARAMETER,
+                    EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[0], EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[1],
+                    EXPRESSION_SYMBOLS.DELINEATOR,
+                    EXPRESSION_SYMBOLS.TRAILING_SLASH,
+                    EXPRESSION_SYMBOLS.OPTIONAL_TRAILING_SLASH
+                ].join('') + ']+?)\\s*' +
+                '(?:([' + EXPRESSION_SYMBOLS.WILDCARD_PARAMETER + '])+)?\\s*' +         // wildcard parameter symbol
+                '(?:[' + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[0] + ']' +             // parameter constraint symbol
+                    '([^' +                                                             // parameter constraint regex
+                        EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[0] + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[1] +
+                    ']*)' +
+                '[' + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[1] + '])?\\s*' +
+                '(?:([' + EXPRESSION_SYMBOLS.WILDCARD_PARAMETER + '])*)?\\s*' +         // wildcard parameter symbol
+                '(?:(?=[' + EXPRESSION_SYMBOLS.TRAILING_SLASH + '])|$)'
+            );
 
     var argumentMaps = {}; // argument mappings for functions with variable parameters
 
@@ -1227,14 +1247,31 @@ Description:    A Node.js module for routing HTTP requests by URL path
      *
      * RouteParameter.prototype.constructor {function}
      *      @name {string}                              - name
+     *      @constraint {RegExp}                        - constraint
+     *
+     * RouteParameter.prototype.constructor {function}
+     *      @parameter {RouteParameter}                 - route parameter part
      *
      * RouteParameter.prototype.name {string}           - get name
+     *
+     * RouteParameter.prototype.constraint {RegExp}     - get constraint
      */
-    var RouteParameter = function(name) {
+    var RouteParameter = function(name, constraint) {
+        if (arguments[0] instanceof RouteParameter) {
+            var parameter   = arguments[0];
+            name            = parameter.name;
+            constraint      = parameter.constraint;
+        }
+
         // accessors
 
         Object.defineProperty(this, 'name', {
-            'get':          function() { return name; }, // name getter
+            'get':          function() { return name; },        // name getter
+            'enumerable':   true,
+            'configurable': false });
+
+        Object.defineProperty(this, 'constraint', {
+            'get':          function() { return constraint; },  // constraint getter
             'enumerable':   true,
             'configurable': false });
     };
@@ -1244,9 +1281,10 @@ Description:    A Node.js module for routing HTTP requests by URL path
      *
      * RouteWildcardParameter.prototype.constructor {function}
      *      @name {string}                                      - name
+     *      @constraint {RegExp}                                - constraint
      */
-    var RouteWildcardParameter = function(name) {
-        RouteParameter.call(this, name);
+    var RouteWildcardParameter = function(name, constraint) {
+        RouteParameter.call(this, name, constraint);
     };
     util.inherits(RouteWildcardParameter, RouteParameter);
 
@@ -1344,40 +1382,74 @@ Description:    A Node.js module for routing HTTP requests by URL path
                 expression = expression.slice(0, -EXPRESSION_SYMBOLS.TRAILING_SLASH.length);
         }
 
-        if (expression.charAt(0) === EXPRESSION_SYMBOLS.DELINEATOR) { expression = expression.substring(1); }
+        // inspect subroutes
+        var subroutes       = [],   // subroute objects
+            index           = 0,    // current index
+            next,                   // next index
+            character,              // current character
+            subroute,               // current subroute
+            names           = {},   // parameter names
+            collision,              // parameter name collision
+            count           = 0;    // parameter count
+        while (index != -1 && index < expression.length) {
+            var character = expression.charAt(index);
+            var part = undefined;
 
-        var collision,  // first parameter collision name
-            names = {}; // parameter name counts
+            if (character === EXPRESSION_SYMBOLS.DELINEATOR) { next = index + 1; }  // delineator
+            else if (character === EXPRESSION_SYMBOLS.PARAMETER) {                  // parameter
+                count++;
 
-        var subroutes = expression.split(EXPRESSION_SYMBOLS.DELINEATOR);
-        subroutes.forEach(function(subroute, index, subroutes) { // parameters
-            var part;
-            if (subroute.charAt(0) === EXPRESSION_SYMBOLS.PARAMETER) { // parameter
-                var last = subroute.length - 1;
+                var match = expression.substring(index).match(EXPRESSION_PARAMETER_REGEX);
+                if (match == undefined) {
+                    var ORDINAL_SUFFIXES    = ["th", "st", "nd", "rd", "th"],
+                        parameterOrdinal    = String(count) +
+                            (ORDINAL_SUFFIXES[(count - 20) % 10] || ORDINAL_SUFFIXES[count] || ORDINAL_SUFFIXES[0]);
 
-                var wildcard    = subroute.charAt(last) === EXPRESSION_SYMBOLS.WILDCARD_PARAMETER;
-                var name        = wildcard ? subroute.substring(1, last) : subroute.substring(1);
+                    throw new Error('The ' + parameterOrdinal +
+                        " parameter of route '" + expression + "' can not be interpretted");
+                }
+
+                subroute        = match[0];
+                var name        = match[1],
+                    wildcard    = match[2] != undefined || match[4] != undefined,
+                    constraint  = match[3];
+
+                next = index + subroute.length;
 
                 if (name in names) { // parameter name collision
                     if (collision == undefined) { collision = name; }
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
-                if (wildcard && index == subroutes.length - 1)  { part = new RouteWildcardParameter(name); }
-                else                                            { part = new RouteParameter(name); }
-            } else { // path part
+                if (wildcard) { part = new RouteWildcardParameter(name, constraint); }
+                else          { part = new RouteParameter(name, constraint); }
+            } else {                                                                // path part
+                next = expression.indexOf(EXPRESSION_SYMBOLS.DELINEATOR, index);
+
+                subroute = expression.substring(index, next !== -1 ? next : undefined);
+
                 if (decode) { part = new RouteSubpath(undefined /* decoded subroute */, subroute); }
                 else        { part = new RouteSubpath(subroute); }
             }
 
-            subroutes[index] = part;
-        });
+            if (part != undefined) { subroutes.push(part); }
+            index = next;
+        }
 
         if (collision != undefined) {
             throw new Error(
                 "Route '" + expression + "' contains " + names[collision] + " parts named '" + collision + "'");
         }
 
+        // validate subroutes structure
+        var last = subroutes.length - 1;
+        subroutes.forEach(function(subroute, index) {
+            if (subroute instanceof RouteWildcardParameter && index !== last) { // not last wildcard parameter
+                subroutes[index] = new RouteParameter(subroute);                // upcast wildcard param to param
+            }
+        });
+
+        // append trailing slash subroute
         if      (expressionHasOptionalTrailingSlash)    { subroutes.push(new RouteTrailingSlash(true)); }
         else if (expressionHasTrailingSlash)            { subroutes.push(new RouteTrailingSlash(false)); }
 
@@ -1414,9 +1486,11 @@ Description:    A Node.js module for routing HTTP requests by URL path
         if (pathname.charAt(0) === PATH_SYMBOLS.DELINEATOR) { pathname = pathname.substring(1); }
 
         var subpaths = [];
-        pathname.split(PATH_SYMBOLS.DELINEATOR).forEach(function(subpath) {
-            subpaths.push(decodeURIComponent(subpath)); // performance optimization for `new PathSubpath(subpath)`
-        });
+        if (pathname.length) {
+            pathname.split(PATH_SYMBOLS.DELINEATOR).forEach(function(subpath) {
+                subpaths.push(decodeURIComponent(subpath)); // performance optimization for `new PathSubpath(subpath)`
+            });
+        }
 
         if (pathnameHasTrailingSlash) { subpaths.push(new PathTrailingSlash()); }
 

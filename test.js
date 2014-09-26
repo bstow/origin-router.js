@@ -1,5 +1,5 @@
 /*******************************************************************************
-Unit Tests
+Description:    Unit testing script
 *******************************************************************************/
 
 /*
@@ -45,9 +45,9 @@ var run = function(orouter) { 'use strict'; // run tests
     var firstRoute = router.add("/%27 path%20'/:param1/:param2/:param3*/?",             // 1st route
         {'name': 'route 1', 'encoded': true}, onRoute);
     // 2.
-    router.add("/' path '/:param1/:param2/", {'name': 'route 2'}).on('route', onRoute); // 2nd route
+    router.add("/' path '/:  param1 /:param2/", {'name': 'route 2'}).on('route', onRoute); // 2nd route
     // 3.
-    router.add(':param1*/:param2/path/?', {'name': 'route 3'}).on('route', onRoute);    // 3rd route
+    router.add(': param1 **/:param2/path/?', {'name': 'route 3'}).on('route', onRoute);    // 3rd route
     // 4.                                      '/ path' ...
     var fourthRoute = new orouter.Route('%2F%20path/file.ext',                          // 4th route
         {'name': 'route 4', 'method': ['delete ', 'Get'], 'ignoreCase': true, 'encoded': true});
@@ -167,6 +167,11 @@ var run = function(orouter) { 'use strict'; // run tests
             return (err instanceof Error && /addGet/.test(err.message));
         },
         'Adding a route instance with an HTTP method-specific add method did not fail as expected');
+    // 8.
+    assert.throws(
+        function()    { router.add('/path/:p1/: p?2 /:p2/:p1/:p2', {'method': 'get'}); },
+        function(err) { return (err instanceof Error && /2nd/.test(err.message)); },
+        'Defining a route with duplicate parameters did not fail as expected');
 
     // add duplicate route name
     // 1.
