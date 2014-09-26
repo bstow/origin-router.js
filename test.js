@@ -45,7 +45,7 @@ var run = function(orouter) { 'use strict'; // run tests
     var firstRoute = router.add("/%27 path%20'/:param1/:param2/:param3*/?",             // 1st route
         {'name': 'route 1', 'encoded': true}, onRoute);
     // 2.
-    router.add("/' path '/:  param1 /:param2/", {'name': 'route 2'}).on('route', onRoute); // 2nd route
+    router.add("/' path '/:  param1 <> /:param2/", {'name': 'route 2'}).on('route', onRoute); // 2nd route
     // 3.
     router.add(': param1 **/:param2/path/?', {'name': 'route 3'}).on('route', onRoute);    // 3rd route
     // 4.                                      '/ path' ...

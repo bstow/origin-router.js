@@ -1002,6 +1002,11 @@
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
+                try { constraint =
+                    (constraint != undefined && constraint.length) ? new RegExp(constraint) : undefined;
+                } catch (error) { // stderr beautification
+                    throw error
+                }
                 if (wildcard) { part = new RouteWildcardParameter(name, constraint); }
                 else          { part = new RouteParameter(name, constraint); }
             } else {                                                                // path part
