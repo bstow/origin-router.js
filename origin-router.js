@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.4.5
+Version:        1.4.6
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -1382,7 +1382,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
                 expression = expression.slice(0, -EXPRESSION_SYMBOLS.TRAILING_SLASH.length);
         }
 
-        // inspect subroutes
+        // inspect and collect subroutes
         var subroutes       = [],   // subroute objects
             index           = 0,    // current index
             next,                   // next index
@@ -1488,13 +1488,27 @@ Description:    A Node.js module for routing HTTP requests by URL path
                 pathname = pathname.slice(0, -PATH_SYMBOLS.TRAILING_SLASH.length);
         }
 
-        if (pathname.charAt(0) === PATH_SYMBOLS.DELINEATOR) { pathname = pathname.substring(1); }
+        // inspect and collect subpaths
+        var subpaths        = [],   // subpath objects
+            index           = 0,    // current index
+            next,                   // next index
+            character,              // current character
+            subpath;                // current subpath
+        while (index != -1 && index < pathname.length) {
+            var character = pathname.charAt(index);
+            var part = undefined;
 
-        var subpaths = [];
-        if (pathname.length) {
-            pathname.split(PATH_SYMBOLS.DELINEATOR).forEach(function(subpath) {
-                subpaths.push(decodeURIComponent(subpath)); // performance optimization for `new PathSubpath(subpath)`
-            });
+            if (character === PATH_SYMBOLS.DELINEATOR) { next = index + 1; }    // delineator
+            else {                                                              // path part
+                next = pathname.indexOf(PATH_SYMBOLS.DELINEATOR, index);
+
+                subpath = pathname.substring(index, next !== -1 ? next : undefined);
+
+                part = decodeURIComponent(subpath); // performance optimization for `new PathSubpath(subpath)`
+            }
+
+            if (part != undefined) { subpaths.push(part); }
+            index = next;
         }
 
         if (pathnameHasTrailingSlash) { subpaths.push(new PathTrailingSlash()); }
