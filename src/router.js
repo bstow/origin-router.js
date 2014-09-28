@@ -832,7 +832,7 @@
      */
     RouteSubpath.prototype.toString = function() {
         return this.decoded;
-    }
+    };
 
     /* RouteParameter {prototype}                       - route parameter part
      *
@@ -962,7 +962,7 @@
      */
     PathSubpath.prototype.toString = function() {
         return this.decoded;
-    }
+    };
 
     /* PathTrailingSlash {prototype}                            - path trailing slash part
      *
