@@ -42,10 +42,10 @@ var run = function(orouter) { 'use strict'; // run tests
 
     // add routes
     // 1.                   //  "' path '" ...
-    var firstRoute = router.add("/%27 path%20'/:param1/:param2/:param3*/?",             // 1st route
+    var firstRoute = router.add("/%27 path%20'/:param1/: param2 /:param3<^[^X?]*$> * /?",             // 1st route
         {'name': 'route 1', 'encoded': true}, onRoute);
     // 2.
-    router.add("/' path '///:  param1 <> /:param2/", {'name': 'route 2'}).on('route', onRoute); // 2nd route
+    router.add("/' path '///:  param1 <> /:param2<2$>/", {'name': 'route 2'}).on('route', onRoute); // 2nd route
     // 3.
     router.add(': param1 **/:param2/path/?', {'name': 'route 3'}).on('route', onRoute);    // 3rd route
     // 4.                                      '/ path' ...
@@ -195,6 +195,7 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result, firstRoute, 'The returned route did not match the 1st route');
 
     // route path with 1st route
+    // 1.
     router.route("/'%20path%20%27/%20arg 1/%27arg2%27/ /./../a/r/g%20/3",
         {'method': 'POST', 'request': 'route 1 request', 'response': 'route 1 response', 'data': 'route 1 data'});
     assert.strictEqual(result.name, 'route 1', 'The path did not match the 1st route');
@@ -209,8 +210,17 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result.response, 'route 1 response',
         'The route response received did not match the route response submitted');
     assert.strictEqual(result.data, 'route 1 data', 'The route data received did not match the route data submitted');
+    // 1.
+    router.route("/'%20path%20%27/%20arg 1/%27arg2%27/ /./../a/r/gXXXX%20/3XXXX",
+        {'method': 'POST', 'request': 'route 1 request', 'response': 'route 1 response', 'data': 'route 1 data'});
+    assert.strictEqual(result.name, undefined, 'The path matched the 1st route');
+    // 1.
+    router.route("/'%20path%20%27/%20arg 1/%27arg2%27/a/r/g/3%3f",
+        {'method': 'POST', 'request': 'route 1 request', 'response': 'route 1 response', 'data': 'route 1 data'});
+    assert.strictEqual(result.name, undefined, 'The path matched the 1st route');
 
     // route paths with 2nd route
+    // 2.
     var callback;
     callback = {'result': {}};
     router.route("%27 path%20'/arg1/arg2/",
@@ -219,6 +229,7 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(callback.result.args.param1, 'arg1',
         "The path's 1st argument to the 2nd route did not match the expected value");
     callback = {'result': {}};
+    // 2.
     router.route("' path '/arg1/arg2/", {'method': 'get'},
         function(event) { callback.result = {'name': this.name, 'args': event.arguments}; });
     assert.strictEqual(result.name, 'route 2', 'The path did not match the 2nd route');
@@ -234,16 +245,22 @@ var run = function(orouter) { 'use strict'; // run tests
     router.route("' path '/arg1/arg2", {'method': 'get'},
         function(event) { callback.result = {'name': this.name, 'args': event.arguments}; });
     assert.notEqual(result.name, 'route 2', 'The path matched the 2nd route');
+    // 2.
+    router.route("%27 path%20'/arg1/arg3/");
+    assert.strictEqual(result.name, undefined, 'The path matched the 2nd route');
 
     // route path with 3rd route
+    // 3.
     router.route('/arg1/arg2/path/');
     assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
     assert.strictEqual(result.args.param1, 'arg1',
         "The path's 1st argument to the 3rd route did not match the expected value");
     assert.strictEqual(result.args.param2, 'arg2',
         "The path's 2nd argument to the 3rd route did not match the expected value");
+    // 3.
     router.route(url.parse('http://host.domain:3000/arg1/arg2/path/'));
     assert.strictEqual(result.name, 'route 3', 'The path did not match the 3rd route');
+    // 3.
     request = new http.IncomingMessage();
     request.url = 'http://host.domain:3000/arg1/arg2/path/';
     router.route(request, response);
@@ -251,7 +268,7 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result.request, request, 'The request was not properly passed');
 
     // route path with 4th route
-    router.route('/%2f%20path/file.EXT', {'method': 'Delete'});
+    router.route('/%2f%20PAth/file.EXT', {'method': 'Delete'});
     assert.strictEqual(result.name, 'route 4', 'The path did not match the 4th route');
 
     // route path with 5th route
@@ -376,6 +393,14 @@ var run = function(orouter) { 'use strict'; // run tests
     result = result({'param1': 'arg1', 'param2': 'arg2'});
     assert.strictEqual(result, '/' + encodeURIComponent("' path '") + '/arg1/arg2/',
         'The path generated using the 2nd route did not match the expected value');
+    // 2.
+    /*assert.throws(
+        function() { router.path('route 2', {'param1': 'arg1', 'param2': 'arg3'}); },
+        function(err) {
+            return (err instanceof Error &&
+                /route\s2/.test(err.message) && /param2/.test(err.message) && /arg3/.test(err.message));
+        },
+        'The path generated using the 2nd route and an invalid argument did not fail as expected');*/
 
     // generate path with 3rd route
     // 3.
@@ -514,7 +539,7 @@ var run = function(orouter) { 'use strict'; // run tests
     // caching
     var cacheRouter = new orouter.Router();
 
-    cacheRouter.add('odd', '/odd/:1/:2/:3/:4/?', onRoute);
+    cacheRouter.add('odd',  '/odd/:1/:2/:3/:4/?',  onRoute);
     cacheRouter.add('even', '/even/:1/:2/:3/:4/?', onRoute);
 
     var constraintFive = 0;
