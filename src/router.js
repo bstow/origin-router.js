@@ -659,8 +659,21 @@
                 args = match(subroutes, subpaths, ignoreCase); // match arguments
 
                 if (args != undefined) { // match
-                    var constraints = route.constraints; // constraints
+                    var constraints;
+
+                    // validate expression constraints
+                    constraints = {};
+                    subroutes.forEach(function(subroute) {
+                        if (subroute instanceof RouteParameter && subroute.constraint != undefined) {
+                            constraints[subroute.name] = subroute.constraint;
+                        }
+                    });
+                    if (validate(args, constraints) !== true) { // invalid per expression constraints
+                        args = undefined; // no match
+                    }
+
                     // validate constraints
+                    constraints = route.constraints;
                     if (constraints !== undefined && validate(args, constraints) !== true) { // invalid per constraints
                         args = undefined; // no match
                     }
@@ -867,19 +880,6 @@
             'configurable': false });
     };
 
-    /*
-     * RouteParameter.prototype.match {function}        - match subpath
-     *      @subpath {string|PathSubpath}               - part of the path
-     *      return {boolean}                            - true if match, false if no match
-     */
-    RouteParameter.prototype.match = function(subpath) {
-        if (this.constraint == undefined) { return true; } // no constraint, match successful
-        else {
-            this.constraint.lastIndex = 0;
-            return this.constraint.test(String(subpath)); // match constraint regex
-        }
-    };
-
     /* RouteWildcardParameter {prototype}                       - route wildcard parameter part
      *      inherits {RouteParameter}
      *
@@ -891,22 +891,6 @@
         RouteParameter.call(this, name, constraint);
     };
     util.inherits(RouteWildcardParameter, RouteParameter);
-
-    /*
-     * RouteWildcardParameter.prototype.match {function}                - match subpaths
-     *      @subpaths {string|PathSubpath|array<string|PathSubpath>}    - parts of the path
-     *      return {boolean}                                            - true if match, false if no match
-     */
-    RouteWildcardParameter.prototype.match = function(subpaths) {
-        if (this.constraint == undefined) { return true; } // no constraint, match successful
-        else {
-            var constraint = this.constraint;
-            return (!util.isArray(subpaths) ? [subpaths] : subpaths).every(function(subpath) {
-                constraint.lastIndex = 0;
-                return constraint.test(String(subpath)); // match constraint regex
-            });
-        }
-    };
 
     /* RouteTrailingSlash {prototype}                           - route trailing slash part
      *
@@ -1028,8 +1012,8 @@
                 count++;
 
                 EXPRESSION_PARAMETER_REGEX.lastIndex = 0;
-                var match = expression.substring(index).match(EXPRESSION_PARAMETER_REGEX);
-                if (match == undefined) {
+                var expressionMatch = expression.substring(index).match(EXPRESSION_PARAMETER_REGEX);
+                if (expressionMatch == undefined) {
                     var ORDINAL_SUFFIXES    = ["th", "st", "nd", "rd", "th"],
                         parameterOrdinal    = String(count) +
                             (ORDINAL_SUFFIXES[(count - 20) % 10] || ORDINAL_SUFFIXES[count] || ORDINAL_SUFFIXES[0]);
@@ -1038,10 +1022,10 @@
                         " parameter of route '" + expression + "' can not be interpretted");
                 }
 
-                subroute        = match[0];
-                var name        = match[1],
-                    wildcard    = match[2] != undefined || match[4] != undefined,
-                    constraint  = match[3];
+                subroute        = expressionMatch[0];
+                var name        = expressionMatch[1],
+                    wildcard    = expressionMatch[2] != undefined || expressionMatch[4] != undefined,
+                    constraint  = expressionMatch[3];
 
                 next = index + subroute.length;
 
@@ -1180,7 +1164,7 @@
         var subpathsLength  = subpaths.length  - (pathHasTrailingSlash  ? 1 : 0);
         var subroutesLength = subroutes.length - (routeHasTrailingSlash ? 1 : 0);
 
-        var wildcardSubroute,
+        var wildcardParameterSubroute, // wildcard parameter subroute
             index;
         for (index = 0; index < subpathsLength; index++) { // traverse subpaths and subroutes
             var subroute    = index < subroutesLength ? subroutes[index] : undefined,
@@ -1200,10 +1184,9 @@
             } else if (subroute instanceof RouteParameter) { // parameter
                 if (typeof subpath === 'string' || subpath instanceof String || subpath instanceof PathSubpath) {
                     if (subroute instanceof RouteWildcardParameter) { // wildcard parameter
-                        wildcardSubroute = subroute;
+                        wildcardParameterSubroute = subroute;
                         break; // end matching
                     } else { // parameter
-                        if (subroute.match(subpath) !== true) { return; } // match unsuccessful
                         args[subroute.name] = String(subpath); // store argument
                         continue; // continue matching
                     }
@@ -1211,10 +1194,9 @@
             } else { break; } // end matching
         }
 
-        if (wildcardSubroute != undefined) { // resolve wildcard parameter, store argument
+        if (wildcardParameterSubroute != undefined) { // resolve wildcard parameter, store argument
             var wildcardSubpaths = subpaths.slice(index, subpathsLength);
-            if (wildcardSubroute.match(wildcardSubpaths) !== true) { return; } // match unsuccessful
-            args[wildcardSubroute.name] = wildcardSubpaths.map(function(subpath) { return String(subpath); })
+            args[wildcardParameterSubroute.name] = wildcardSubpaths.map(function(subpath) { return String(subpath); });
         } else if (index != subroutesLength) { return; } // no match
 
         return args; // match
