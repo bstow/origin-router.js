@@ -220,13 +220,6 @@ fs.writeFileSync(path.join(__dirname, package.main), source, 'utf8'); // write
 orouter = require(path.join(__dirname, package.main)); // ensure compilation
 test.run(orouter); // run tests against the compiled source
 
-// ./builds/v.{version number}.js source code
-if (parseInt(package.version.split('.')[2]) === 0) { // only write X.X.0 versioned builds
-    fs.writeFileSync(path.join(__dirname, './builds/v.' + package.version + '.js'), source, 'utf8'); // write
-    orouter = require(path.join(__dirname, './builds/v.' + package.version + '.js')); // ensure compilation
-    test.run(orouter); // run tests against the compiled source
-}
-
 // ./example.js source code
 fs.writeFileSync(path.join(__dirname, './example.js'), exampleSource, 'utf8'); // write
 
