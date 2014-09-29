@@ -42,7 +42,7 @@ var run = function(orouter) { 'use strict'; // run tests
 
     // add routes
     // 1.                   //  "' path '" ...
-    var firstRoute = router.add("/%27 path%20'/:param1/: param2 /:param3<^[^X?]*$> * /?",             // 1st route
+    var firstRoute = router.add("/%27 path%20'/:param1/: param2 /:param3<^[^X?0]*$> * /?",             // 1st route
         {'name': 'route 1', 'encoded': true}, onRoute);
     // 2.
     router.add("/' path '///:  param1 <> /:param2<2$>/", {'name': 'route 2'}).on('route', onRoute); // 2nd route
@@ -382,6 +382,14 @@ var run = function(orouter) { 'use strict'; // run tests
     result = result({'param1': 'arg/1', 'param2': 'arg2', 'param3': ['arg ', 3]});
     assert.strictEqual(result, "/%27 path%20'/arg%2F1/arg2/arg%20/3",
         'The path generated using the 1st route did not match the expected value');
+    // 1.
+    assert.throws(
+        function() { router.path('route 1', {'param1': 'arg/1', 'param2': 'arg2', 'param3': ['arg ', 1000]}); },
+        function(err) {
+            return (err instanceof Error &&
+                /route\s1/.test(err.message) && /param3/.test(err.message) && /1000/.test(err.message));
+        },
+        'The path generated using the 1st route and an invalid argument did not fail as expected');
 
     // generate path with 2nd route
     // 2.
@@ -394,13 +402,13 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result, '/' + encodeURIComponent("' path '") + '/arg1/arg2/',
         'The path generated using the 2nd route did not match the expected value');
     // 2.
-    /*assert.throws(
+    assert.throws(
         function() { router.path('route 2', {'param1': 'arg1', 'param2': 'arg3'}); },
         function(err) {
             return (err instanceof Error &&
                 /route\s2/.test(err.message) && /param2/.test(err.message) && /arg3/.test(err.message));
         },
-        'The path generated using the 2nd route and an invalid argument did not fail as expected');*/
+        'The path generated using the 2nd route and an invalid argument did not fail as expected');
 
     // generate path with 3rd route
     // 3.

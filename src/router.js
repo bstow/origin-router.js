@@ -246,16 +246,43 @@
 
         var subroutes = this.__subroutes__;
 
+        var constraints,
+            valid;
+
+        // validate parameter constraint expressions
+        constraints = {};
+        subroutes.forEach(function(subroute) {
+            if (subroute instanceof RouteParameter && subroute.constraint != undefined) {
+                constraints[subroute.name] = subroute.constraint;
+            }
+        });
+        valid = validate(args, constraints);
+        if (valid !== true) { // invalid
+            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid parameter constraint expression
+                var key     = Object.keys(valid)[0],
+                    value   = valid[key];
+                throw new Error(
+                    "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
+                    "because the '" + key + "' argument value of '" + value + "' is invalid " +
+                    "according to the route's '" + key + "' parameter constraint expression");
+            } else { // invalid constraints
+                throw new Error(
+                    "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
+                    "because one or more of the arguments are invalid according to the route's " +
+                    "parameter constraint expressions");
+            }
+        }
+
         // validate constraints
-        var constraints     = this.constraints;
-        var valid           = validate(args, constraints);
+        constraints = this.constraints;
+        valid       = validate(args, constraints);
         if (valid !== true) { // invalid
             if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid parameter constraint
                 var key     = Object.keys(valid)[0],
                     value   = valid[key];
                 throw new Error(
                     "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
-                    "because the " + "'" + key + "' argument value of '" + value + "' is invalid " +
+                    "because the '" + key + "' argument value of '" + value + "' is invalid " +
                     "according to the route's constraints");
             } else { // invalid constraints
                 throw new Error(
@@ -661,14 +688,14 @@
                 if (args != undefined) { // match
                     var constraints;
 
-                    // validate expression constraints
+                    // validate parameter constraint expressions
                     constraints = {};
                     subroutes.forEach(function(subroute) {
                         if (subroute instanceof RouteParameter && subroute.constraint != undefined) {
                             constraints[subroute.name] = subroute.constraint;
                         }
                     });
-                    if (validate(args, constraints) !== true) { // invalid per expression constraints
+                    if (validate(args, constraints) !== true) { // invalid per parameter constraint expressions
                         args = undefined; // no match
                     }
 
@@ -1034,9 +1061,9 @@
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
-                try { constraint = // compile regex constraint
+                try { constraint = // compile regex parameter constraint
                     (constraint != undefined && constraint.length) ? new RegExp(constraint) : undefined;
-                } catch (error) { // invalid regex stderr beautification
+                } catch (error) { // invalid regex parameter constraint stderr beautification
                     throw error
                 }
 
