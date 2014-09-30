@@ -386,7 +386,7 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.throws(
         function() { router.path('route 1', {'param1': 'arg/1', 'param2': 'arg2', 'param3': ['arg ', 1000]}); },
         function(err) {
-            return (err instanceof Error &&
+            return (err instanceof Error && /inline/.test(err.message) &&
                 /route\s1/.test(err.message) && /param3/.test(err.message) && /1000/.test(err.message));
         },
         'The path generated using the 1st route and an invalid argument did not fail as expected');
@@ -405,7 +405,7 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.throws(
         function() { router.path('route 2', {'param1': 'arg1', 'param2': 'arg3'}); },
         function(err) {
-            return (err instanceof Error &&
+            return (err instanceof Error && /inline/.test(err.message) &&
                 /route\s2/.test(err.message) && /param2/.test(err.message) && /arg3/.test(err.message));
         },
         'The path generated using the 2nd route and an invalid argument did not fail as expected');

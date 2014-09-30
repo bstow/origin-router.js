@@ -45,8 +45,8 @@
                     EXPRESSION_SYMBOLS.OPTIONAL_TRAILING_SLASH
                 ].join('') + ']+?)\\s*' +
                 '(?:([' + EXPRESSION_SYMBOLS.WILDCARD_PARAMETER + '])+)?\\s*' +         // wildcard parameter symbol
-                '(?:[' + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[0] + ']' +             // parameter constraint symbol
-                    '([^' +                                                             // parameter constraint regex
+                '(?:[' + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[0] + ']' +             // inline constraint symbol
+                    '([^' +                                                             // inline constraint regex
                         EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[0] + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[1] +
                     ']*)' +
                 '[' + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[1] + '])?\\s*' +
@@ -249,7 +249,7 @@
         var constraints,
             valid;
 
-        // validate parameter constraint expressions
+        // validate inline constraints
         constraints = {};
         subroutes.forEach(function(subroute) {
             if (subroute instanceof RouteParameter && subroute.constraint != undefined) {
@@ -258,18 +258,17 @@
         });
         valid = validate(args, constraints);
         if (valid !== true) { // invalid
-            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid parameter constraint expression
+            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid inline constraint
                 var key     = Object.keys(valid)[0],
                     value   = valid[key];
                 throw new Error(
                     "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
                     "because the '" + key + "' argument value of '" + value + "' is invalid " +
-                    "according to the route's '" + key + "' parameter constraint expression");
-            } else { // invalid constraints
+                    "according to the route's '" + key + "' inline constraint");
+            } else { // invalid inline constraints
                 throw new Error(
                     "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
-                    "because one or more of the arguments are invalid according to the route's " +
-                    "parameter constraint expressions");
+                    "because one or more of the arguments are invalid according to the route's inline constraints");
             }
         }
 
@@ -277,7 +276,7 @@
         constraints = this.constraints;
         valid       = validate(args, constraints);
         if (valid !== true) { // invalid
-            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid parameter constraint
+            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid constraint
                 var key     = Object.keys(valid)[0],
                     value   = valid[key];
                 throw new Error(
@@ -688,14 +687,14 @@
                 if (args != undefined) { // match
                     var constraints;
 
-                    // validate parameter constraint expressions
+                    // validate inline constraints
                     constraints = {};
                     subroutes.forEach(function(subroute) {
                         if (subroute instanceof RouteParameter && subroute.constraint != undefined) {
                             constraints[subroute.name] = subroute.constraint;
                         }
                     });
-                    if (validate(args, constraints) !== true) { // invalid per parameter constraint expressions
+                    if (validate(args, constraints) !== true) { // invalid per inline constraints
                         args = undefined; // no match
                     }
 
@@ -1061,9 +1060,9 @@
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
-                try { constraint = // compile regex parameter constraint
+                try { constraint = // compile inline constraint
                     (constraint != undefined && constraint.length) ? new RegExp(constraint) : undefined;
-                } catch (error) { // invalid regex parameter constraint stderr beautification
+                } catch (error) { // invalid inline constraint stderr beautification
                     throw error
                 }
 

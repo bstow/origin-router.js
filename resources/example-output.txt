@@ -19,6 +19,7 @@ I have a white,orange,gray cat
 
 Applying Constraints to Route Parameters
 ----------------------------------------
+I have 12 blue and red fish
 I have 2 poodles
 I have two persian cats
 

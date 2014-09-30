@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.4.11
+Version:        1.5.0
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -89,7 +89,19 @@ Description:    A Node.js module for routing HTTP requests by URL path
  // 
  // **** Example: Applying Constraints to Route Parameters *********************
  // 
- // // add a route with a parameter and corresponding parameter constraints ...
+ // // add a route with parameters and corresponding inline regex constraints ...
+ // router.add('/fish/:count<^[0-9]+$>/:colors*<^[a-z]+$>', // total must be numeric
+ //     function(event) {                                   // colors must be lower case
+ //         console.log('I have ' + event.arguments.count +
+ //             ' ' + event.arguments.colors.join(' and ') + ' fish');
+ //     });
+ // 
+ // router.route('/fish/12/blue/red');     // outputs 'I have 12 blue and red fish'
+ // router.route('/fish/twelve/blue/RED'); // outputs nothing because
+ //                                        // the count is not numeric and
+ //                                        // one of the colors is upper cased
+ // 
+ // // add a route with parameters and a corresponding constraints function ...
  // router.add('/dogs/:count/:breed', // count must be more than 0 to match
  //     {'constraints': function(args) { return parseInt(args.count) > 0; }},
  //     function(event) {
@@ -464,8 +476,8 @@ Description:    A Node.js module for routing HTTP requests by URL path
                     EXPRESSION_SYMBOLS.OPTIONAL_TRAILING_SLASH
                 ].join('') + ']+?)\\s*' +
                 '(?:([' + EXPRESSION_SYMBOLS.WILDCARD_PARAMETER + '])+)?\\s*' +         // wildcard parameter symbol
-                '(?:[' + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[0] + ']' +             // parameter constraint symbol
-                    '([^' +                                                             // parameter constraint regex
+                '(?:[' + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[0] + ']' +             // inline constraint symbol
+                    '([^' +                                                             // inline constraint regex
                         EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[0] + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[1] +
                     ']*)' +
                 '[' + EXPRESSION_SYMBOLS.PARAMETER_CONSTRAINT[1] + '])?\\s*' +
@@ -668,7 +680,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
         var constraints,
             valid;
 
-        // validate parameter constraint expressions
+        // validate inline constraints
         constraints = {};
         subroutes.forEach(function(subroute) {
             if (subroute instanceof RouteParameter && subroute.constraint != undefined) {
@@ -677,18 +689,17 @@ Description:    A Node.js module for routing HTTP requests by URL path
         });
         valid = validate(args, constraints);
         if (valid !== true) { // invalid
-            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid parameter constraint expression
+            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid inline constraint
                 var key     = Object.keys(valid)[0],
                     value   = valid[key];
                 throw new Error(
                     "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
                     "because the '" + key + "' argument value of '" + value + "' is invalid " +
-                    "according to the route's '" + key + "' parameter constraint expression");
-            } else { // invalid constraints
+                    "according to the route's '" + key + "' inline constraint");
+            } else { // invalid inline constraints
                 throw new Error(
                     "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
-                    "because one or more of the arguments are invalid according to the route's " +
-                    "parameter constraint expressions");
+                    "because one or more of the arguments are invalid according to the route's inline constraints");
             }
         }
 
@@ -696,7 +707,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
         constraints = this.constraints;
         valid       = validate(args, constraints);
         if (valid !== true) { // invalid
-            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid parameter constraint
+            if (typeof valid !== 'boolean' && !(valid instanceof Boolean)) { // invalid constraint
                 var key     = Object.keys(valid)[0],
                     value   = valid[key];
                 throw new Error(
@@ -1107,14 +1118,14 @@ Description:    A Node.js module for routing HTTP requests by URL path
                 if (args != undefined) { // match
                     var constraints;
 
-                    // validate parameter constraint expressions
+                    // validate inline constraints
                     constraints = {};
                     subroutes.forEach(function(subroute) {
                         if (subroute instanceof RouteParameter && subroute.constraint != undefined) {
                             constraints[subroute.name] = subroute.constraint;
                         }
                     });
-                    if (validate(args, constraints) !== true) { // invalid per parameter constraint expressions
+                    if (validate(args, constraints) !== true) { // invalid per inline constraints
                         args = undefined; // no match
                     }
 
@@ -1480,9 +1491,9 @@ Description:    A Node.js module for routing HTTP requests by URL path
                     names[name]++; // increment parameter name count
                 } else { names[name] = 1; }
 
-                try { constraint = // compile regex parameter constraint
+                try { constraint = // compile inline constraint
                     (constraint != undefined && constraint.length) ? new RegExp(constraint) : undefined;
-                } catch (error) { // invalid regex parameter constraint stderr beautification
+                } catch (error) { // invalid inline constraint stderr beautification
                     throw error
                 }
 

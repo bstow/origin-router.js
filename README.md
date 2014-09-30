@@ -29,6 +29,8 @@ A Node.js module for routing HTTP requests by URL path
 <br>
 <br>
 
+
+
 ###[Examples of Using the Router](#examples)
 * [Example: Setting Up the Router](#example_setup)
 * [Example: Routing URL Paths](#example_routing)
@@ -44,6 +46,7 @@ A Node.js module for routing HTTP requests by URL path
 * [Example: About URL Encoding](#example_url_encoding)
 * [Example: Mapping URL Paths to Filepaths](#example_filepaths)
 * [Example: Using with an HTTP Server](#example_http_server)
+
 
 <br>
 
@@ -175,7 +178,19 @@ router.route('/calico/cat/white/orange/gray'); // outputs
 
 ####<a name='example_parameter_constraints'>Example: Applying Constraints to Route Parameters
 ```javascript
-// add a route with a parameter and corresponding parameter constraints ...
+// add a route with parameters and corresponding inline regex constraints ...
+router.add('/fish/:count<^[0-9]+$>/:colors*<^[a-z]+$>', // total must be numeric
+    function(event) {                                   // colors must be lower case
+        console.log('I have ' + event.arguments.count +
+            ' ' + event.arguments.colors.join(' and ') + ' fish');
+    });
+
+router.route('/fish/12/blue/red');     // outputs 'I have 12 blue and red fish'
+router.route('/fish/twelve/blue/RED'); // outputs nothing because
+                                       // the count is not numeric and
+                                       // one of the colors is upper cased
+
+// add a route with parameters and a corresponding constraints function ...
 router.add('/dogs/:count/:breed', // count must be more than 0 to match
     {'constraints': function(args) { return parseInt(args.count) > 0; }},
     function(event) {
@@ -563,7 +578,7 @@ Add a route to the router to serve in matching and routing URL paths.
 
 <a name='router_add__expression'></a>The `expression` `String` defines if and how the route will match a URL path.  A simple example of a route expression is `'/my/path'` which will route any similar URL path such as `'/my/path'` or `'my/path'` (route matching disregards a leading `/` character).
 
-A route expression can match variable subpaths by specifying a route parameter denoted by a `:` character.  As an example, the route expression `'/my/:foo/path'` has a parameter `foo` and will route the URL paths `'/my/bar/path'` and `'/my/qux/path'`.  In each case, the `foo` parameter will respectively have an argument value of `'bar'` and '`qux`'.  Furthermore, a route wildcard parameter can be specified which will match multiple subpaths at the end of a URL path.  A route wildcard parameter must be specified at the end of the route expression with a `*` appended to the end of the parameter name. For example, the expression `'/my/:foo/:bar*'` has a wildcard parameter `bar` at the end and will match the URL path`'my/lorem/ipsum/dolor/sit/amet'`.  In this case, the `foo` parameter will have an argument value of `'lorem'` and the `bar` wildcard parameter will have an argument value of `['ipsum', 'dolor', 'sit', 'amet']` (wildcard parameter matches are split into an `Array` of subpaths). (See [Example: Routes with Parameters](#example_parameters) and [Example: Routes with Wildcard Parameters](#example_wildcard_parameters))
+A route expression can match variable subpaths by specifying one or more route parameters.  Each parameter is denoted by a `:` character followed by the parameter name of 1 or more non-special characters (not `:`, `*`, `<`, `>`, `/` or `?`).  As an example, the route expression `'/my/:foo/path'` has a parameter `foo` and will route the URL paths `'/my/bar/path'` and `'/my/qux/path'`.  In each case, the `foo` parameter will have an argument value of `'bar'` and '`qux`' respectively. (See [Example: Routes with Parameters](#example_parameters))  Furthermore, a route wildcard parameter can be specified that will match multiple subpaths at the end of a URL path.  A route wildcard parameter must be specified at the end of the route expression with a `*` appended to the end of the parameter name. For example, the expression `'/my/:foo/:bar*'` has a wildcard parameter `bar` at the end and will match the URL path`'my/lorem/ipsum/dolor/sit/amet'`.  In this case, the `foo` parameter will have an argument value of `'lorem'` and the `bar` wildcard parameter will have an argument value of `['ipsum', 'dolor', 'sit', 'amet']` (wildcard parameter matches are split into an `Array` of subpaths). (See [Example: Routes with Wildcard Parameters](#example_wildcard_parameters))  Lastly, each route parameter can optionally be specified with an inline constraint that restricts what subpaths the route parameter will match according to a regular expression. An inline constraint is specified after the corresponding route parameter name and is denoted by a `<` and `>` character before and after the constraint regular expression.  As an example, the route expression `/:foo<^[a-z]+$>/qux/:bar*<^[0-9]$>` contains 2 constrained parameters, `foo` and `bar`, and will route the URL path `/lorem/qux/1/2/3` but will **not** route the URL path `/123/qux/1/2/ipsum`. (See [Example: Applying Constraints to Route Parameters](#example_parameter_constraints))
 
 By default, a route expression will not match a URL path with a trailing `/` character.  For example, the route expression `/my/:path*` will **not** match `/my/trailing/slash/`.  To enable a route expression to match only URL paths with a trailing `/` character, a `/` character should be specified at the end of the route expression.  For example, the route expression `/my/:path*/` will match `/my/trailing/slash/` but not `/my/omitted/trailing/slash`.  To enable a route expression to match both URL paths with and without a trailing `/` character, `/?` should be specified at the end of the route expression.  For example, the route expression `/my/path*/?` will match both `/my/trailing/slash/` and `/my/omitted/trailing/slash`. (See [Example: Handling Trailing Slashes](#example_trailing_slash))
 

@@ -125,16 +125,18 @@ readmeMarkdown += '<br>\n<br>\n\n';
 readmeMarkdown += documentationMarkdown;
 
 // examples
-var EXAMPLE_START_SECTION   = '@![example section <<]';
-var EXAMPLE_END_SECTION     = '@![>> example section]';
+var EXAMPLE_START_SECTION           = '@![example section <<]';
+var EXAMPLE_END_SECTION             = '@![>> example section]';
 
-var EXAMPLE_START_CLEAN   = '@![example clean <<]';
-var EXAMPLE_END_CLEAN     = '@![>> example clean]';
+var EXAMPLE_START_CLEAN             = '@![example clean <<]';
+var EXAMPLE_END_CLEAN               = '@![>> example clean]';
+
+var EXAMPLES_TOC_MARKDOWN_SECTION   = '@![examples toc]';
 
 // example source code to embed in source
 var sourceExampleSource = '';
 
-readmeTOCMarkdown += '###[Examples of Using the Router](#examples)\n';
+var readmeExamplesTOCMarkdown = '###[Examples of Using the Router](#examples)\n';
 
 var exampleStartSectionIndex    = 0,
     exampleEndSectionIndex      = 0,
@@ -179,7 +181,7 @@ while (true) { // iterate over each example section
         '```javascript\n' + exampleSectionSource + '\n```';
     readmeExampleSectionMarkdowns.push(readmeExampleSectionMarkdown);
 
-    readmeTOCMarkdown += '* [' + 'Example: ' + exampleSectionTitle + ']' +
+    readmeExamplesTOCMarkdown += '* [' + 'Example: ' + exampleSectionTitle + ']' +
         '(#' + 'example_' + exampleSectionIdentifier + ')' + '\n';
 
     // add the example section source code to the source code for reference
@@ -202,6 +204,9 @@ while (true) { // iterate over each example section
     firstExampleSection = false;
 }
 sourceExampleSource += '\n //' + Array(sourceLineLength - 4).join('*');
+
+// insert examples' table of contents into readme table of contents
+documentationTOCMarkdown = documentationTOCMarkdown.replace(EXAMPLES_TOC_MARKDOWN_SECTION, readmeExamplesTOCMarkdown);
 
 // prepend example sections to the readme
 var readmeExamplesMarkdown = '';
@@ -259,8 +264,6 @@ exampleOut.join('\n').split('\n').forEach(function(exampleOutputLine, lineNumber
 
 readmeIntroductionMarkdown = documentationIntroductionMarkdown;
 
-documentationTOCMarkdown = '\n<br>\n\n' + '###[Router Documentation](#documentation)\n' +
-    documentationTOCMarkdown;
 readmeTOCMarkdown += documentationTOCMarkdown;
 
 readmeMarkdown = (

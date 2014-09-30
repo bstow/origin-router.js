@@ -53,7 +53,19 @@ router.route('/calico/cat/white/orange/gray'); // outputs
 @![>> example section]
 
 @![example section <<] [parameter_constraints:Applying Constraints to Route Parameters]
-// add a route with a parameter and corresponding parameter constraints ...
+// add a route with parameters and corresponding inline regex constraints ...
+router.add('/fish/:count<^[0-9]+$>/:colors*<^[a-z]+$>', // total must be numeric
+    function(event) {                                   // colors must be lower case
+        console.log('I have ' + event.arguments.count +
+            ' ' + event.arguments.colors.join(' and ') + ' fish');
+    });
+
+router.route('/fish/12/blue/red');     // outputs 'I have 12 blue and red fish'
+router.route('/fish/twelve/blue/RED'); // outputs nothing because
+                                       // the count is not numeric and
+                                       // one of the colors is upper cased
+
+// add a route with parameters and a corresponding constraints function ...
 router.add('/dogs/:count/:breed', // count must be more than 0 to match
     {'constraints': function(args) { return parseInt(args.count) > 0; }},
     function(event) {
