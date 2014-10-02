@@ -42,20 +42,22 @@ var run = function(orouter) { 'use strict'; // run tests
 
     // add routes
     // 1.                   //  "' path '" ...
-    var firstRoute = router.add("/%27 path%20'/:param1/: param2 /:param3<^[^X?0]*$> * /?",             // 1st route
+    var firstRoute = router.add("/%27 path%20'/:param1/: param2 /:param3<^[^X?0]*$> * /?",          // 1st route
         {'name': 'route 1', 'encoded': true}, onRoute);
     // 2.
     router.add("/' path '///:  param1 <> /:param2<2$>/", {'name': 'route 2'}).on('route', onRoute); // 2nd route
     // 3.
-    router.add(': param1 **/:param2/path/?', {'name': 'route 3'}).on('route', onRoute);    // 3rd route
+    router.add(': param1 /:param2/path/?', {'name': 'route 3'}).on('route', onRoute);               // 3rd route
     // 4.                                      '/ path' ...
-    var fourthRoute = new orouter.Route('%2F%20path/file.ext',                          // 4th route
+    var fourthRoute = new orouter.Route('%2F%20path/file.ext',                                      // 4th route
         {'name': 'route 4', 'method': ['delete ', 'Get'], 'ignoreCase': true, 'encoded': true});
     assert.strictEqual(router.add(fourthRoute, onRoute), fourthRoute);
     // 5.
-    router.add('/', {'name': 'route 5'}, onRoute);                                      // 5th route
+    router.add('/', {'name': 'route 5'}, onRoute);                                                  // 5th route
     // 6.
-    router.add('/?', {'name': 'route 6'}, onRoute);                                     // 6th route
+    router.add('/?', {'name': 'route 6'}, onRoute);                                                 // 6th route
+    // 7.
+    router.add('/expression-only/:param1');                                                                // 7th route
 
     // add constrained routes
     var constraints;
@@ -172,6 +174,11 @@ var run = function(orouter) { 'use strict'; // run tests
         function()    { router.add('/path/:p1/: p?2 /:p2/:p1/:p2', {'method': 'get'}); },
         function(err) { return (err instanceof Error && /2nd/.test(err.message)); },
         'Defining a route with duplicate parameters did not fail as expected');
+    // 9.
+    assert.throws(
+        function() { router.add(': param1 **/:param2/path/?').on('route', onRoute); },
+        function(err) { return (err instanceof Error && /param1/.test(err.message) && /wildcard/.test(err.message)); },
+        'Defining a route with a wildcard parameter that is not last did not fail as expected');
 
     // add duplicate route name
     // 1.

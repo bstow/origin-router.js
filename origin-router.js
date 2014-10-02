@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.5.1
+Version:        1.5.2
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -924,14 +924,16 @@ Description:    A Node.js module for routing HTTP requests by URL path
         var route, name, expression, options, callback;
 
         var args = Array.prototype.slice.call(arguments);
-        if (args.length >= 1 && args[0] instanceof Route) {
-            route = args.shift();
-            if (args.length > 0 && args[0] instanceof Function) { callback = args.shift(); }
-        } else if (args.length >= 2) {
-            if ((typeof args[1] === 'string' || args[1] instanceof String))     { name      = args.shift(); }
-            expression = args.shift();
-            if (args.length > 0 && !(args[0] instanceof Function))              { options   = args.shift(); }
-            if (args.length > 0 && args[0] instanceof Function)                 { callback  = args.shift(); }
+        if (args.length >= 1) {
+            if (args[0] instanceof Route) {
+                route = args.shift();
+                if (args.length > 0 && args[0] instanceof Function) { callback = args.shift(); }
+            } else {
+                if ((typeof args[1] === 'string' || args[1] instanceof String))     { name      = args.shift(); }
+                expression = args.shift();
+                if (args.length > 0 && !(args[0] instanceof Function))              { options   = args.shift(); }
+                if (args.length > 0 && args[0] instanceof Function)                 { callback  = args.shift(); }
+            }
         }
         return {'route': route, 'name': name, 'expression': expression, 'options': options, 'callback': callback};
     };
@@ -1521,7 +1523,9 @@ Description:    A Node.js module for routing HTTP requests by URL path
         var last = subroutes.length - 1;
         subroutes.forEach(function(subroute, index) {
             if (subroute instanceof RouteWildcardParameter && index !== last) { // not last wildcard parameter
-                subroutes[index] = new RouteParameter(subroute);                // upcast wildcard param to param
+                throw new Error(
+                    "The '" + subroute.name + "' wildcard parameter " +
+                    "of route '" + expression + "' must be specified last");
             }
         });
 
