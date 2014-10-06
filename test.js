@@ -305,6 +305,8 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result.name, 'constrained route 4', 'The path did not match the 4th constrained route');
     router.routePost('/constraint/arg%201/2/arg 3/arg 5');
     assert.strictEqual(result.name, 'constrained route 4', 'The path did not match the 4th constrained route');
+    router.routePost('/constraint/arg%205/arg 2/arg 3/arg 5');
+    assert.strictEqual(result.fail, true, 'The path matched the 4th constrained route');
     // 5.
     router.routePost('/constraint/arg%201/arg 2/arg 3/arg 5/arg 6');
     assert.strictEqual(result.name, 'constrained route 5', 'The path did not match the 5th constrained route');

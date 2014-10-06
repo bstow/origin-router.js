@@ -1361,10 +1361,12 @@
                 return constraints(args) ? true : false; // validate
             } else { // validate arguments against constraints map
                 for (var name in constraints) { // iterate parameter names within constraints
-                    if (!(name in args)) { continue; } // no argument to validate
+                    if (!(name in args))        { continue; }   // no argument to validate
+                    if (!(name in constraints)) { continue; }   // no constraint to validate against
 
-                    var argument    = args[name],
-                        constraint  = constraints[name];
+                    var argument        = args[name],
+                        subarguments    = util.isArray(argument) ? argument : [argument],
+                        constraint      = constraints[name];
                     if (constraint instanceof Function) { // function
                         if (!constraint(argument)) { // invalid
                             var invalid     = {};
@@ -1372,38 +1374,21 @@
                             return invalid;
                         }
                     } if (constraint instanceof RegExp) { // regular expression
-                        if (util.isArray(argument)) { // array of strings wildcard parameter argument
-                            for (var i = 0, length = argument.length; i < length; i++) {
-                                var subargument = argument[i];
-                                try { constraint.lastIndex = 0; } catch (err) {} // potentially frozen
-                                if (!constraint.test(subargument)) { // invalid
-                                    var invalid     = {};
-                                    invalid[name]   = subargument;
-                                    return invalid;
-                                }
-                            }
-                        } else { // string parameter argument
+                        for (var i = 0, length = subarguments.length; i < length; i++) {
+                            var subargument = subarguments[i];
                             try { constraint.lastIndex = 0; } catch (err) {} // potentially frozen
-                            if (!constraint.test(argument)) { // invalid
+                            if (!constraint.test(subargument)) { // invalid
                                 var invalid     = {};
-                                invalid[name]   = argument;
+                                invalid[name]   = subargument;
                                 return invalid;
                             }
                         }
                     } else if (util.isArray(constraint)) { // array of strings
-                        if (util.isArray(argument)) { // array of strings wildcard parameter argument
-                            for (var i = 0, length = argument.length; i < length; i++) {
-                                var subargument = argument[i];
-                                if (constraint.indexOf(subargument) === -1) { // invalid
-                                    var invalid     = {};
-                                    invalid[name]   = subargument;
-                                    return invalid;
-                                }
-                            }
-                        } else { // string parameter argument
-                            if (constraint.indexOf(argument) === -1) { // invalid
+                        for (var i = 0, length = subarguments.length; i < length; i++) {
+                            var subargument = subarguments[i];
+                            if (constraint.indexOf(subargument) === -1) { // invalid
                                 var invalid     = {};
-                                invalid[name]   = argument;
+                                invalid[name]   = subargument;
                                 return invalid;
                             }
                         }
