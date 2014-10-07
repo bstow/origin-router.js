@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.5.3
+Version:        1.5.4
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -1466,8 +1466,13 @@ Description:    A Node.js module for routing HTTP requests by URL path
             var character = expression.charAt(index);
             var part = undefined;
 
-            if (character === EXPRESSION_SYMBOLS.DELINEATOR) { next = index + 1; }  // delineator
-            else if (character === EXPRESSION_SYMBOLS.PARAMETER) {                  // parameter
+            if (character === EXPRESSION_SYMBOLS.DELINEATOR) {                          // delineator
+                next = index + 1;
+
+                if (expression.charAt(next) === EXPRESSION_SYMBOLS.DELINEATOR || next >= expression.length) {
+                    part = new RouteSubpath(''); // matches '//'
+                }
+            } else if (character === EXPRESSION_SYMBOLS.PARAMETER) {                    // parameter
                 count++;
 
                 EXPRESSION_PARAMETER_REGEX.lastIndex = 0;
@@ -1573,8 +1578,13 @@ Description:    A Node.js module for routing HTTP requests by URL path
             var character = pathname.charAt(index);
             var part = undefined;
 
-            if (character === PATH_SYMBOLS.DELINEATOR) { next = index + 1; }    // delineator
-            else {                                                              // path part
+            if (character === PATH_SYMBOLS.DELINEATOR) {                        // delineator
+                next = index + 1;
+
+                if (pathname.charAt(next) === PATH_SYMBOLS.DELINEATOR || next >= pathname.length) {
+                    part = ''; // matches '//'
+                }
+            } else {                                                            // path part
                 next = pathname.indexOf(PATH_SYMBOLS.DELINEATOR, index);
 
                 subpath = pathname.substring(index, next !== -1 ? next : undefined);
@@ -1697,7 +1707,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
         var pathname = subpaths.join(PATH_SYMBOLS.DELINEATOR);
         if (appendTrailingSlash) { pathname += PATH_SYMBOLS.TRAILING_SLASH; }
 
-        if (pathname.charAt(0) !== PATH_SYMBOLS.DELINEATOR) { pathname = PATH_SYMBOLS.DELINEATOR + pathname; }
+        pathname = PATH_SYMBOLS.DELINEATOR + pathname;
 
         return pathname;
     };
@@ -1766,9 +1776,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
                                         "pathname += '" + PATH_SYMBOLS.TRAILING_SLASH + "'; " +
                                     '} ' +
 
-                                    "if (pathname.charAt(0) !== '" + PATH_SYMBOLS.DELINEATOR + "') { " +
-                                        "pathname = '" + PATH_SYMBOLS.DELINEATOR + "' + pathname; " +
-                                    '} ' +
+                                    "pathname = '" + PATH_SYMBOLS.DELINEATOR + "' + pathname; " +
 
                                     'return pathname; ' +
                                 '}';

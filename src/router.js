@@ -1035,8 +1035,13 @@
             var character = expression.charAt(index);
             var part = undefined;
 
-            if (character === EXPRESSION_SYMBOLS.DELINEATOR) { next = index + 1; }  // delineator
-            else if (character === EXPRESSION_SYMBOLS.PARAMETER) {                  // parameter
+            if (character === EXPRESSION_SYMBOLS.DELINEATOR) {                          // delineator
+                next = index + 1;
+
+                if (expression.charAt(next) === EXPRESSION_SYMBOLS.DELINEATOR || next >= expression.length) {
+                    part = new RouteSubpath(''); // matches '//'
+                }
+            } else if (character === EXPRESSION_SYMBOLS.PARAMETER) {                    // parameter
                 count++;
 
                 EXPRESSION_PARAMETER_REGEX.lastIndex = 0;
@@ -1142,8 +1147,13 @@
             var character = pathname.charAt(index);
             var part = undefined;
 
-            if (character === PATH_SYMBOLS.DELINEATOR) { next = index + 1; }    // delineator
-            else {                                                              // path part
+            if (character === PATH_SYMBOLS.DELINEATOR) {                        // delineator
+                next = index + 1;
+
+                if (pathname.charAt(next) === PATH_SYMBOLS.DELINEATOR || next >= pathname.length) {
+                    part = ''; // matches '//'
+                }
+            } else {                                                            // path part
                 next = pathname.indexOf(PATH_SYMBOLS.DELINEATOR, index);
 
                 subpath = pathname.substring(index, next !== -1 ? next : undefined);
@@ -1266,7 +1276,7 @@
         var pathname = subpaths.join(PATH_SYMBOLS.DELINEATOR);
         if (appendTrailingSlash) { pathname += PATH_SYMBOLS.TRAILING_SLASH; }
 
-        if (pathname.charAt(0) !== PATH_SYMBOLS.DELINEATOR) { pathname = PATH_SYMBOLS.DELINEATOR + pathname; }
+        pathname = PATH_SYMBOLS.DELINEATOR + pathname;
 
         return pathname;
     };
@@ -1335,9 +1345,7 @@
                                         "pathname += '" + PATH_SYMBOLS.TRAILING_SLASH + "'; " +
                                     '} ' +
 
-                                    "if (pathname.charAt(0) !== '" + PATH_SYMBOLS.DELINEATOR + "') { " +
-                                        "pathname = '" + PATH_SYMBOLS.DELINEATOR + "' + pathname; " +
-                                    '} ' +
+                                    "pathname = '" + PATH_SYMBOLS.DELINEATOR + "' + pathname; " +
 
                                     'return pathname; ' +
                                 '}';
