@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.5.5
+Version:        1.5.6
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -564,23 +564,23 @@ Description:    A Node.js module for routing HTTP requests by URL path
         // accessors
 
         Object.defineProperty(this, 'expression', {
-            'get':          function() { return expression; }, // expression getter
+            'get':          function() { return expression; },              // expression getter
             'enumerable':   true,
             'configurable': false });
 
         Object.defineProperty(this, 'name', {
-            'get':          function() { return name; }, // name getter
+            'get':          function() { return name; },                    // name getter
             'enumerable':   true,
             'configurable': false });
 
         if (util.isArray(method)) { Object.freeze(method); }
         Object.defineProperty(this, 'method', {
-            'get':          function() { return method; }, // method getter
+            'get':          function() { return method; },                  // method getter
             'enumerable':   true,
             'configurable': false });
 
         Object.defineProperty(this, 'encoded', {
-            'get':          function() { return encoded; }, // encoded getter
+            'get':          function() { return encoded; },                 // encoded getter
             'enumerable':   true,
             'configurable': false });
         if ('encoded' in options)   { encoded = options.encoded; } // set encoded
@@ -595,8 +595,8 @@ Description:    A Node.js module for routing HTTP requests by URL path
         else                            { ignoreCase = false; }                 // default ignore case
 
         var subroutes = parse.route(this.expression, this.encoded);
-        Object.defineProperty(this, '__subroutes__', { // private
-            'get':          function() { return subroutes; }, // subroutes getter
+        Object.defineProperty(this, '__subroutes__', {                      // private
+            'get':          function() { return subroutes; },               // subroutes getter
             'enumerable':   false,
             'configurable': false });
 
@@ -665,11 +665,11 @@ Description:    A Node.js module for routing HTTP requests by URL path
             'set':          function(val)   { flush(); setConstraints(val); },  // constraints setter
             'enumerable':   true,
             'configurable': false });
-        if ('constraints' in options) { setConstraints(options.constraints); } // set constraints
+        if ('constraints' in options) { setConstraints(options.constraints); }  // set constraints
 
         var pathSourceCode = compose.sourceCode(subroutes);
         Object.defineProperty(this, 'pathSourceCode', {
-            'get':          function() { return pathSourceCode; }, // path source code getter
+            'get':          function() { return pathSourceCode; },              // path source code getter
             'enumerable':   true,
             'configurable': false });
 
@@ -782,8 +782,8 @@ Description:    A Node.js module for routing HTTP requests by URL path
         var self = this;
 
         var routes = {}; // all routes regardless of method
-        Object.defineProperty(this, '__routes__', { // private
-            'get':          function() { return routes; }, // routes getter
+        Object.defineProperty(this, '__routes__', {         // private
+            'get':          function() { return routes; },  // routes getter
             'enumerable':   false,
             'configurable': false });
 
@@ -1296,12 +1296,12 @@ Description:    A Node.js module for routing HTTP requests by URL path
         // accessors
 
         Object.defineProperty(this, 'raw', {
-            'get':          function() { return raw; }, // raw value getter
+            'get':          function() { return raw; },     // raw value getter
             'enumerable':   true,
             'configurable': false });
 
         Object.defineProperty(this, 'decoded', {
-            'get':          function() { return raw; }, // decoded value getter
+            'get':          function() { return raw; },     // decoded value getter
             'enumerable':   true,
             'configurable': false });
 
@@ -1397,12 +1397,12 @@ Description:    A Node.js module for routing HTTP requests by URL path
         // accessors
 
         Object.defineProperty(this, 'raw', {
-            'get':          function() { return raw; }, // raw value getter
+            'get':          function() { return raw; },     // raw value getter
             'enumerable':   true,
             'configurable': false });
 
         Object.defineProperty(this, 'encoded', {
-            'get':          function() { return raw; }, // encoded value getter
+            'get':          function() { return raw; },     // encoded value getter
             'enumerable':   true,
             'configurable': false });
 
@@ -1699,20 +1699,20 @@ Description:    A Node.js module for routing HTTP requests by URL path
 
         var subpaths = [];
         subroutes.forEach(function(subroute) {
-            if (subroute instanceof RouteSubpath) { // path part
+            if (subroute instanceof RouteSubpath) {                 // path part
                 subpaths.push(subroute.encoded);
-            } else if (subroute instanceof RouteParameter) { // parameter
+            } else if (subroute instanceof RouteParameter) {        // parameter
                 var argument = args[subroute.name];
                 if (argument == undefined) { argument = ''; }
 
-                if (subroute instanceof RouteWildcardParameter) { // wildcard parameter
+                if (subroute instanceof RouteWildcardParameter) {   // wildcard parameter
                     if (util.isArray(argument)) { // array argument
                         argument.forEach(function(subargument) { subpaths.push(encodeURIComponent(subargument)); });
                     } else { subpaths.push(encodeURIComponent(String(argument))); } // string argument
                 } else { // parameter
                     subpaths.push(encodeURIComponent(String(argument))); // string argument
                 }
-            } else if (subroute instanceof RouteTrailingSlash) { // trailing slash
+            } else if (subroute instanceof RouteTrailingSlash) {    // trailing slash
                 appendTrailingSlash = !subroute.optional;
             }
         });
@@ -1734,16 +1734,16 @@ Description:    A Node.js module for routing HTTP requests by URL path
         var sourceCode = compose.sourceCode.START;
 
         subroutes.forEach(function(subroute) {
-            if (subroute instanceof RouteSubpath) { // path part
+            if (subroute instanceof RouteSubpath) {                 // path part
                 sourceCode +=       'subpath(' + JSON.stringify(subroute.encoded) + '); ';
-            } else if (subroute instanceof RouteParameter) { // parameter
+            } else if (subroute instanceof RouteParameter) {        // parameter
                 var stringifiedSubrouteName = JSON.stringify(subroute.name);
-                if (subroute instanceof RouteWildcardParameter) { // wildcard parameter
+                if (subroute instanceof RouteWildcardParameter) {   // wildcard parameter
                     sourceCode +=   'parameter.wildcard(' + stringifiedSubrouteName + '); ';
                 } else { // parameter
                     sourceCode +=   'parameter(' + stringifiedSubrouteName + '); ';
                 }
-            } else if (subroute instanceof RouteTrailingSlash) { // trailing slash
+            } else if (subroute instanceof RouteTrailingSlash) {    // trailing slash
                 if (!subroute.optional) {
                     sourceCode +=   'trailingSlash(); ';
                 }
@@ -1818,12 +1818,12 @@ Description:    A Node.js module for routing HTTP requests by URL path
                         subarguments    = util.isArray(argument) ? argument : [argument],
                         constraint      = constraints[name];
 
-                    if (constraint instanceof Function) { // function
+                    if (constraint instanceof Function) {       // function
                         if (!constraint(argument)) { // invalid
                             invalid[name] = argument;
                             return invalid;
                         }
-                    } else if (constraint instanceof RegExp) { // regular expression
+                    } else if (constraint instanceof RegExp) {  // regular expression
                         if (!subarguments.length) { // empty array argument
                             invalid[name] = argument;
                             return invalid;
@@ -1837,7 +1837,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
                                 return invalid;
                             }
                         }
-                    } else if (util.isArray(constraint)) { // array of strings
+                    } else if (util.isArray(constraint)) {      // array of strings
                         if (!subarguments.length) { // empty array argument
                             invalid[name] = argument;
                             return invalid;
