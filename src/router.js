@@ -163,6 +163,12 @@
         if ('ignoreCase' in options)    { ignoreCase = options.ignoreCase; }    // set ignore case
         else                            { ignoreCase = false; }                 // default ignore case
 
+        var subroutes = parse.route(this.expression, this.encoded);
+        Object.defineProperty(this, '__subroutes__', { // private
+            'get':          function() { return subroutes; }, // subroutes getter
+            'enumerable':   false,
+            'configurable': false });
+
         var setConstraints = function(val) {
             cacheable = true; // allow caching by default
 
@@ -175,32 +181,45 @@
             } else if (val === Object(val)) { // constraints map
                 constraints = {};
 
-                var invalidate = function(key) {
+                var parameters = {}; // route parameter names
+                subroutes.forEach(function(subroute) {
+                    if (subroute instanceof RouteParameter) { parameters[subroute.name] = true; }
+                });
+
+                var invalidate = function(parameter) {
                     throw new Error("Couldn't set constraints for route " +
                         (self.name != undefined ? "'" + self.name + "'" + ' ' : '') +
-                        "because the constraint '" + key + "' was not a " +
+                        "because the constraint '" + parameter + "' is not a " +
                         'function, regular expression or an array of strings');
                 };
 
                 for (var key in val) {
-                    var constraint = val[key];
+                    var parameter = key;
+                    var constraint = val[parameter];
+
+                    if (!(parameter in parameters)) {
+                        throw new Error("Couldn't set constraints for route " +
+                            (self.name != undefined ? "'" + self.name + "'" + ' ' : '') +
+                            "because the constraint '" + parameter + "' doesn't apply " +
+                            'to a corresponding route parameter');
+                    }
 
                     if (constraint instanceof Function) {
                         cacheable = false; // disallow caching, constraint function result may vary at run-time
-                        constraints[key] = (function(_constraint) {
+                        constraints[parameter] = (function(_constraint) {
                                 return function() { return _constraint.apply(self, arguments); };
                             })(constraint);
                     } else if (constraint instanceof RegExp) {
-                        constraints[key] = new RegExp(constraint);
+                        constraints[parameter] = new RegExp(constraint);
                     } else if (util.isArray(constraint)) {
-                        constraints[key] = constraint.map(function(val) {
+                        constraints[parameter] = constraint.map(function(val) {
                             if (typeof val === 'string' || val instanceof String)   { return String(val); }
                             if (typeof val === 'number')                            { return String(val); }
-                            else                                                    { invalidate(key); }
+                            else                                                    { invalidate(parameter); }
                         });
-                    } else { invalidate(key); }
+                    } else { invalidate(parameter); }
 
-                    try { Object.freeze(constraints[key]); } catch (err) {}
+                    try { Object.freeze(constraints[parameter]); } catch (err) {}
                 }
             } else {
                 throw new Error("Couldn't set constraints for route " +
@@ -216,12 +235,6 @@
             'enumerable':   true,
             'configurable': false });
         if ('constraints' in options) { setConstraints(options.constraints); } // set constraints
-
-        var subroutes = parse.route(this.expression, this.encoded);
-        Object.defineProperty(this, '__subroutes__', { // private
-            'get':          function() { return subroutes; }, // subroutes getter
-            'enumerable':   false,
-            'configurable': false });
 
         var pathSourceCode = compose.sourceCode(subroutes);
         Object.defineProperty(this, 'pathSourceCode', {
@@ -263,8 +276,8 @@
                     value   = valid[key];
                 throw new Error(
                     "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
-                    "because the '" + key + "' argument value of '" + value + "' is invalid " +
-                    "according to the route's '" + key + "' inline constraint");
+                    "because the '" + key + "' argument value of " + JSON.stringify(value) + ' ' +
+                    "is invalid according to the route's '" + key + "' inline constraint");
             } else { // invalid inline constraints
                 throw new Error(
                     "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
@@ -281,8 +294,8 @@
                     value   = valid[key];
                 throw new Error(
                     "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
-                    "because the '" + key + "' argument value of '" + value + "' is invalid " +
-                    "according to the route's constraints");
+                    "because the '" + key + "' argument value of " + JSON.stringify(value) + ' ' +
+                    "is invalid according to the route's '" + key + "' constraint");
             } else { // invalid constraints
                 throw new Error(
                     "Couldn't generate path with route " + (this.name != undefined ? "'" + this.name + "' " : '') +
@@ -547,7 +560,7 @@
 
         if (name != undefined) { route = routes.by.name[name]; }
 
-        if (route == undefined) { return; } // route was unspecified or not found
+        if (route == undefined) { return; } // route unspecified or not found
 
         var stores = [routes]; // potential stores containing the route
         stores = stores.concat( // collect all method stores
@@ -1364,39 +1377,45 @@
     var validate = function(args, constraints) {
         args = args || {};
 
+        var invalid = {};
         if (constraints != undefined) {
             if (constraints instanceof Function) { // validate arguments against constraint function
                 return constraints(args) ? true : false; // validate
             } else { // validate arguments against constraints map
                 for (var name in constraints) { // iterate parameter names within constraints
-                    if (!(name in args))        { continue; }   // no argument to validate
-                    if (!(name in constraints)) { continue; }   // no constraint to validate against
-
                     var argument        = args[name],
                         subarguments    = util.isArray(argument) ? argument : [argument],
                         constraint      = constraints[name];
+
                     if (constraint instanceof Function) { // function
                         if (!constraint(argument)) { // invalid
-                            var invalid     = {};
-                            invalid[name]   = argument;
+                            invalid[name] = argument;
                             return invalid;
                         }
-                    } if (constraint instanceof RegExp) { // regular expression
+                    } else if (constraint instanceof RegExp) { // regular expression
+                        if (!subarguments.length) { // empty array argument
+                            invalid[name] = argument;
+                            return invalid;
+                        }
+
                         for (var i = 0, length = subarguments.length; i < length; i++) {
                             var subargument = subarguments[i];
                             try { constraint.lastIndex = 0; } catch (err) {} // potentially frozen
                             if (!constraint.test(subargument)) { // invalid
-                                var invalid     = {};
-                                invalid[name]   = subargument;
+                                invalid[name] = subargument;
                                 return invalid;
                             }
                         }
                     } else if (util.isArray(constraint)) { // array of strings
+                        if (!subarguments.length) { // empty array argument
+                            invalid[name] = argument;
+                            return invalid;
+                        }
+
                         for (var i = 0, length = subarguments.length; i < length; i++) {
                             var subargument = subarguments[i];
                             if (constraint.indexOf(subargument) === -1) { // invalid
-                                var invalid     = {};
-                                invalid[name]   = subargument;
+                                invalid[name] = subargument;
                                 return invalid;
                             }
                         }

@@ -21,7 +21,7 @@ var run = function(orouter) { 'use strict'; // run tests
 
     result      = {};
     var onRoute = function(event) {
-        result = {
+        result  = {
                 'success':  true,
                 'fail':     false,
                 'name':     this.name,
@@ -42,7 +42,7 @@ var run = function(orouter) { 'use strict'; // run tests
 
     // add routes
     // 1.                   //  "' path '" ...
-    var firstRoute = router.add("//%27 path%20'/:param1/: param2 //:param3<^[^X?0]*$> * /?",       // 1st route
+    var firstRoute = router.add("//%27 path%20'/:param1/: param2 //:param3<^[^X?0]*$> * /?",        // 1st route
         {'name': 'route 1', 'encoded': true}, onRoute);
     // 2.
     router.add("/' path '/:  param1 <> /:param2<2$>//", {'name': 'route 2'}).on('route', onRoute);  // 2nd route
@@ -68,7 +68,7 @@ var run = function(orouter) { 'use strict'; // run tests
     router.add('/constraint/:param1/:param2',                               // 1st constrained route
         {'name': 'constrained route 1', 'method': ['connect'], 'constraints': constraints}).on('route', onRoute);
     // 2.
-    constraints = {'param1': /^(?!(?:not\s2)).*$/, 'param2': /^(?!(?:not\s2)).*$/, 'param3': /^(?!(?:not\s2)).*$/};
+    constraints = {'param1': /^(?!(?:not\s2)).*$/, 'param2': /^(?!(?:not\s2)).*$/};
     var routeConstraint2 = router.add('/constraint/:param1/:param2',        // 2nd constrained route
         {'name': 'constrained route 2', 'method': 'connect', 'constraints': constraints}).on('route', onRoute);
     // 3.
@@ -140,7 +140,7 @@ var run = function(orouter) { 'use strict'; // run tests
     // 5.
     assert.throws(
         function() {
-            router.add('/invalid/constraint/:param1',
+            router.add('/invalid/constraint/:p1/:param1',
                 {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': 'value1'}});
         },
         function(err) {
@@ -151,7 +151,7 @@ var run = function(orouter) { 'use strict'; // run tests
     // 6.
     assert.throws(
         function() {
-            router.add('/invalid/constraint/:param1',
+            router.add('/invalid/constraint/:p1/:param1',
                 {'name': 'bad constraint', 'constraints': {'p1': /v1/, 'param1': ['value1', true, '1']}});
         },
         function(err) {
@@ -179,6 +179,14 @@ var run = function(orouter) { 'use strict'; // run tests
         function() { router.add(': param1 **/:param2/path/?').on('route', onRoute); },
         function(err) { return (err instanceof Error && /param1/.test(err.message) && /wildcard/.test(err.message)); },
         'Defining a route with a wildcard parameter that is not last did not fail as expected');
+    // 10.
+    assert.throws(
+        function() {
+            var constraints = {'param1': /^[a-z]+$/, 'param2': /^[a-z]+$/, 'not3': ['no parameter']};
+            router.add('/constraint/:param1/:param2', {'constraints': constraints});
+        },
+        function(err) { return (err instanceof Error && /not3/.test(err.message) && /parameter/.test(err.message)); },
+        'Adding a route with an inapplicable constraint did not fail as expected');
 
     // add duplicate route name
     // 1.
@@ -481,9 +489,12 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result, '/constraint/not%201/not%202',
         'The path generated using the 3rd constrained route did not match the expected value');
     // 3.
-    result = router.path('constrained route 3', {'param2': 'not 2'});
-    assert.strictEqual(result, '/constraint//not%202',
-        'The path generated using the 3rd constrained route did not match the expected value');
+    assert.throws(
+        function() { router.path('constrained route 3', {'param2': 'not 2'}); },
+        function(err) {
+            return (err instanceof Error && /param1/.test(err.message) && /constraint/.test(err.message));
+        },
+        'Generating a path with the 3rd constrainted route and an omitted argument did not fail as expected');
     // 4.
     result = router.path('constrained route 4', {'param1': 'arg 1', 'param2': 'arg 2', 'param3': 'arg 3'});
     assert.strictEqual(result, '/constraint/arg%201/arg%202/arg%203',
@@ -506,6 +517,22 @@ var run = function(orouter) { 'use strict'; // run tests
                 /constrained\sroute\s4/.test(err.message) && /param3/.test(err.message) && /arg\s7/.test(err.message));
         },
         'Generating a path with the 2nd constrained route and an invalid argument did not fail as expected');
+    // 4.
+    assert.throws(
+        function() { router.path('constrained route 4', {'param1': 'arg 1', 'param2': 'arg 2'}); },
+        function(err) {
+            return (err instanceof Error &&
+                /param3/.test(err.message) && /constraint/.test(err.message) && /undefined/.test(err.message));
+        },
+        'Generating a path with the 4th constrained route and an omitted argument did not fail as expected');
+    // 4.
+    assert.throws(
+        function() { router.path('constrained route 4', {'param1': 'arg 1', 'param2': 'arg 2', 'param3': []}); },
+        function(err) {
+            return (err instanceof Error &&
+                /param3/.test(err.message) && /constraint/.test(err.message) && /[\[][\]]/.test(err.message));
+        },
+        'Generating a path with the 4th constrained route and an empty array argument did not fail as expected');
 
     // generate path with invalid route
     assert.throws(function() { router.path('invalid route', {'param1': 'arg1', 'param2': 'arg2'}); },
