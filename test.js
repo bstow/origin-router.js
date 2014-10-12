@@ -395,16 +395,26 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result, "//%27 path%20'/arg%2F1/arg2//%2Fa%2Fr%2Fg%2F3%2F",
         'The path generated using the 1st route did not match the expected value');
     // 1.
-    eval('result = ' + firstRoute.pathSourceCode);
+    eval('result = ' + firstRoute.pathjs);
     result = result({'param1': 'arg/1', 'param2': 'arg2', 'param3': '/a/r/g/3/'});
     assert.strictEqual(result, "//%27 path%20'/arg%2F1/arg2//%2Fa%2Fr%2Fg%2F3%2F",
+        'The path generated using the 1st route did not match the expected value');
+    // 1.
+    eval('result = ' + firstRoute.pathjs);
+    result = result({'param2': 'arg2', 'param3': '/a/r/g/3/'});
+    assert.strictEqual(result, "//%27 path%20'//arg2//%2Fa%2Fr%2Fg%2F3%2F",
+        'The path generated using the 1st route did not match the expected value');
+    // 1.
+    eval('result = ' + firstRoute.pathjs);
+    result = result({'param1': undefined, 'param2': 'arg2', 'param3': '/a/r/g/3/'});
+    assert.strictEqual(result, "//%27 path%20'//arg2//%2Fa%2Fr%2Fg%2F3%2F",
         'The path generated using the 1st route did not match the expected value');
     // 1.
     result = router.path('route 1', {'param1': 'arg/1', 'param2': 'arg2', 'param3': ['arg ', 3]});
     assert.strictEqual(result, "//%27 path%20'/arg%2F1/arg2//arg%20/3",
         'The path generated using the 1st route did not match the expected value');
     // 1.
-    eval('result = ' + router.pathSourceCode('route 1'));
+    eval('result = ' + router.pathjs('route 1'));
     result = result({'param1': 'arg/1', 'param2': 'arg2', 'param3': ['arg ', 3]});
     assert.strictEqual(result, "//%27 path%20'/arg%2F1/arg2//arg%20/3",
         'The path generated using the 1st route did not match the expected value');
@@ -423,7 +433,7 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result, '/' + encodeURIComponent("' path '") + '/arg1/arg2//',
         'The path generated using the 2nd route did not match the expected value');
     // 2.
-    eval('result = ' + router.pathSourceCode('route 2'));
+    eval('result = ' + router.pathjs('route 2'));
     result = result({'param1': 'arg1', 'param2': 'arg2'});
     assert.strictEqual(result, '/' + encodeURIComponent("' path '") + '/arg1/arg2//',
         'The path generated using the 2nd route did not match the expected value');
@@ -446,12 +456,12 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result, '///path',
         'The path generated using the 3rd route did not match the expected value');
     // 3.
-    eval('result = ' + router.pathSourceCode('route 3'));
+    eval('result = ' + router.pathjs('route 3'));
     result = result({'param1': 'arg 1', 'param2': 'arg 2'});
     assert.strictEqual(result, '/arg%201/arg%202/path',
         'The path generated using the 3rd route did not match the expected value');
     // 3.
-    eval('result = ' + router.pathSourceCode('route 3'));
+    eval('result = ' + router.pathjs('route 3'));
     result = result({'param2': undefined});
     assert.strictEqual(result, '///path',
         'The path generated using the 3rd route did not match the expected value');
@@ -462,7 +472,7 @@ var run = function(orouter) { 'use strict'; // run tests
     assert.strictEqual(result, '/%2F%20path/file.ext',
         'The path generated using the 4th route did not match the expected value');
     // 4.
-    eval('result = ' + router.pathSourceCode('route 4'));
+    eval('result = ' + router.pathjs('route 4'));
     result = result();
     assert.strictEqual(result, '/%2F%20path/file.ext',
         'The path generated using the 4th route did not match the expected value');

@@ -31,6 +31,13 @@ A Node.js module for routing HTTP requests by URL path
 
 
 
+###[Cheatsheet](#cheatsheet)
+* [Route Expressions](#cheatsheet__route_expressions)
+* [Adding Routes](#cheatsheet__adding_routes)
+* [Removing Routes](#cheatsheet__removing_routes)
+
+<br>
+
 ###[Examples of Using the Router](#examples)
 * [Example: Setting Up the Router](#example_setup)
 * [Example: Routing URL Paths](#example_routing)
@@ -50,7 +57,9 @@ A Node.js module for routing HTTP requests by URL path
 
 <br>
 
-###[Router Documentation](#documentation)
+###[Documentation](#documentation)
+
+<br>
 
 * [Class: orouter.Router](#Router)
     * [new Router()](#new_Router)
@@ -77,7 +86,7 @@ A Node.js module for routing HTTP requests by URL path
         * [router.routeTrace(request, [response], [options], [callback])](#router_routeTrace)
         * [router.routeConnect(request, [response], [options], [callback])](#router_routeConnect)
     * [router.path(name, [arguments])](#router_path)
-    * [router.pathSourceCode(name)](#router_pathSourceCode)
+    * [router.pathjs(name)](#router_pathjs)
     * [Event: 'add'](#router_add_event)
     * [Event: 'remove'](#router_remove_event)
     * [Event: 'success'](#router_success_event)
@@ -93,7 +102,7 @@ A Node.js module for routing HTTP requests by URL path
     * [route.encoded](#route_encoded)
     * [route.ignoreCase](#route_ignoreCase)
     * [route.path([arguments])](#route_path)
-    * [route.pathSourceCode](#route_pathSourceCode)
+    * [route.pathjs](#route_pathjs)
     * [Event: 'route'](#route_route_event)
     * [Event: 'added'](#route_added_event)
     * [Event: 'removed'](#route_removed_event)
@@ -102,6 +111,40 @@ A Node.js module for routing HTTP requests by URL path
 
 * [orouter.basejoin(basepath, [subpaths, ...])](#basejoin)
 
+
+
+<br>
+<br>
+
+
+
+
+
+##<a name='cheatsheet'></a>Cheatsheet
+* <a name='cheatsheet__route_expressions'></a>**Route Expressions**
+    * route _foo_ => matches URL path _foo_ and _<b>/</b>foo_
+    * route _<b>/</b>foo_ => matches URL path _foo_ and _<b>/</b>foo_
+    * route _/foo/bar_ => matches URL path _/foo/bar_ but **not** _/foo/bar<b>/</b>_
+    * route _/foo/bar<b>/</b>_ => matches URL path _/foo/bar<b>/</b>_ but **not** _/foo/bar_
+    * route _/foo/bar<b>/?</b>_ => matches URL path _/foo/bar_ and _/foo/bar<b>/</b>_
+    * route _/<b>:foo</b>/bar_ => matches URL path _/<b>qux</b>/bar_ (where <b>:foo</b>=<b>qux</b>) and _/<b>baz</b>/bar_ (where <b>:foo</b>=<b>baz</b>)
+    * route _/foo/<b>:bar*</b>_ => matches URL path _/foo/<b>qux</b>_ (where <b>:bar</b>=<b>[qux]</b>) and _/foo/<b>baz/qux</b>_ (where <b>:bar</b>=<b>[baz, qux]</b>)
+    * route _/foo/:bar*<b>/?</b>_ => matches URL path _/foo/qux<b>/</b>_ (where :bar=[qux]) and _/foo/baz/qux_ (where :bar=[baz, qux])
+    * route _/:foo<b><\^[a-z]+$></b>/bar_ => matches URL path _/<b>qux</b>/bar_ (where <b>:foo</b>=<b>qux</b>) but **not** _/<b>123</b>/bar_
+    * route _/foo/:bar*<b><\^[a-z]+$></b>/_ => matches URL path _/foo/<b>qux</b>/_ (where <b>:bar</b>=<b>[qux]</b>) but **not** _/foo/<b>qux/123</b>/_
+* <a name='cheatsheet__adding_routes'></a>**Adding Routes**
+    * _router.add('/foo')_ => adds a route that matches URL path <i>/foo</i>
+    * _router.add(<b>'my foo'</b>, '/foo') => adds a route named <b><i>my foo</i></b> that matches URL path <i>/foo</i>
+    * _router.add('/foo', {<b>method: 'GET'</b>}) => adds a route applicable to <b>GET requests</b> that matches URL path <i>/foo</i>
+    * _router.add('/foo', {<b>method: ['GET', 'POST']</b>}) => adds a route applicable to <b>GET and POST requests</b> that matches URL path <i>/foo</i>
+    * _router.add('/foo', {<b>ignoreCase: true</b>}) => adds a route that matches URL path <i>/<b>foo</b></i> and <i>/<b>FOO</b></i>
+    * _router.add('/foo bar') => adds a route that matches URL path <i>/foo<b>%20</b>bar</i>
+    * _router.add('/foo<b>%20</b>bar', {<b>encoded: true</b>}) => adds a route that matches URL path <i>/foo<b>%20</b>bar</i>
+    * _router.add('/foo<b>%20</b>bar/<b>:qux</b>', {<b>encoded: true</b>}) => adds a route that matches URL path <i>/foo<b>%20</b>bar/<b>baz</b></i> (where <b>:qux</b>=<b>baz</b>)
+    * _router.add('/foo/:bar/:qux', {<b>constraints: function(args) { return args.bar.length > 2 && args.qux.length > 2; }</b>}) => adds a route that matches URL path <i>/foo/<b>aaa</b>/<b>bbb</b></i> (where <b>:bar</b>=<b>aaa</b> and <b>:qux</b>=<b>bbb</b>) but **not** <i>/foo/<b>aa</b>/<b>bb</b></i>
+    * _router.add('/foo/:bar/:baz/:qux/', {<b>constraints: {bar: /\^[a-z]+$/, baz: function(arg) { return arg.length > 2; }, qux: ['123', '456'] }</b>}) => adds a route that matches URL path <i>/foo/<b>abc</b>/<b>aaa</b>/<b>123</b></i> (where <b>:bar</b>=<b>abc</b>, <b>:baz</b>=<b>aaa</b>, <b>:qux</b>=<b>123</b>) but **not** <i>/foo/<b>123</b>/<b>bb</b>/<b>abc</b></i>
+* <a name='cheatsheet__removing_routes'></a>**Removing Routes**
+    * _router.remove(<b>'my foo'</b>)_ => removes a route named <b><i>my foo</i></b>
 
 <br>
 <br>
@@ -307,13 +350,13 @@ router.add('/:pet/age/:years', {'name': "my pet's age"}, function(event) {
 
 // get the source code for the function to generate a URL path using
 // the route named "my pet's age" ...
-var pathSourceCode = router.pathSourceCode("my pet's age");
+var pathjs = router.pathjs("my pet's age");
 
 // compile the source code into a function using eval for the sake of example,
 // typically the source code would not be eval'd but rather included into a
 // script or <script> tag that is then sent to and compiled by the client ...
 var pathFunction;
-eval('pathFunction = ' + pathSourceCode);
+eval('pathFunction = ' + pathjs);
 
 // generate a URL by running the compiled function and passing any
 // route parameter arguments ...
@@ -541,14 +584,15 @@ console.log('Browse to http://localhost:3000');
 <br>
 <br>
 
+
+
+<br>
+<br>
+
 ##<a name='documentation'>Router Documentation
 
 <br>
 <br>
-
-
-
-
 
 To use the router one must `require('./origin-router.js')`.
 ```javascript
@@ -727,13 +771,13 @@ Returns the URL encoded pathname generated using the route specified. (See [url.
 <br>
 <br>
 
-####<a name='router_pathSourceCode'></a>router.pathSourceCode(name)
+####<a name='router_pathjs'></a>router.pathjs(name)
 
 Get the source code `String` for a `Function` that will generate a URL path using the route specified.  Upon compiling the source code, the `Function` may be called and optionally passed a route parameter arguments `Object` of URL decoded name value pairs as the 1st parameter to be mapped and embedded within the generated URL path.  (Note that the route parameter arguments are **not** validated for compliance against the corresponding route constraints.)
   
   This is primarily useful in allowing for a URL path to be dynamically generated on the client-side. (See [Example: Generating URL Paths on the Client-Side](#example_client_side_reverse_routing))
 
-<a name='router_pathSourceCode__name'></a>The `name` `String` of the route to use to generate the source code `String` of the URL path generating `Function`.  Consequently, only named routes can be used with this feature.
+<a name='router_pathjs__name'></a>The `name` `String` of the route to use to generate the source code `String` of the URL path generating `Function`.  Consequently, only named routes can be used with this feature.
 
 Returns the source code `String` for a `Function` that will generate a URL path using the route specified.
   
@@ -867,7 +911,7 @@ Returns the URL encoded pathname generated using the route. (See [url.URL](http:
 <br>
 <br>
 
-####<a name='route_pathSourceCode'></a>route.pathSourceCode
+####<a name='route_pathjs'></a>route.pathjs
 
 * `String` get the source code for a `Function` that will generate a URL path using the route.  Upon compiling the source code, the `Function` may be called and optionally passed a route parameter arguments `Object` of URL decoded name value pairs as the 1st parameter to be mapped and embedded within the generated URL path.  (Note that the route parameter arguments are **not** validated for compliance against the corresponding route constraints.)
   

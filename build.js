@@ -120,8 +120,6 @@ documentationMarkdown = documentationMarkdown.substring(0, documentationStartTOC
     documentationMarkdown.substring(documentationEndTOCMarkdownIndex + DOCUMENTATION_TOC_MARKDOWN_END_SECTION.length);
 
 // add documentation to readme
-readmeMarkdown += "##<a name='documentation'>Router Documentation\n\n";
-readmeMarkdown += '<br>\n<br>\n\n';
 readmeMarkdown += documentationMarkdown;
 
 // examples
@@ -208,13 +206,13 @@ sourceExampleSource += '\n //' + Array(sourceLineLength - 4).join('*');
 // insert examples' table of contents into readme table of contents
 documentationTOCMarkdown = documentationTOCMarkdown.replace(EXAMPLES_TOC_MARKDOWN_SECTION, readmeExamplesTOCMarkdown);
 
-// prepend example sections to the readme
+// embed example sections to the readme
 var readmeExamplesMarkdown = '';
 readmeExamplesMarkdown += "###<a name='examples'>Examples of Using the Router\n\n";
 readmeExamplesMarkdown += '<br>\n\n';
 readmeExamplesMarkdown += readmeExampleSectionMarkdowns.join('\n\n<br>\n\n') + '\n\n';
 readmeExamplesMarkdown += '<br>\n<br>\n\n';
-readmeMarkdown = readmeExamplesMarkdown + readmeMarkdown;
+readmeMarkdown = readmeMarkdown.replace('@![examples]', readmeExamplesMarkdown);
 
 originalSource = originalSource.replace('@![examples]', sourceExampleSource); // embed examples
 

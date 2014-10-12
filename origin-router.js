@@ -210,13 +210,13 @@ Description:    A Node.js module for routing HTTP requests by URL path
  // 
  // // get the source code for the function to generate a URL path using
  // // the route named "my pet's age" ...
- // var pathSourceCode = router.pathSourceCode("my pet's age");
+ // var pathjs = router.pathjs("my pet's age");
  // 
  // // compile the source code into a function using eval for the sake of example,
  // // typically the source code would not be eval'd but rather included into a
  // // script or <script> tag that is then sent to and compiled by the client ...
  // var pathFunction;
- // eval('pathFunction = ' + pathSourceCode);
+ // eval('pathFunction = ' + pathjs);
  // 
  // // generate a URL by running the compiled function and passing any
  // // route parameter arguments ...
@@ -522,7 +522,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
      *
      * Route.prototype.ignoreCase {boolean|undefined}               - get/set case insensitive path matching
      *
-     * Route.prototype.pathSourceCode {string}                      - get source code for function to generate a path
+     * Route.prototype.pathjs {string}                              - get source code for function to generate a path
      *
      * Route.prototype
      *      emits added {event}                                     - occurs upon route being added to router
@@ -667,9 +667,9 @@ Description:    A Node.js module for routing HTTP requests by URL path
             'configurable': false });
         if ('constraints' in options) { setConstraints(options.constraints); }  // set constraints
 
-        var pathSourceCode = compose.sourceCode(subroutes);
-        Object.defineProperty(this, 'pathSourceCode', {
-            'get':          function() { return pathSourceCode; },              // path source code getter
+        var pathjs = compose.sourceCode(subroutes);
+        Object.defineProperty(this, 'pathjs', {
+            'get':          function() { return pathjs; },                      // path source code getter
             'enumerable':   true,
             'configurable': false });
 
@@ -1237,16 +1237,16 @@ Description:    A Node.js module for routing HTTP requests by URL path
     };
 
     /*
-     * Router.prototype.pathSourceCode {function}       - source code to generate a path
+     * Router.prototype.pathjs {function}               - source code to generate a path
      *      @name {string}                              - route name
      *      return {string}                             - source code to generate a path
      */
-    Router.prototype.pathSourceCode = function(name) {
+    Router.prototype.pathjs = function(name) {
         var routes = this.__routes__;
 
         if (name in routes.by.name) { // named route
             var route = routes.by.name[name];
-            return route.pathSourceCode;
+            return route.pathjs;
         } else { // named route doesn't exist
             throw new Error("Couldn't get source code to generate path with route '" + name + "'" +
                 " because no route named '" + name + "' exists");

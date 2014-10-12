@@ -198,13 +198,13 @@ router.add('/:pet/age/:years', {'name': "my pet's age"}, function(event) {
 
 // get the source code for the function to generate a URL path using
 // the route named "my pet's age" ...
-var pathSourceCode = router.pathSourceCode("my pet's age");
+var pathjs = router.pathjs("my pet's age");
 
 // compile the source code into a function using eval for the sake of example,
 // typically the source code would not be eval'd but rather included into a
 // script or <script> tag that is then sent to and compiled by the client ...
 var pathFunction;
-eval('pathFunction = ' + pathSourceCode);
+eval('pathFunction = ' + pathjs);
 
 // generate a URL by running the compiled function and passing any
 // route parameter arguments ...

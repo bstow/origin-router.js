@@ -91,7 +91,7 @@
      *
      * Route.prototype.ignoreCase {boolean|undefined}               - get/set case insensitive path matching
      *
-     * Route.prototype.pathSourceCode {string}                      - get source code for function to generate a path
+     * Route.prototype.pathjs {string}                              - get source code for function to generate a path
      *
      * Route.prototype
      *      emits added {event}                                     - occurs upon route being added to router
@@ -236,9 +236,9 @@
             'configurable': false });
         if ('constraints' in options) { setConstraints(options.constraints); }  // set constraints
 
-        var pathSourceCode = compose.sourceCode(subroutes);
-        Object.defineProperty(this, 'pathSourceCode', {
-            'get':          function() { return pathSourceCode; },              // path source code getter
+        var pathjs = compose.sourceCode(subroutes);
+        Object.defineProperty(this, 'pathjs', {
+            'get':          function() { return pathjs; },                      // path source code getter
             'enumerable':   true,
             'configurable': false });
 
@@ -806,16 +806,16 @@
     };
 
     /*
-     * Router.prototype.pathSourceCode {function}       - source code to generate a path
+     * Router.prototype.pathjs {function}               - source code to generate a path
      *      @name {string}                              - route name
      *      return {string}                             - source code to generate a path
      */
-    Router.prototype.pathSourceCode = function(name) {
+    Router.prototype.pathjs = function(name) {
         var routes = this.__routes__;
 
         if (name in routes.by.name) { // named route
             var route = routes.by.name[name];
-            return route.pathSourceCode;
+            return route.pathjs;
         } else { // named route doesn't exist
             throw new Error("Couldn't get source code to generate path with route '" + name + "'" +
                 " because no route named '" + name + "' exists");
