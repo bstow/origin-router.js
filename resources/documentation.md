@@ -95,21 +95,21 @@ A Node.js module for routing HTTP requests by URL path
     * route _/:foo<b><\^[a-z]+$></b>/bar_ => matches URL path _/<b>qux</b>/bar_ (where <b>:foo</b>=<b>qux</b>) but **not** _/<b>123</b>/bar_
     * route _/foo/:bar*<b><\^[a-z]+$></b>/_ => matches URL path _/foo/<b>qux</b>/_ (where <b>:bar</b>=<b>[qux]</b>) but **not** _/foo/<b>qux/123</b>/_
 * <a name='cheatsheet__adding_routes'></a>**Adding Routes**
-    * _router.add('/foo')_ => adds a route that matches URL path <i>/foo</i>
-    * _router.add(<b>'my foo'</b>, '/foo') => adds a route named <b><i>my foo</i></b> that matches URL path <i>/foo</i>
-    * _router.add('/foo', {<b>method: 'GET'</b>}) => adds a route applicable to <b>GET requests</b> that matches URL path <i>/foo</i>
-    * _router.add('/foo', {<b>method: ['GET', 'POST']</b>}) => adds a route applicable to <b>GET and POST requests</b> that matches URL path <i>/foo</i>
-    * _router.add('/foo', {<b>ignoreCase: true</b>}) => adds a route that matches URL path <i>/<b>foo</b></i> and <i>/<b>FOO</b></i>
-    * _router.add('/foo bar') => adds a route that matches URL path <i>/foo<b>%20</b>bar</i>
-    * _router.add('/foo<b>%20</b>bar', {<b>encoded: true</b>}) => adds a route that matches URL path <i>/foo<b>%20</b>bar</i>
-    * _router.add('/foo<b>%20</b>bar/<b>:qux</b>', {<b>encoded: true</b>}) => adds a route that matches URL path <i>/foo<b>%20</b>bar/<b>baz</b></i> (where <b>:qux</b>=<b>baz</b>)
-    * _router.add('/foo/:bar/:qux', {<b>constraints: function(args) { return args.bar.length > 2 && args.qux.length > 2; }</b>}) => adds a route that matches URL path <i>/foo/<b>aaa</b>/<b>bbb</b></i> (where <b>:bar</b>=<b>aaa</b> and <b>:qux</b>=<b>bbb</b>) but **not** <i>/foo/<b>aa</b>/<b>bb</b></i>
-    * _router.add('/foo/:bar/:baz/:qux/', {<b>constraints: {bar: /\^[a-z]+$/, baz: function(arg) { return arg.length > 2; }, qux: ['123', '456'] }</b>}) => adds a route that matches URL path <i>/foo/<b>abc</b>/<b>aaa</b>/<b>123</b></i> (where <b>:bar</b>=<b>abc</b>, <b>:baz</b>=<b>aaa</b>, <b>:qux</b>=<b>123</b>) but **not** <i>/foo/<b>123</b>/<b>bb</b>/<b>abc</b></i>
+    * router.add('/foo') => adds a route that matches URL path <i>/foo</i>
+    * router.add(<b>'my foo'</b>, '/foo') => adds a route named <b><i>my foo</i></b> that matches URL path <i>/foo</i>
+    * router.add('/foo', {<b>method: 'GET'</b>}) => adds a route applicable to <b>GET requests</b> that matches URL path <i>/foo</i>
+    * router.add('/foo', {<b>method: ['GET', 'POST']</b>}) => adds a route applicable to <b>GET and POST requests</b> that matches URL path <i>/foo</i>
+    * router.add('/foo', {<b>ignoreCase: true</b>}) => adds a route that matches URL path <i>/<b>foo</b></i> and <i>/<b>FOO</b></i>
+    * router.add('/foo bar') => adds a route that matches URL path <i>/foo<b>%20</b>bar</i>
+    * router.add('/foo<b>%20</b>bar', {<b>encoded: true</b>}) => adds a route that matches URL path <i>/foo<b>%20</b>bar</i>
+    * router.add('/foo<b>%20</b>bar/<b>:qux</b>', {<b>encoded: true</b>}) => adds a route that matches URL path <i>/foo<b>%20</b>bar/<b>baz</b></i> (where <b>:qux</b>=<b>baz</b>)
+    * router.add('/foo/:bar/:qux', {<b>constraints: function(args) { return args.bar.length > 2 && args.qux.length > 2; }</b>}) => adds a route that matches URL path <i>/foo/<b>aaa</b>/<b>bbb</b></i> (where <b>:bar</b>=<b>aaa</b> and <b>:qux</b>=<b>bbb</b>) but **not** <i>/foo/<b>aa</b>/<b>bb</b></i>
+    * router.add('/foo/:bar/:baz/:qux/', {<b>constraints: {bar: /\^[a-z]+$/, baz: function(arg) { return arg.length > 2; }, qux: ['123', '456'] }</b>}) => adds a route that matches URL path <i>/foo/<b>abc</b>/<b>aaa</b>/<b>123</b></i> (where <b>:bar</b>=<b>abc</b>, <b>:baz</b>=<b>aaa</b>, <b>:qux</b>=<b>123</b>) but **not** <i>/foo/<b>123</b>/<b>bb</b>/<b>abc</b></i>
 * <a name='cheatsheet__removing_routes'></a>**Removing Routes**
-    * _router.remove(<b>'my foo'</b>)_ => removes a route named <b><i>my foo</i></b>
+    * router.remove(<b>'my foo'</b>) => removes a route named <b><i>my foo</i></b>
 * <a name='cheatsheet__reverse_routing'></a>**Generating URL Paths**
-    * _router.path(<b>'my foo'</b>, {<b>bar: 'abc'</b>, <b>qux: ['1', '2', '3']</b>})_ => returns the URL path <i><b>/foo/abc/1/2/3</b></i> given that route named <b><i>my foo</i></b> has an expression of <i><b>/foo/:bar/:qux*</b></i>
-    * _router.pathjs(<b>'my foo'</b>)_ => returns the javascript source code for a function that will generate a URL path using the route named <b><i>my foo</i></b>
+    * router.path(<b>'my foo'</b>, {<b>bar: 'abc'</b>, <b>qux: ['1', '2', '3']</b>}) => returns the URL path <i><b>/foo/abc/1/2/3</b></i> given that route named <b><i>my foo</i></b> has an expression of <i><b>/foo/:bar/:qux*</b></i>
+    * router.pathjs(<b>'my foo'</b>) => returns the javascript source code for a function that will generate a URL path using the route named <b><i>my foo</i></b>
 
 <br>
 <br>
