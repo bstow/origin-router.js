@@ -35,6 +35,7 @@ A Node.js module for routing HTTP requests by URL path
 * [Route Expressions](#cheatsheet__route_expressions)
 * [Adding Routes](#cheatsheet__adding_routes)
 * [Removing Routes](#cheatsheet__removing_routes)
+* [Generating URL Paths](#cheatsheet__reverse_routing)
 
 <br>
 
@@ -145,6 +146,9 @@ A Node.js module for routing HTTP requests by URL path
     * _router.add('/foo/:bar/:baz/:qux/', {<b>constraints: {bar: /\^[a-z]+$/, baz: function(arg) { return arg.length > 2; }, qux: ['123', '456'] }</b>}) => adds a route that matches URL path <i>/foo/<b>abc</b>/<b>aaa</b>/<b>123</b></i> (where <b>:bar</b>=<b>abc</b>, <b>:baz</b>=<b>aaa</b>, <b>:qux</b>=<b>123</b>) but **not** <i>/foo/<b>123</b>/<b>bb</b>/<b>abc</b></i>
 * <a name='cheatsheet__removing_routes'></a>**Removing Routes**
     * _router.remove(<b>'my foo'</b>)_ => removes a route named <b><i>my foo</i></b>
+* <a name='cheatsheet__reverse_routing'></a>**Generating URL Paths**
+    * _router.path(<b>'my foo'</b>, {<b>bar: 'abc'</b>, <b>qux: ['1', '2', '3']</b>})_ => returns the URL path <i><b>/foo/abc/1/2/3</b></i> given that route named <b><i>my foo</i></b> has an expression of <i><b>/foo/:bar/:qux*</b></i>
+    * _router.pathjs(<b>'my foo'</b>)_ => returns the javascript source code for a function that will generate a URL path using the route named <b><i>my foo</i></b>
 
 <br>
 <br>
