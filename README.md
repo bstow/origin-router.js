@@ -137,6 +137,7 @@ A Node.js module for routing HTTP requests by URL path
     * router.add('/foo') => adds a route that matches URL path <i>/foo</i>
     * router.add(<b>'my foo'</b>, '/foo') => adds a route named <b><i>my foo</i></b> that matches URL path <i>/foo</i>
     * router.add('/foo', {<b>method: 'GET'</b>}) => adds a route applicable to <b>GET requests</b> that matches URL path <i>/foo</i>
+    * router.add<b>Get</b>('/foo') => adds a route applicable to <b>GET requests</b> that matches URL path <i>/foo</i>
     * router.add('/foo', {<b>method: ['GET', 'POST']</b>}) => adds a route applicable to <b>GET and POST requests</b> that matches URL path <i>/foo</i>
     * router.add('/foo', {<b>ignoreCase: true</b>}) => adds a route that matches URL path <i>/<b>foo</b></i> and <i>/<b>FOO</b></i>
     * router.add('/foo bar') => adds a route that matches URL path <i>/foo<b>%20</b>bar</i>

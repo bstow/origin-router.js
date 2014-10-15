@@ -451,6 +451,7 @@ var run = function(orouter) { 'use strict'; // run tests
     result = router.path('route 3', {'param1': 'arg 1', 'param2': 'arg 2'});
     assert.strictEqual(result, '/arg%201/arg%202/path',
         'The path generated using the 3rd route did not match the expected value');
+    result = router.path('route 3', {'param1': ['arg 1', 'arg2', 'arg3'], 'param2': 'arg 2'});
     // 3.
     result = router.path('route 3', {'param2': undefined});
     assert.strictEqual(result, '///path',

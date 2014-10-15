@@ -2,7 +2,7 @@
     "name": "origin-router",
     "description": "A Node.js module for routing HTTP requests by URL path",
     "author": "Brandon Stow",
-    "version": "1.6.2",
+    "version": "1.6.3",
     "license" : "MIT",
     "keywords": ["router", "http", "url"],
     "main": "origin-router.js",
