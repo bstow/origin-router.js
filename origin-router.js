@@ -24,7 +24,7 @@ SOFTWARE.
 
 /*******************************************************************************
 Name:           Origin Router
-Version:        1.6.3
+Version:        1.6.4
 Description:    A Node.js module for routing HTTP requests by URL path
 *******************************************************************************/
 
@@ -1106,8 +1106,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
         var subpaths = parse.path(pathname);
 
         // find matching route
-        var length = stores.by.order.length;
-        for (var index = 0; index < length; index++) {
+        for (var index = 0, length = stores.by.order.length; index < length; index++) {
             var route       = stores.by.order[index],
                 routeCache  = route.__cache__,
                 subroutes   = route.__subroutes__,
@@ -1771,8 +1770,7 @@ Description:    A Node.js module for routing HTTP requests by URL path
                                             'value instanceof Array || ' +
                                             "Object.prototype.toString.call(value) === '[object Array]'" +
                                         ') { ' +
-                                            'var length = value.length; ' +
-                                            'for (var index = 0; index < length; index++) { ' +
+                                            'for (var index = 0, length = value.length; index < length; index++) { ' +
                                                 "subpaths.push(encodeURIComponent(String(value[index] || ''))); " +
                                             '} ' +
                                         '} else { ' +

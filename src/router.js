@@ -675,8 +675,7 @@
         var subpaths = parse.path(pathname);
 
         // find matching route
-        var length = stores.by.order.length;
-        for (var index = 0; index < length; index++) {
+        for (var index = 0, length = stores.by.order.length; index < length; index++) {
             var route       = stores.by.order[index],
                 routeCache  = route.__cache__,
                 subroutes   = route.__subroutes__,
@@ -1340,8 +1339,7 @@
                                             'value instanceof Array || ' +
                                             "Object.prototype.toString.call(value) === '[object Array]'" +
                                         ') { ' +
-                                            'var length = value.length; ' +
-                                            'for (var index = 0; index < length; index++) { ' +
+                                            'for (var index = 0, length = value.length; index < length; index++) { ' +
                                                 "subpaths.push(encodeURIComponent(String(value[index] || ''))); " +
                                             '} ' +
                                         '} else { ' +
